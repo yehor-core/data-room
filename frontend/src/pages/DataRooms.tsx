@@ -70,7 +70,7 @@ export const DataRooms: React.FC = () => {
     mutationFn: async (id: string) => {
       if (!user) throw new Error('User not authenticated');
       
-      const response = await api.delete(`/data-rooms/${id}`);
+      const response = await api.delete(`/data-rooms?id=${id}`);
       return response.data;
     },
     onSuccess: () => {

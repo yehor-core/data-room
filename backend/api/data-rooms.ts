@@ -1,7 +1,7 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { PrismaClient } from '@prisma/client';
 import jwt from 'jsonwebtoken';
-import { setCorsHeaders, handlePreflight } from '../src/config/cors';
+import { handleCORS } from './_cors';
 
 // Inline authentication middleware
 const authenticateToken = (req: VercelRequest): string | null => {
@@ -27,7 +27,23 @@ const authenticateToken = (req: VercelRequest): string | null => {
   }
 };
 
-const prisma = new PrismaClient();
+// Use a singleton pattern for Prisma Client in serverless
+let prisma: PrismaClient;
+
+function getPrismaClient() {
+  if (!prisma) {
+    console.log('[Data Rooms API] Creating new Prisma Client instance');
+    prisma = new PrismaClient({
+      log: ['error', 'warn'],
+      datasources: {
+        db: {
+          url: process.env.DATABASE_URL
+        }
+      }
+    });
+  }
+  return prisma;
+}
 
 // Helper function to convert BigInt to string for JSON serialization
 const serializeBigInt = (obj: any): any => {
@@ -45,22 +61,24 @@ const serializeBigInt = (obj: any): any => {
 };
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // ALWAYS set CORS headers first, no matter what
-  try {
-    setCorsHeaders(res, req.headers.origin);
-  } catch (e) {
-    console.error('Failed to set CORS headers:', e);
-  }
-
-  // Handle preflight immediately
-  if (req.method === 'OPTIONS') {
-    return handlePreflight(req, res);
+  console.log(`[Data Rooms API] ==================== NEW REQUEST ====================`);
+  console.log(`[Data Rooms API] ${req.method} ${req.url}`);
+  console.log(`[Data Rooms API] Origin: ${req.headers.origin}`);
+  
+  // Handle CORS - this MUST be first
+  const corsHandled = handleCORS(req, res);
+  if (corsHandled) {
+    console.log('[Data Rooms API] CORS preflight handled, returning early');
+    return; // OPTIONS request was handled
   }
 
   const userId = authenticateToken(req);
   if (!userId) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
+
+  // Get Prisma client instance
+  const prisma = getPrismaClient();
 
   const { id, action } = req.query;
 
@@ -247,21 +265,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
     
     // Ensure CORS headers are set even on error
-    try {
-      setCorsHeaders(res, req.headers.origin);
-    } catch (e) {
-      // Ignore
-    }
+    handleCORS(req, res);
     
-    return res.status(500).json({ 
-      error: 'Internal server error',
-      message: error instanceof Error ? error.message : 'Unknown error'
-    });
-  } finally {
-    try {
-      await prisma.$disconnect();
-    } catch (disconnectError) {
-      console.error('[Data Rooms API] Error disconnecting Prisma:', disconnectError);
+    if (!res.headersSent) {
+      return res.status(500).json({ 
+        error: 'Internal server error',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      });
     }
   }
+  // Note: Don't disconnect Prisma in serverless - let it reuse connections
 }
