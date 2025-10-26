@@ -60,7 +60,7 @@ const serializeBigInt = (obj: any): any => {
   return obj;
 };
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   console.log(`[Data Rooms API] ==================== NEW REQUEST ====================`);
   console.log(`[Data Rooms API] ${req.method} ${req.url}`);
   console.log(`[Data Rooms API] Origin: ${req.headers.origin}`);
@@ -273,7 +273,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         message: error instanceof Error ? error.message : 'Unknown error'
       });
     }
-    return;
   }
   // Note: Don't disconnect Prisma in serverless - let it reuse connections
 }
