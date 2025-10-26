@@ -46,6 +46,9 @@ export const config = {
 };
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  const { id, action } = req.query;
+  const userId = authenticateToken(req);
+  
   try {
     console.log(`[Files API] ${req.method} ${req.url}`, {
       origin: req.headers.origin,
@@ -62,9 +65,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return;
     }
 
-    const { id, action } = req.query;
-
-    const userId = authenticateToken(req);
     console.log('🔐 Auth check:', { 
       userId, 
       hasAuthHeader: !!req.headers.authorization,
