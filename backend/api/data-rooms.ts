@@ -96,7 +96,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         orderBy: { createdAt: 'desc' }
       });
 
-      res.status(200).json({
+      return res.status(200).json({
         success: true,
         data: dataRooms,
         pagination: {
@@ -141,7 +141,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
       });
 
-      res.status(201).json({
+      return res.status(201).json({
         success: true,
         data: dataRoom,
         message: 'Data room created successfully'
@@ -167,7 +167,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         orderBy: { createdAt: 'desc' }
       });
 
-      res.status(200).json({
+      return res.status(200).json({
         success: true,
         data: folders
       });
@@ -187,7 +187,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         orderBy: { createdAt: 'desc' }
       });
 
-      res.status(200).json({
+      return res.status(200).json({
         success: true,
         data: serializeBigInt(files)
       });
@@ -226,7 +226,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return;
       }
 
-      res.status(200).json({
+      return res.status(200).json({
         success: true,
         data: dataRoom
       });
@@ -249,7 +249,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         where: { id }
       });
 
-      res.status(200).json({
+      return res.status(200).json({
         success: true,
         message: 'Data room deleted successfully'
       });
