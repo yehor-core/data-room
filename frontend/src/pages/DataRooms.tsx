@@ -10,6 +10,7 @@ import { formatDate } from '../lib/utils';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { api } from '../lib/api';
+import { DataRoom } from '../types';
 
 export const DataRooms: React.FC = () => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -17,9 +18,9 @@ export const DataRooms: React.FC = () => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
 
-  const { data: dataRooms, isLoading } = useQuery({
+  const { data: dataRooms, isLoading } = useQuery<DataRoom[]>({
     queryKey: ['dataRooms'],
-    queryFn: async () => {
+    queryFn: async (): Promise<DataRoom[]> => {
       if (!user) {
         console.log('🔍 No user, skipping data rooms fetch');
         return [];
