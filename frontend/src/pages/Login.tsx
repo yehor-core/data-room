@@ -25,7 +25,7 @@ export const Login: React.FC = () => {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl">Welcome to Data Room</CardTitle>
-          <CardDescription>Secure document management for your team</CardDescription>
+          <CardDescription>Secure document management</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
