@@ -8,31 +8,76 @@ const authenticateToken = (req: VercelRequest): string | null => {
   const authHeader = req.headers.authorization;
   const token = authHeader && authHeader.split(' ')[1];
 
+  console.log('[Folders API] Auth header:', authHeader ? 'Present' : 'Missing');
+  console.log('[Folders API] JWT Secret available:', !!process.env.JWT_SECRET);
+
   if (!token) {
+    console.log('[Folders API] No token found in authorization header');
     return null;
   }
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string };
+    console.log('[Folders API] Token decoded successfully for user:', decoded.userId);
     return decoded.userId;
   } catch (error) {
+    console.error('[Folders API] Token verification failed:', error);
     return null;
   }
 };
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({
+  log: ['query', 'info', 'warn', 'error'],
+});
+
+// Test database connection
+prisma.$connect().catch((error) => {
+  console.error('[Folders API] Database connection failed:', error);
+});
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  setCorsHeaders(res, req.headers.origin);
+  try {
+    console.log(`[Folders API] ${req.method} ${req.url}`, {
+      origin: req.headers.origin,
+      userAgent: req.headers['user-agent'],
+      query: req.query,
+      body: req.body
+    });
 
-  if (req.method === 'OPTIONS') {
-    handlePreflight(req, res);
-    return;
-  }
+    setCorsHeaders(res, req.headers.origin);
 
-  const userId = authenticateToken(req);
-  if (!userId) {
-    res.status(401).json({ error: 'Unauthorized' });
+    if (req.method === 'OPTIONS') {
+      console.log('[Folders API] Handling OPTIONS preflight');
+      handlePreflight(req, res);
+      return;
+    }
+
+    const userId = authenticateToken(req);
+    if (!userId) {
+      console.log('[Folders API] Authentication failed');
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    console.log(`[Folders API] Authenticated user: ${userId}`);
+    
+    // Test database connection
+    try {
+      await prisma.$queryRaw`SELECT 1`;
+      console.log('[Folders API] Database connection successful');
+    } catch (dbError) {
+      console.error('[Folders API] Database connection failed:', dbError);
+      setCorsHeaders(res, req.headers.origin);
+      res.status(500).json({ 
+        error: 'Database connection failed',
+        message: dbError instanceof Error ? dbError.message : 'Unknown database error'
+      });
+      return;
+    }
+  } catch (error) {
+    console.error('[Folders API] Error in handler setup:', error);
+    setCorsHeaders(res, req.headers.origin);
+    res.status(500).json({ error: 'Internal server error during setup' });
     return;
   }
 
@@ -218,6 +263,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     } else if (req.method === 'DELETE' && id && typeof id === 'string') {
       // Delete folder
+      console.log(`[Folders API] Deleting folder: ${id} for user: ${userId}`);
+      
       const folder = await prisma.folder.findFirst({
         where: { 
           id,
@@ -228,14 +275,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
 
       if (!folder) {
+        console.log(`[Folders API] Folder not found: ${id}`);
         res.status(404).json({ error: 'Folder not found' });
         return;
       }
 
+      console.log(`[Folders API] Found folder to delete: ${folder.name}`);
+      
       await prisma.folder.delete({
         where: { id }
       });
 
+      console.log(`[Folders API] Successfully deleted folder: ${id}`);
       res.status(200).json({
         success: true,
         message: 'Folder deleted successfully'
@@ -264,7 +315,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       res.status(405).json({ error: 'Method not allowed' });
     }
   } catch (error) {
-    console.error('Folders API error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('[Folders API] Error in main handler:', error);
+    console.error('[Folders API] Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      method: req.method,
+      url: req.url,
+      query: req.query
+    });
+    
+    // Ensure CORS headers are set even on error
+    setCorsHeaders(res, req.headers.origin);
+    res.status(500).json({ 
+      error: 'Internal server error',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
   }
 }

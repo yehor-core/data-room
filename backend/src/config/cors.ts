@@ -10,30 +10,55 @@ export const corsConfig = {
 
 // Set CORS headers for Vercel API functions
 export const setCorsHeaders = (res: any, origin?: string) => {
-  // Allow specific frontend domain
-  const allowedOrigins = [
-    'https://data-room-196e.vercel.app',
-    'http://localhost:3000', // For local development
-  ];
-  
-  const requestOrigin = origin || '';
-  const allowedOrigin = allowedOrigins.includes(requestOrigin) 
-    ? requestOrigin 
-    : allowedOrigins[0];
-  
-  // Set all required CORS headers
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
-  res.setHeader('Access-Control-Allow-Methods', corsConfig.methods.join(', '));
-  res.setHeader('Access-Control-Allow-Headers', corsConfig.allowedHeaders.join(', '));
-  res.setHeader('Access-Control-Max-Age', '86400'); // Cache preflight for 24 hours
+  try {
+    // Allow specific frontend domain
+    const allowedOrigins = [
+      'https://data-room-196e.vercel.app',
+      'http://localhost:3000', // For local development
+    ];
+    
+    const requestOrigin = origin || '';
+    const allowedOrigin = allowedOrigins.includes(requestOrigin) 
+      ? requestOrigin 
+      : allowedOrigins[0];
+    
+    console.log('[CORS] Setting headers for origin:', requestOrigin, '->', allowedOrigin);
+    
+    // Set all required CORS headers
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
+    res.setHeader('Access-Control-Allow-Methods', corsConfig.methods.join(', '));
+    res.setHeader('Access-Control-Allow-Headers', corsConfig.allowedHeaders.join(', '));
+    res.setHeader('Access-Control-Max-Age', '86400'); // Cache preflight for 24 hours
+  } catch (error) {
+    console.error('[CORS] Error setting headers:', error);
+    // Fallback to basic headers
+    res.setHeader('Access-Control-Allow-Origin', 'https://data-room-196e.vercel.app');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+  }
 };
 
 // Handle preflight OPTIONS requests
 export const handlePreflight = (req: any, res: any) => {
-  // Set CORS headers for preflight
-  setCorsHeaders(res, req.headers.origin);
-  
-  // Return 200 OK for OPTIONS preflight
-  res.status(200).end();
+  try {
+    console.log('[CORS] Handling preflight request:', {
+      origin: req.headers.origin,
+      method: req.method,
+      url: req.url
+    });
+    
+    // Set CORS headers for preflight
+    setCorsHeaders(res, req.headers.origin);
+    
+    // Return 200 OK for OPTIONS preflight
+    res.status(200).end();
+  } catch (error) {
+    console.error('[CORS] Error in preflight handling:', error);
+    // Even if there's an error, try to set basic CORS headers
+    res.setHeader('Access-Control-Allow-Origin', 'https://data-room-196e.vercel.app');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.status(200).end();
+  }
 };

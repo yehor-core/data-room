@@ -11,19 +11,32 @@ const authenticateToken = (req: VercelRequest): string | null => {
   const authHeader = req.headers.authorization;
   const token = authHeader && authHeader.split(' ')[1];
 
+  console.log('[Files API] Auth header:', authHeader ? 'Present' : 'Missing');
+  console.log('[Files API] JWT Secret available:', !!process.env.JWT_SECRET);
+
   if (!token) {
+    console.log('[Files API] No token found in authorization header');
     return null;
   }
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string };
+    console.log('[Files API] Token decoded successfully for user:', decoded.userId);
     return decoded.userId;
   } catch (error) {
+    console.error('[Files API] Token verification failed:', error);
     return null;
   }
 };
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({
+  log: ['query', 'info', 'warn', 'error'],
+});
+
+// Test database connection
+prisma.$connect().catch((error) => {
+  console.error('[Files API] Database connection failed:', error);
+});
 
 // Disable body parser for file uploads
 export const config = {
@@ -33,48 +46,90 @@ export const config = {
 };
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  setCorsHeaders(res, req.headers.origin);
+  try {
+    console.log(`[Files API] ${req.method} ${req.url}`, {
+      origin: req.headers.origin,
+      userAgent: req.headers['user-agent'],
+      query: req.query,
+      contentType: req.headers['content-type']
+    });
 
-  if (req.method === 'OPTIONS') {
-    handlePreflight(req, res);
-    return;
-  }
+    setCorsHeaders(res, req.headers.origin);
 
-  const { id, action } = req.query;
+    if (req.method === 'OPTIONS') {
+      console.log('[Files API] Handling OPTIONS preflight');
+      handlePreflight(req, res);
+      return;
+    }
 
-  const userId = authenticateToken(req);
-  console.log('🔐 Auth check:', { 
-    userId, 
-    hasAuthHeader: !!req.headers.authorization,
-    action,
-    method: req.method 
-  });
-  
-  if (!userId) {
-    console.error('❌ Unauthorized - no valid token');
-    res.status(401).json({ error: 'Unauthorized' });
+    const { id, action } = req.query;
+
+    const userId = authenticateToken(req);
+    console.log('🔐 Auth check:', { 
+      userId, 
+      hasAuthHeader: !!req.headers.authorization,
+      action,
+      method: req.method 
+    });
+    
+    if (!userId) {
+      console.error('❌ Unauthorized - no valid token');
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    // Test database connection
+    try {
+      await prisma.$queryRaw`SELECT 1`;
+      console.log('[Files API] Database connection successful');
+    } catch (dbError) {
+      console.error('[Files API] Database connection failed:', dbError);
+      setCorsHeaders(res, req.headers.origin);
+      res.status(500).json({ 
+        error: 'Database connection failed',
+        message: dbError instanceof Error ? dbError.message : 'Unknown database error'
+      });
+      return;
+    }
+  } catch (error) {
+    console.error('[Files API] Error in handler setup:', error);
+    setCorsHeaders(res, req.headers.origin);
+    res.status(500).json({ error: 'Internal server error during setup' });
     return;
   }
 
   try {
     if (req.method === 'POST' && action === 'upload') {
+      console.log('[Files API] Starting file upload process');
+      
       // Handle file upload with formidable
       const form = formidable({
         maxFileSize: 100 * 1024 * 1024, // 100MB for Vercel Pro
       });
 
+      console.log('[Files API] Parsing form data...');
       const [fields, files] = await form.parse(req as any);
       
       const name = fields.name?.[0];
       const folderId = fields.folderId?.[0];
       const uploadedFile = files.file?.[0];
 
+      console.log('[Files API] Form data parsed:', {
+        name,
+        folderId,
+        hasFile: !!uploadedFile,
+        fileName: uploadedFile?.originalFilename,
+        fileSize: uploadedFile?.size
+      });
+
       if (!name || !folderId || !uploadedFile) {
+        console.log('[Files API] Missing required fields:', { name: !!name, folderId: !!folderId, file: !!uploadedFile });
         res.status(400).json({ error: 'Name, folderId, and file are required' });
         return;
       }
 
       // Verify the user has access to the folder
+      console.log('[Files API] Verifying folder access...');
       const folder = await prisma.folder.findFirst({
         where: { 
           id: folderId,
@@ -85,33 +140,77 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
 
       if (!folder) {
+        console.log('[Files API] Folder not found or no access:', folderId);
         res.status(404).json({ error: 'Folder not found' });
         return;
       }
 
-      // Check for duplicate file name in same folder
-      const existingFile = await prisma.file.findFirst({
-        where: {
-          name,
-          folderId,
-        }
-      });
+      console.log('[Files API] Folder verified:', folder.name);
 
-      if (existingFile) {
-        res.status(409).json({ error: 'A file with this name already exists in this folder' });
-        return;
+      // Check for duplicate file name in same folder and generate unique name
+      console.log('[Files API] Checking for duplicate file name...');
+      let finalFileName = name;
+      let counter = 1;
+      
+      while (true) {
+        const existingFile = await prisma.file.findFirst({
+          where: {
+            name: finalFileName,
+            folderId,
+          }
+        });
+
+        if (!existingFile) {
+          break; // No duplicate found, use this name
+        }
+
+        // Generate a new name with a counter
+        const nameParts = name.split('.');
+        if (nameParts.length > 1) {
+          const extension = nameParts.pop();
+          const baseName = nameParts.join('.');
+          finalFileName = `${baseName} (${counter}).${extension}`;
+        } else {
+          finalFileName = `${name} (${counter})`;
+        }
+        counter++;
+        
+        // Prevent infinite loop
+        if (counter > 100) {
+          console.log('[Files API] Too many duplicates, using timestamp');
+          const timestamp = Date.now();
+          const nameParts = name.split('.');
+          if (nameParts.length > 1) {
+            const extension = nameParts.pop();
+            const baseName = nameParts.join('.');
+            finalFileName = `${baseName}_${timestamp}.${extension}`;
+          } else {
+            finalFileName = `${name}_${timestamp}`;
+          }
+          break;
+        }
       }
 
+      if (finalFileName !== name) {
+        console.log('[Files API] Generated unique filename:', finalFileName);
+      }
+
+      console.log('[Files API] No duplicate found, proceeding with upload...');
+
       // Read the file buffer
+      console.log('[Files API] Reading file buffer...');
       const fileBuffer = await fs.readFile(uploadedFile.filepath);
       
       // Upload to Supabase Storage
+      console.log('[Files API] Uploading to Supabase Storage...');
       const filePath = await uploadFile(fileBuffer, uploadedFile.originalFilename || name);
+
+      console.log('[Files API] File uploaded to storage, creating database record...');
 
       // Create file record in database
       const file = await prisma.file.create({
         data: {
-          name,
+          name: finalFileName, // Use the unique filename
           mimeType: uploadedFile.mimetype || 'application/octet-stream',
           fileSize: BigInt(uploadedFile.size),
           filePath,
@@ -121,10 +220,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
       });
 
+      console.log('[Files API] File upload completed successfully:', file.id);
+
       res.status(201).json({
         success: true,
         data: file,
-        message: 'File uploaded successfully'
+        message: finalFileName !== name 
+          ? `File uploaded successfully as "${finalFileName}" (original name was already in use)`
+          : 'File uploaded successfully'
       });
 
     } else if (req.method === 'POST' && id && typeof id === 'string' && action === 'duplicate') {
@@ -231,11 +334,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       res.status(405).json({ error: 'Method not allowed' });
     }
   } catch (error) {
-    console.error('Files API error:', error);
+    console.error('[Files API] Error in main handler:', error);
+    console.error('[Files API] Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      method: req.method,
+      url: req.url,
+      query: req.query,
+      action: req.query.action
+    });
+    
+    // Ensure CORS headers are set even on error
     setCorsHeaders(res, req.headers.origin);
     res.status(500).json({ 
       error: 'Internal server error',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      message: error instanceof Error ? error.message : 'Unknown error'
     });
   } finally {
     await prisma.$disconnect();
