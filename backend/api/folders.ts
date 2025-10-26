@@ -32,6 +32,13 @@ const prisma = new PrismaClient({
     db: {
       url: process.env.DATABASE_URL
     }
+  },
+  // Add connection pooling configuration for serverless
+  __internal: {
+    engine: {
+      connectTimeout: 60000,
+      queryTimeout: 60000,
+    }
   }
 });
 

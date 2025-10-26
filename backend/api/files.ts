@@ -242,7 +242,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       
       // Upload to Supabase Storage
       console.log('[Files API] Uploading to Supabase Storage...');
-      const filePath = await uploadFile(fileBuffer, uploadedFile.originalFilename || name);
+      const blobUrl = await uploadFile(fileBuffer, uploadedFile.originalFilename || name);
 
       console.log('[Files API] File uploaded to storage, creating database record...');
 
@@ -252,7 +252,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           name: finalFileName, // Use the unique filename
           mimeType: uploadedFile.mimetype || 'application/octet-stream',
           fileSize: BigInt(uploadedFile.size),
-          filePath,
+          filePath: blobUrl, // Store the public URL as filePath for now
           folderId,
           dataRoomId: folder.dataRoomId,
           userId: userId,

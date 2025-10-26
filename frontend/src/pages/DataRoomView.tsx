@@ -399,6 +399,22 @@ export const DataRoomView: React.FC = () => {
     }
   };
 
+  // Get all folders and files for FileTree (needed for proper tree structure)
+  const getAllFoldersAndFiles = () => {
+    const allFolders = Array.isArray(foldersData?.data) 
+      ? foldersData.data 
+      : (foldersData?.data?.folders || []);
+    
+    const allFiles = Array.isArray(filesData?.data) 
+      ? filesData.data 
+      : (filesData?.data?.files || []);
+    
+    return {
+      folders: allFolders,
+      files: allFiles
+    };
+  };
+
   const { folders, files } = getCurrentFolderContents();
   const isLoading = !folderId ? (foldersData?.isLoading || filesData?.isLoading) : (folderData?.isLoading || filesData?.isLoading);
 
@@ -496,18 +512,24 @@ export const DataRoomView: React.FC = () => {
       return;
     }
 
+    // Map database fields to expected frontend fields
+    const blobUrl = file.filePath || file.blobUrl;
+    const fileType = file.mimeType || file.fileType;
+    const size = file.fileSize || file.size;
+
     console.log('📄 File details:', {
       id: file.id,
       name: file.name,
-      blobUrl: file.blobUrl,
-      fileType: file.fileType,
-      size: file.size
+      blobUrl,
+      fileType,
+      size,
+      originalFile: file
     });
 
     // Open file in new tab using the blobUrl from the database
-    if (file.blobUrl) {
+    if (blobUrl) {
       try {
-        if (file.fileType === 'application/pdf') {
+        if (fileType === 'application/pdf') {
           // Open PDF in new tab with proper viewer
           const pdfWindow = window.open('', '_blank');
           if (pdfWindow) {
@@ -566,16 +588,8 @@ export const DataRoomView: React.FC = () => {
     <div className="flex h-screen">
       {/* File Tree Sidebar */}
       <FileTree
-        folders={
-          Array.isArray(foldersData?.data) 
-            ? foldersData.data 
-            : (foldersData?.data?.folders || [])
-        }
-        files={
-          Array.isArray(filesData?.data) 
-            ? filesData.data 
-            : (filesData?.data?.files || [])
-        }
+        folders={getAllFoldersAndFiles().folders}
+        files={getAllFoldersAndFiles().files}
         onFolderClick={handleFolderClick}
         onFileClick={handleFileClick}
         currentPath={folderId}
@@ -756,7 +770,7 @@ export const DataRoomView: React.FC = () => {
                             <div className="min-w-0">
                               <h3 className="font-medium truncate">{file.name}</h3>
                               <p className="text-sm text-muted-foreground">
-                                {file.size ? formatBytes(file.size) : 'Unknown size'} · {formatDate(file.createdAt)}
+                                {file.fileSize ? formatBytes(file.fileSize) : 'Unknown size'} · {formatDate(file.createdAt)}
                                 {searchQuery.trim() && fileFolder && (
                                   <span className="ml-2 text-blue-600">in {fileFolder.name}</span>
                                 )}
