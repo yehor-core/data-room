@@ -356,12 +356,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
     
     // Ensure CORS headers are set even on error
-    setCorsHeaders(res, req.headers.origin);
-    res.status(500).json({ 
-      error: 'Internal server error',
-      message: error instanceof Error ? error.message : 'Unknown error'
-    });
-  } finally {
-    await prisma.$disconnect();
+    handleCORS(req, res);
+    
+    if (!res.headersSent) {
+      res.status(500).json({ 
+        error: 'Internal server error',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
   }
+  // Note: Don't disconnect Prisma in serverless - let it reuse connections
 }
