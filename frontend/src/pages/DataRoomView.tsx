@@ -107,9 +107,21 @@ export const DataRoomView: React.FC = () => {
   const deleteFolderMutation = useMutation({
     mutationFn: async (folderIdToDelete: string) => {
       console.log('🗑️ Deleting folder:', folderIdToDelete);
-      const response = await api.delete(`/folders/${folderIdToDelete}`);
-      console.log('✅ Delete response:', response);
-      return { id: folderIdToDelete };
+      try {
+        const response = await api.delete(`/folders/${folderIdToDelete}`);
+        console.log('✅ Delete response:', response);
+        return { id: folderIdToDelete };
+      } catch (error: any) {
+        console.error('❌ Delete folder API error:', {
+          error,
+          code: error.code,
+          message: error.message,
+          status: error.response?.status,
+          statusText: error.response?.statusText,
+          data: error.response?.data
+        });
+        throw error;
+      }
     },
     onSuccess: () => {
       alert('✅ Folder deleted successfully!');
@@ -122,14 +134,44 @@ export const DataRoomView: React.FC = () => {
     },
     onError: (error: any) => {
       console.error('❌ Delete folder error:', error);
-      alert(`Failed to delete folder: ${error.response?.data?.error || error.message}`);
+      let message = 'Failed to delete folder';
+      
+      if (error.code === 'ERR_NETWORK') {
+        message = 'Network error. Please check your connection and try again.';
+      } else if (error.response?.status === 401) {
+        message = 'Authentication failed. Please log in again.';
+      } else if (error.response?.status === 404) {
+        message = 'Folder not found. It may have already been deleted.';
+      } else if (error.response?.status === 403) {
+        message = 'You do not have permission to delete this folder.';
+      } else if (error.response?.data?.error) {
+        message = error.response.data.error;
+      } else if (error.message) {
+        message = error.message;
+      }
+      
+      alert(`❌ ${message}`);
     },
   });
 
   const deleteFileMutation = useMutation({
     mutationFn: async (fileId: string) => {
-      await api.delete(`/files/${fileId}`);
-      return { id: fileId };
+      console.log('🗑️ Deleting file:', fileId);
+      try {
+        const response = await api.delete(`/files/${fileId}`);
+        console.log('✅ Delete file response:', response);
+        return { id: fileId };
+      } catch (error: any) {
+        console.error('❌ Delete file API error:', {
+          error,
+          code: error.code,
+          message: error.message,
+          status: error.response?.status,
+          statusText: error.response?.statusText,
+          data: error.response?.data
+        });
+        throw error;
+      }
     },
     onSuccess: () => {
       alert('✅ File deleted successfully!');
@@ -142,8 +184,24 @@ export const DataRoomView: React.FC = () => {
       }
     },
     onError: (error: any) => {
-      console.error('Delete file error:', error);
-      alert(`❌ Failed to delete file: ${error.response?.data?.error || error.message}`);
+      console.error('❌ Delete file error:', error);
+      let message = 'Failed to delete file';
+      
+      if (error.code === 'ERR_NETWORK') {
+        message = 'Network error. Please check your connection and try again.';
+      } else if (error.response?.status === 401) {
+        message = 'Authentication failed. Please log in again.';
+      } else if (error.response?.status === 404) {
+        message = 'File not found. It may have already been deleted.';
+      } else if (error.response?.status === 403) {
+        message = 'You do not have permission to delete this file.';
+      } else if (error.response?.data?.error) {
+        message = error.response.data.error;
+      } else if (error.message) {
+        message = error.message;
+      }
+      
+      alert(`❌ ${message}`);
     },
   });
 
@@ -167,8 +225,22 @@ export const DataRoomView: React.FC = () => {
 
   const renameFileMutation = useMutation({
     mutationFn: async ({ id, name }: { id: string; name: string }) => {
-      const response = await api.patch(`/files/${id}`, { name });
-      return response.data.data;
+      console.log('✏️ Renaming file:', { id, name });
+      try {
+        const response = await api.patch(`/files/${id}`, { name });
+        console.log('✅ Rename file response:', response);
+        return response.data.data;
+      } catch (error: any) {
+        console.error('❌ Rename file API error:', {
+          error,
+          code: error.code,
+          message: error.message,
+          status: error.response?.status,
+          statusText: error.response?.statusText,
+          data: error.response?.data
+        });
+        throw error;
+      }
     },
     onSuccess: () => {
       setIsRenameDialogOpen(false);
@@ -176,6 +248,28 @@ export const DataRoomView: React.FC = () => {
       setNewName('');
       // Invalidate relevant queries
       queryClient.invalidateQueries({ queryKey: ['files', id, folderId] });
+    },
+    onError: (error: any) => {
+      console.error('❌ Rename file error:', error);
+      let message = 'Failed to rename file';
+      
+      if (error.code === 'ERR_NETWORK') {
+        message = 'Network error. Please check your connection and try again.';
+      } else if (error.response?.status === 401) {
+        message = 'Authentication failed. Please log in again.';
+      } else if (error.response?.status === 404) {
+        message = 'File not found. It may have been deleted.';
+      } else if (error.response?.status === 403) {
+        message = 'You do not have permission to rename this file.';
+      } else if (error.response?.status === 409) {
+        message = 'A file with this name already exists.';
+      } else if (error.response?.data?.error) {
+        message = error.response.data.error;
+      } else if (error.message) {
+        message = error.message;
+      }
+      
+      alert(`❌ ${message}`);
     },
   });
 
@@ -290,7 +384,7 @@ export const DataRoomView: React.FC = () => {
         files: folderData?.data?.files || []
       };
     } else {
-      // Show root level contents (only folders with no parent)
+      // Show root level contents (only folders with no parent, NO FILES at root level)
       const allFolders = Array.isArray(foldersData?.data) 
         ? foldersData.data 
         : (foldersData?.data?.folders || []);
@@ -300,7 +394,7 @@ export const DataRoomView: React.FC = () => {
       
       return {
         folders: rootFolders,
-        files: filesData?.data || []
+        files: [] // No files at data room root level
       };
     }
   };
@@ -393,10 +487,26 @@ export const DataRoomView: React.FC = () => {
   };
 
   const handleFileClick = (fileId: string) => {
+    console.log('🔍 Attempting to view file:', fileId);
     const file = files.find((f: FileType) => f.id === fileId);
-    if (file) {
-      // Open file in new tab using the blobUrl from the database
-      if (file.blobUrl) {
+    
+    if (!file) {
+      console.error('❌ File not found in current files list:', fileId);
+      alert('File not found in current view. Please refresh the page.');
+      return;
+    }
+
+    console.log('📄 File details:', {
+      id: file.id,
+      name: file.name,
+      blobUrl: file.blobUrl,
+      fileType: file.fileType,
+      size: file.size
+    });
+
+    // Open file in new tab using the blobUrl from the database
+    if (file.blobUrl) {
+      try {
         if (file.fileType === 'application/pdf') {
           // Open PDF in new tab with proper viewer
           const pdfWindow = window.open('', '_blank');
@@ -426,6 +536,10 @@ export const DataRoomView: React.FC = () => {
               </html>
             `);
             pdfWindow.document.close();
+            console.log('✅ PDF opened successfully');
+          } else {
+            console.error('❌ Failed to open PDF window - popup blocked?');
+            alert('Failed to open PDF. Please check if popups are blocked.');
           }
         } else {
           // For other file types, create a download link
@@ -436,10 +550,15 @@ export const DataRoomView: React.FC = () => {
           document.body.appendChild(link);
           link.click();
           document.body.removeChild(link);
+          console.log('✅ File download initiated');
         }
-      } else {
-        alert('File not found. Please re-upload the file.');
+      } catch (error) {
+        console.error('❌ Error opening file:', error);
+        alert(`Error opening file: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
+    } else {
+      console.error('❌ File has no blobUrl:', file);
+      alert(`File not found. The file "${file.name}" may have been corrupted or deleted. Please re-upload the file.`);
     }
   };
 

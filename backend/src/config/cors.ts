@@ -45,21 +45,32 @@ export const handlePreflight = (req: any, res: any) => {
       origin: req.headers.origin,
       method: req.method,
       url: req.url,
-      headers: req.headers
+      'access-control-request-method': req.headers['access-control-request-method'],
+      'access-control-request-headers': req.headers['access-control-request-headers'],
+      allHeaders: Object.keys(req.headers)
     });
     
     // Set CORS headers for preflight
     setCorsHeaders(res, req.headers.origin);
     
     // Additional headers for better compatibility
-    res.setHeader('Access-Control-Allow-Origin', req.headers.origin || 'https://data-room-196e.vercel.app');
+    const origin = req.headers.origin || 'https://data-room-196e.vercel.app';
+    res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin, Cache-Control, Pragma');
     res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.setHeader('Access-Control-Max-Age', '86400');
     
+    // Log the headers being set
+    console.log('[CORS] Headers set:', {
+      'Access-Control-Allow-Origin': origin,
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, Accept, Origin, Cache-Control, Pragma',
+      'Access-Control-Allow-Credentials': 'true'
+    });
+    
     // Return 200 OK for OPTIONS preflight
-    console.log('[CORS] Preflight request handled successfully');
+    console.log('[CORS] Preflight request handled successfully - returning 200');
     res.status(200).end();
   } catch (error) {
     console.error('[CORS] Error in preflight handling:', error);
@@ -69,6 +80,7 @@ export const handlePreflight = (req: any, res: any) => {
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin, Cache-Control, Pragma');
     res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.setHeader('Access-Control-Max-Age', '86400');
+    console.log('[CORS] Fallback headers set due to error');
     res.status(200).end();
   }
 };
