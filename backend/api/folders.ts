@@ -36,6 +36,8 @@ prisma.$connect().catch((error) => {
 });
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  const userId = authenticateToken(req);
+  
   try {
     console.log(`[Folders API] ${req.method} ${req.url}`, {
       origin: req.headers.origin,
@@ -52,7 +54,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return;
     }
 
-    const userId = authenticateToken(req);
     if (!userId) {
       console.log('[Folders API] Authentication failed');
       res.status(401).json({ error: 'Unauthorized' });

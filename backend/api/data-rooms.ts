@@ -42,13 +42,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return handlePreflight(req, res);
   }
 
-  try {
-    const userId = authenticateToken(req);
-    if (!userId) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
+  const userId = authenticateToken(req);
+  if (!userId) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
 
-    const { id, action } = req.query;
+  const { id, action } = req.query;
+
+  try {
 
     if (req.method === 'GET' && !id) {
       // Get all data rooms for the user
