@@ -242,5 +242,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       error: 'Internal server error',
       message: error instanceof Error ? error.message : 'Unknown error'
     });
+  } finally {
+    try {
+      await prisma.$disconnect();
+    } catch (disconnectError) {
+      console.error('[Data Rooms API] Error disconnecting Prisma:', disconnectError);
+    }
   }
 }

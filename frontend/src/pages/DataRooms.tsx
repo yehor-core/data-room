@@ -9,6 +9,7 @@ import { Input } from '../components/ui/Input';
 import { formatDate } from '../lib/utils';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
+import { api } from '../lib/api';
 
 export const DataRooms: React.FC = () => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -24,18 +25,9 @@ export const DataRooms: React.FC = () => {
         return [];
       }
       
-      console.log('🔍 Fetching data rooms for user:', user.id);
-      const { data, error } = await supabase
-        .from('data_rooms')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-      
-      if (error) {
-        console.error('🔍 Error fetching data rooms:', error);
-        throw error;
-      }
-      return data || [];
+      console.log('🔍 Fetching data rooms via API for user:', user.id);
+      const response = await api.get('/data-rooms');
+      return response.data.data || [];
     },
     enabled: !!user, // Only run when user is available
   });
@@ -44,21 +36,9 @@ export const DataRooms: React.FC = () => {
     mutationFn: async (name: string) => {
       if (!user) throw new Error('User not authenticated');
       
-      console.log('🔍 Creating data room:', { name, user_id: user.id });
-      const { data, error } = await supabase
-        .from('data_rooms')
-        .insert({
-          name,
-          user_id: user.id,
-        })
-        .select()
-        .single();
-      
-      if (error) {
-        console.error('🔍 Error creating data room:', error);
-        throw error;
-      }
-      return data;
+      console.log('🔍 Creating data room via API:', { name, user_id: user.id });
+      const response = await api.post('/data-rooms', { name });
+      return response.data.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['dataRooms'] });
@@ -66,10 +46,22 @@ export const DataRooms: React.FC = () => {
       setNewDataRoomName('');
     },
     onError: (error: any) => {
-      const message = error.code === '23505' || error.message.includes('duplicate')
-        ? 'A data room with this name already exists'
-        : `Failed to create data room: ${error.message}`;
-      alert(message);
+      const status = error.response?.status;
+      const responseData = error.response?.data;
+      
+      let message = 'Failed to create data room';
+      
+      if (status === 409) {
+        message = responseData?.error || 'A data room with this name already exists';
+      } else if (status === 401) {
+        message = 'Authentication failed. Please try logging out and back in.';
+      } else if (responseData?.error) {
+        message = responseData.error;
+      } else if (error.message) {
+        message = error.message;
+      }
+      
+      alert(`❌ ${message}`);
     },
   });
 
@@ -77,17 +69,15 @@ export const DataRooms: React.FC = () => {
     mutationFn: async (id: string) => {
       if (!user) throw new Error('User not authenticated');
       
-      const { error } = await supabase
-        .from('data_rooms')
-        .delete()
-        .eq('id', id)
-        .eq('user_id', user.id);
-      
-      if (error) throw error;
-      return { id };
+      const response = await api.delete(`/data-rooms/${id}`);
+      return response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['dataRooms'] });
+    },
+    onError: (error: any) => {
+      const message = error.response?.data?.error || error.message || 'Failed to delete data room';
+      alert(`❌ ${message}`);
     },
   });
 

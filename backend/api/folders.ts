@@ -55,8 +55,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     if (!userId) {
-      console.log('[Folders API] Authentication failed');
-      res.status(401).json({ error: 'Unauthorized' });
+      console.log('[Folders API] Authentication failed - no valid token provided');
+      res.status(401).json({ 
+        error: 'Unauthorized',
+        message: 'Authentication required. Please log in to access this resource.'
+      });
       return;
     }
 
@@ -331,5 +334,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       error: 'Internal server error',
       message: error instanceof Error ? error.message : 'Unknown error'
     });
+  } finally {
+    try {
+      await prisma.$disconnect();
+    } catch (disconnectError) {
+      console.error('[Folders API] Error disconnecting Prisma:', disconnectError);
+    }
   }
 }
