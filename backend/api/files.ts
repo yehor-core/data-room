@@ -66,11 +66,14 @@ export const config = {
 };
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // ALWAYS set CORS headers first, no matter what
+  console.log(`[Files API] Incoming request: ${req.method} ${req.url}`);
+  console.log('[Files API] Headers:', JSON.stringify(req.headers, null, 2));
+  
+  // Set CORS headers (in addition to vercel.json headers for reliability)
   try {
     setCorsHeaders(res, req.headers.origin);
   } catch (e) {
-    console.error('Failed to set CORS headers:', e);
+    console.error('[Files API] Failed to set CORS headers:', e);
     // Fallback CORS headers
     res.setHeader('Access-Control-Allow-Origin', 'https://data-room-196e.vercel.app');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
@@ -81,22 +84,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   // Handle OPTIONS preflight requests FIRST
   if (req.method === 'OPTIONS') {
-    console.log('[Files API] Handling OPTIONS preflight request');
-    try {
-      handlePreflight(req, res);
-      console.log('[Files API] OPTIONS preflight handled successfully');
-      return;
-    } catch (error) {
-      console.error('[Files API] Error handling OPTIONS preflight:', error);
-      // Fallback CORS headers
-      res.setHeader('Access-Control-Allow-Origin', 'https://data-room-196e.vercel.app');
-      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
-      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin, Cache-Control, Pragma');
-      res.setHeader('Access-Control-Allow-Credentials', 'true');
-      res.setHeader('Access-Control-Max-Age', '86400');
-      res.status(200).end();
-      return;
-    }
+    console.log('[Files API] Handling OPTIONS preflight request - returning 200');
+    res.status(200).end();
+    return;
   }
 
   const { id, action } = req.query;
