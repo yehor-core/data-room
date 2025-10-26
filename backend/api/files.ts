@@ -31,6 +31,11 @@ const authenticateToken = (req: VercelRequest): string | null => {
 
 const prisma = new PrismaClient({
   log: ['query', 'info', 'warn', 'error'],
+  datasources: {
+    db: {
+      url: process.env.DATABASE_URL
+    }
+  }
 });
 
 // Test database connection

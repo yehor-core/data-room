@@ -28,6 +28,11 @@ const authenticateToken = (req: VercelRequest): string | null => {
 
 const prisma = new PrismaClient({
   log: ['query', 'info', 'warn', 'error'],
+  datasources: {
+    db: {
+      url: process.env.DATABASE_URL
+    }
+  }
 });
 
 // Test database connection
@@ -99,18 +104,34 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     console.log(`[Folders API] Authenticated user: ${userId}`);
     
-    // Test database connection
-    try {
-      await prisma.$queryRaw`SELECT 1`;
-      console.log('[Folders API] Database connection successful');
-    } catch (dbError) {
-      console.error('[Folders API] Database connection failed:', dbError);
-      setCorsHeaders(res, req.headers.origin);
-      res.status(500).json({ 
-        error: 'Database connection failed',
-        message: dbError instanceof Error ? dbError.message : 'Unknown database error'
-      });
-      return;
+    // Test database connection with retry
+    let dbConnected = false;
+    let retryCount = 0;
+    const maxRetries = 3;
+    
+    while (!dbConnected && retryCount < maxRetries) {
+      try {
+        await prisma.$queryRaw`SELECT 1`;
+        console.log('[Folders API] Database connection successful');
+        dbConnected = true;
+      } catch (dbError) {
+        retryCount++;
+        console.error(`[Folders API] Database connection attempt ${retryCount} failed:`, dbError);
+        
+        if (retryCount >= maxRetries) {
+          console.error('[Folders API] Database connection failed after all retries');
+          setCorsHeaders(res, req.headers.origin);
+          res.status(500).json({ 
+            error: 'Database connection failed',
+            message: dbError instanceof Error ? dbError.message : 'Unknown database error',
+            retries: retryCount
+          });
+          return;
+        }
+        
+        // Wait before retry
+        await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+      }
     }
   } catch (error) {
     console.error('[Folders API] Error in handler setup:', error);
