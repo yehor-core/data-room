@@ -74,7 +74,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
 
   const userId = authenticateToken(req);
   if (!userId) {
-    return res.status(401).json({ error: 'Unauthorized' });
+    res.status(401).json({ error: 'Unauthorized' });
+    return;
   }
 
   // Get Prisma client instance
@@ -96,7 +97,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
         orderBy: { createdAt: 'desc' }
       });
 
-      return res.status(200).json({
+      res.status(200).json({
         success: true,
         data: dataRooms,
         pagination: {
@@ -106,6 +107,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
           totalPages: 1
         }
       });
+      return;
 
     } else if (req.method === 'POST' && !id) {
       // Create a new data room
@@ -141,11 +143,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
         }
       });
 
-      return res.status(201).json({
+      res.status(201).json({
         success: true,
         data: dataRoom,
         message: 'Data room created successfully'
       });
+      return;
 
     } else if (action === 'folders' && id && typeof id === 'string') {
       // Get folders for a data room
@@ -167,10 +170,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
         orderBy: { createdAt: 'desc' }
       });
 
-      return res.status(200).json({
+      res.status(200).json({
         success: true,
         data: folders
       });
+      return;
 
     } else if (action === 'files' && id && typeof id === 'string') {
       // Get files for a data room (root level files)
@@ -187,10 +191,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
         orderBy: { createdAt: 'desc' }
       });
 
-      return res.status(200).json({
+      res.status(200).json({
         success: true,
         data: serializeBigInt(files)
       });
+      return;
 
     } else if (req.method === 'GET' && id && typeof id === 'string') {
       // Get specific data room (must come AFTER action routes)
@@ -226,10 +231,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
         return;
       }
 
-      return res.status(200).json({
+      res.status(200).json({
         success: true,
         data: dataRoom
       });
+      return;
 
     } else if (req.method === 'DELETE' && id && typeof id === 'string') {
       // Delete data room
@@ -249,13 +255,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
         where: { id }
       });
 
-      return res.status(200).json({
+      res.status(200).json({
         success: true,
         message: 'Data room deleted successfully'
       });
+      return;
 
     } else {
-      return res.status(405).json({ error: 'Method not allowed' });
+      res.status(405).json({ error: 'Method not allowed' });
+      return;
     }
   } catch (error) {
     console.error('❌ Data rooms API error:', error);
