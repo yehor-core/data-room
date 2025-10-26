@@ -108,7 +108,7 @@ export const DataRoomView: React.FC = () => {
     mutationFn: async (folderIdToDelete: string) => {
       console.log('🗑️ Deleting folder:', folderIdToDelete);
       try {
-        const response = await api.delete(`/folders/${folderIdToDelete}`);
+        const response = await api.delete(`/folders?id=${folderIdToDelete}`);
         console.log('✅ Delete response:', response);
         return { id: folderIdToDelete };
       } catch (error: any) {
@@ -158,7 +158,7 @@ export const DataRoomView: React.FC = () => {
     mutationFn: async (fileId: string) => {
       console.log('🗑️ Deleting file:', fileId);
       try {
-        const response = await api.delete(`/files/${fileId}`);
+        const response = await api.delete(`/files?id=${fileId}`);
         console.log('✅ Delete file response:', response);
         return { id: fileId };
       } catch (error: any) {
@@ -207,7 +207,7 @@ export const DataRoomView: React.FC = () => {
 
   const renameFolderMutation = useMutation({
     mutationFn: async ({ id, name }: { id: string; name: string }) => {
-      const response = await api.patch(`/folders/${id}`, { name });
+      const response = await api.patch(`/folders?id=${id}`, { name });
       return response.data.data;
     },
     onSuccess: () => {
@@ -227,7 +227,7 @@ export const DataRoomView: React.FC = () => {
     mutationFn: async ({ id, name }: { id: string; name: string }) => {
       console.log('✏️ Renaming file:', { id, name });
       try {
-        const response = await api.patch(`/files/${id}`, { name });
+        const response = await api.patch(`/files?id=${id}`, { name });
         console.log('✅ Rename file response:', response);
         return response.data.data;
       } catch (error: any) {
