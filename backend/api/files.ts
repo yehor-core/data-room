@@ -38,6 +38,21 @@ prisma.$connect().catch((error) => {
   console.error('[Files API] Database connection failed:', error);
 });
 
+// Helper function to convert BigInt to string for JSON serialization
+const serializeBigInt = (obj: any): any => {
+  if (obj === null || obj === undefined) return obj;
+  if (typeof obj === 'bigint') return obj.toString();
+  if (Array.isArray(obj)) return obj.map(serializeBigInt);
+  if (typeof obj === 'object') {
+    const result: any = {};
+    for (const key in obj) {
+      result[key] = serializeBigInt(obj[key]);
+    }
+    return result;
+  }
+  return obj;
+};
+
 // Disable body parser for file uploads
 export const config = {
   api: {
@@ -61,8 +76,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (req.method === 'OPTIONS') {
       console.log('[Files API] Handling OPTIONS preflight');
-      handlePreflight(req, res);
-      return;
+      try {
+        handlePreflight(req, res);
+        console.log('[Files API] OPTIONS preflight handled successfully');
+        return;
+      } catch (error) {
+        console.error('[Files API] Error handling OPTIONS preflight:', error);
+        // Fallback CORS headers
+        res.setHeader('Access-Control-Allow-Origin', 'https://data-room-196e.vercel.app');
+        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+        res.setHeader('Access-Control-Allow-Credentials', 'true');
+        res.status(200).end();
+        return;
+      }
     }
 
     console.log('🔐 Auth check:', { 
@@ -224,7 +251,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       res.status(201).json({
         success: true,
-        data: file,
+        data: serializeBigInt(file),
         message: finalFileName !== name 
           ? `File uploaded successfully as "${finalFileName}" (original name was already in use)`
           : 'File uploaded successfully'
@@ -263,7 +290,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       res.status(201).json({
         success: true,
-        data: duplicateFile,
+        data: serializeBigInt(duplicateFile),
         message: 'File duplicated successfully'
       });
 
@@ -299,7 +326,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       res.status(200).json({
         success: true,
-        data: updatedFile,
+        data: serializeBigInt(updatedFile),
         message: 'File updated successfully'
       });
 

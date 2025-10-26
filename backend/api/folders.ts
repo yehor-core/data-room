@@ -35,6 +35,21 @@ prisma.$connect().catch((error) => {
   console.error('[Folders API] Database connection failed:', error);
 });
 
+// Helper function to convert BigInt to string for JSON serialization
+const serializeBigInt = (obj: any): any => {
+  if (obj === null || obj === undefined) return obj;
+  if (typeof obj === 'bigint') return obj.toString();
+  if (Array.isArray(obj)) return obj.map(serializeBigInt);
+  if (typeof obj === 'object') {
+    const result: any = {};
+    for (const key in obj) {
+      result[key] = serializeBigInt(obj[key]);
+    }
+    return result;
+  }
+  return obj;
+};
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const userId = authenticateToken(req);
   
@@ -50,8 +65,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (req.method === 'OPTIONS') {
       console.log('[Folders API] Handling OPTIONS preflight');
-      handlePreflight(req, res);
-      return;
+      try {
+        handlePreflight(req, res);
+        console.log('[Folders API] OPTIONS preflight handled successfully');
+        return;
+      } catch (error) {
+        console.error('[Folders API] Error handling OPTIONS preflight:', error);
+        // Fallback CORS headers
+        res.setHeader('Access-Control-Allow-Origin', 'https://data-room-196e.vercel.app');
+        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+        res.setHeader('Access-Control-Allow-Credentials', 'true');
+        res.status(200).end();
+        return;
+      }
     }
 
     if (!userId) {
@@ -143,7 +170,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       res.status(201).json({
         success: true,
-        data: folder,
+        data: serializeBigInt(folder),
         message: 'Folder created successfully'
       });
 
@@ -184,7 +211,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       res.status(200).json({
         success: true,
-        data: folder
+        data: serializeBigInt(folder)
       });
 
     } else if (req.method === 'POST' && id && typeof id === 'string' && action === 'duplicate') {
@@ -219,7 +246,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       res.status(201).json({
         success: true,
-        data: duplicateFolder,
+        data: serializeBigInt(duplicateFolder),
         message: 'Folder duplicated successfully'
       });
 
@@ -261,7 +288,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       res.status(200).json({
         success: true,
-        data: updatedFolder,
+        data: serializeBigInt(updatedFolder),
         message: 'Folder updated successfully'
       });
 
@@ -312,7 +339,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       res.status(200).json({
         success: true,
-        data: files
+        data: serializeBigInt(files)
       });
 
     } else {
