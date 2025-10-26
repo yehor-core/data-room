@@ -317,7 +317,7 @@ export const DataRoomView: React.FC = () => {
     mutationFn: async ({ file, name, folderId }: { file: File; name: string; folderId: string }) => {
       // Check file size (Vercel Pro limit: 100MB)
       const maxSize = 100 * 1024 * 1024; // 100MB in bytes
-      if (file.size > maxSize) {
+      if (file.size && file.size > maxSize) {
         throw new Error(`File size exceeds 100MB limit. Your file is ${(file.size / 1024 / 1024).toFixed(2)}MB. Please compress the file or upload a smaller file.`);
       }
 
@@ -554,7 +554,7 @@ export const DataRoomView: React.FC = () => {
                       <h3>${file.name}</h3>
                     </div>
                     <div class="viewer">
-                      <iframe src="${file.blobUrl}" type="application/pdf"></iframe>
+                      <iframe src="${blobUrl}" type="application/pdf"></iframe>
                     </div>
                   </div>
                 </body>
@@ -569,7 +569,7 @@ export const DataRoomView: React.FC = () => {
         } else {
           // For other file types, create a download link
           const link = document.createElement('a');
-          link.href = file.blobUrl;
+          link.href = blobUrl;
           link.download = file.name;
           link.target = '_blank';
           document.body.appendChild(link);
@@ -773,7 +773,7 @@ export const DataRoomView: React.FC = () => {
                             <div className="min-w-0">
                               <h3 className="font-medium truncate">{file.name}</h3>
                               <p className="text-sm text-muted-foreground">
-                                {file.fileSize ? formatBytes(file.fileSize) : 'Unknown size'} · {formatDate(file.createdAt)}
+                                {file.fileSize ? formatBytes(file.fileSize) : (file.size ? formatBytes(file.size) : 'Unknown size')} · {formatDate(file.createdAt)}
                                 {searchQuery.trim() && fileFolder && (
                                   <span className="ml-2 text-blue-600">in {fileFolder.name}</span>
                                 )}

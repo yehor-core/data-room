@@ -36,10 +36,13 @@ export interface Folder {
 export interface File {
   id: string;
   name: string;
-  fileType: string;
-  size: number | null;
+  fileType?: string; // Frontend field
+  mimeType?: string; // Database field
+  size?: number | null; // Frontend field
+  fileSize?: number | string | null; // Database field (BigInt serialized as string)
   folderId: string;
-  blobUrl: string;
+  blobUrl?: string; // Frontend field
+  filePath?: string; // Database field
   createdAt: string;
   updatedAt: string;
   folder?: {
