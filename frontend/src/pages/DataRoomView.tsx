@@ -504,11 +504,14 @@ export const DataRoomView: React.FC = () => {
 
   const handleFileClick = (fileId: string) => {
     console.log('🔍 Attempting to view file:', fileId);
-    const file = files.find((f: FileType) => f.id === fileId);
+    
+    // Search in all files, not just current folder's files
+    const allFiles = getAllFoldersAndFiles().files;
+    const file = allFiles.find((f: FileType) => f.id === fileId);
     
     if (!file) {
-      console.error('❌ File not found in current files list:', fileId);
-      alert('File not found in current view. Please refresh the page.');
+      console.error('❌ File not found in any files list:', fileId);
+      alert('File not found. Please refresh the page.');
       return;
     }
 

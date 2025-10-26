@@ -71,6 +71,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     setCorsHeaders(res, req.headers.origin);
   } catch (e) {
     console.error('Failed to set CORS headers:', e);
+    // Fallback CORS headers
+    res.setHeader('Access-Control-Allow-Origin', 'https://data-room-196e.vercel.app');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin, Cache-Control, Pragma');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Max-Age', '86400');
   }
 
   // Handle OPTIONS preflight requests FIRST
