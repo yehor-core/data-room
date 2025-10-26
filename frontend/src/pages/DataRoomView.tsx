@@ -588,65 +588,21 @@ export const DataRoomView: React.FC = () => {
                             </p>
                           </div>
                         </div>
-                        <div className="flex gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setRenameItem({ id: folder.id, name: folder.name, type: 'folder' });
-                              setNewName(folder.name);
-                              setIsRenameDialogOpen(true);
-                            }}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              duplicateFolderMutation.mutate(folder.id);
-                            }}
-                          >
-                            <Copy className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (window.confirm('Delete this folder and all its contents?')) {
-                                deleteFolderMutation.mutate(folder.id);
-                              }
-                            }}
-                          >
-                            <Trash2 className="h-4 w-4 text-red-500" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onContextMenu={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              setContextMenu({ 
-                                x: e.clientX, 
-                                y: e.clientY, 
-                                item: { id: folder.id, name: folder.name, type: 'folder' }
-                              });
-                            }}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setContextMenu({ 
-                                x: e.currentTarget.getBoundingClientRect().left, 
-                                y: e.currentTarget.getBoundingClientRect().bottom, 
-                                item: { id: folder.id, name: folder.name, type: 'folder' }
-                              });
-                            }}
-                          >
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 p-0"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setContextMenu({ 
+                              x: e.currentTarget.getBoundingClientRect().left, 
+                              y: e.currentTarget.getBoundingClientRect().bottom, 
+                              item: { id: folder.id, name: folder.name, type: 'folder' }
+                            });
+                          }}
+                        >
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
                       </div>
                     </CardContent>
                   </Card>
@@ -688,69 +644,21 @@ export const DataRoomView: React.FC = () => {
                               </p>
                             </div>
                           </div>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleFileClick(file.id)}
-                          >
-                            View
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => {
-                              setRenameItem({ id: file.id, name: file.name, type: 'file' });
-                              setNewName(file.name);
-                              setIsRenameDialogOpen(true);
-                            }}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => {
-                              duplicateFileMutation.mutate(file.id);
-                            }}
-                          >
-                            <Copy className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => {
-                              if (window.confirm('Delete this file?')) {
-                                deleteFileMutation.mutate(file.id);
-                              }
-                            }}
-                          >
-                            <Trash2 className="h-4 w-4 text-red-500" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onContextMenu={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              setContextMenu({ 
-                                x: e.clientX, 
-                                y: e.clientY, 
-                                item: { id: file.id, name: file.name, type: 'file' }
-                              });
-                            }}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setContextMenu({ 
-                                x: e.currentTarget.getBoundingClientRect().left, 
-                                y: e.currentTarget.getBoundingClientRect().bottom, 
-                                item: { id: file.id, name: file.name, type: 'file' }
-                              });
-                            }}
-                          >
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 p-0"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setContextMenu({ 
+                              x: e.currentTarget.getBoundingClientRect().left, 
+                              y: e.currentTarget.getBoundingClientRect().bottom, 
+                              item: { id: file.id, name: file.name, type: 'file' }
+                            });
+                          }}
+                        >
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
                       </div>
                     </CardContent>
                   </Card>
@@ -853,10 +761,22 @@ export const DataRoomView: React.FC = () => {
       {/* Context Menu */}
       {contextMenu && (
         <div
-          className="fixed bg-white border border-gray-200 rounded-md shadow-lg py-1 z-50"
+          className="fixed bg-white border border-gray-200 rounded-md shadow-lg py-1 z-50 min-w-[120px]"
           style={{ top: contextMenu.y, left: contextMenu.x }}
           onClick={(e) => e.stopPropagation()}
         >
+          {contextMenu.item.type === 'file' && (
+            <button
+              className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2"
+              onClick={() => {
+                handleFileClick(contextMenu.item.id);
+                setContextMenu(null);
+              }}
+            >
+              <FileText className="h-4 w-4" />
+              View
+            </button>
+          )}
           <button
             className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2"
             onClick={() => {

@@ -249,6 +249,9 @@ scripts/local/
 # Documentation builds
 docs/build/
 
+# Fixes documentation (temporary files)
+fixes/
+
 # ============================================
 # SECURITY & SECRETS
 # ============================================
