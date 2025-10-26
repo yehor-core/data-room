@@ -134,7 +134,7 @@ export const DataRooms: React.FC = () => {
                   {dataRoom.name}
                 </CardTitle>
                 <CardDescription>
-                  Created {formatDate(dataRoom.created_at)}
+                  Created {formatDate(dataRoom.createdAt)}
                 </CardDescription>
               </CardHeader>
               <CardContent>
