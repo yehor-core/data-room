@@ -268,11 +268,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     handleCORS(req, res);
     
     if (!res.headersSent) {
-      return res.status(500).json({ 
+      res.status(500).json({ 
         error: 'Internal server error',
         message: error instanceof Error ? error.message : 'Unknown error'
       });
     }
+    return;
   }
   // Note: Don't disconnect Prisma in serverless - let it reuse connections
 }
