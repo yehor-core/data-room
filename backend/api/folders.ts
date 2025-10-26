@@ -1,7 +1,7 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { PrismaClient } from '@prisma/client';
 import jwt from 'jsonwebtoken';
-import { setCorsHeaders, handlePreflight } from '../src/config/cors';
+import { handleCORS } from './_cors';
 
 // Inline authentication middleware
 const authenticateToken = (req: VercelRequest): string | null => {
@@ -26,19 +26,27 @@ const authenticateToken = (req: VercelRequest): string | null => {
   }
 };
 
-const prisma = new PrismaClient({
-  log: ['query', 'info', 'warn', 'error'],
-  datasources: {
-    db: {
-      url: process.env.DATABASE_URL
-    }
-  }
-});
+// Use a singleton pattern for Prisma Client in serverless
+// This ensures we reuse connections across function invocations
+let prisma: PrismaClient;
 
-// Test database connection
-prisma.$connect().catch((error) => {
-  console.error('[Folders API] Database connection failed:', error);
-});
+function getPrismaClient() {
+  if (!prisma) {
+    console.log('[Folders API] Creating new Prisma Client instance');
+    prisma = new PrismaClient({
+      log: ['error', 'warn'],
+      datasources: {
+        db: {
+          url: process.env.DATABASE_URL
+        }
+      }
+    });
+  }
+  return prisma;
+}
+
+// Don't auto-connect, let Prisma handle it per-query
+// prisma.$connect() causes issues in serverless
 
 // Helper function to convert BigInt to string for JSON serialization
 const serializeBigInt = (obj: any): any => {
@@ -56,27 +64,17 @@ const serializeBigInt = (obj: any): any => {
 };
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  console.log(`[Folders API] Incoming request: ${req.method} ${req.url}`);
-  console.log('[Folders API] Headers:', JSON.stringify(req.headers, null, 2));
+  console.log(`[Folders API] ==================== NEW REQUEST ====================`);
+  console.log(`[Folders API] ${req.method} ${req.url}`);
+  console.log(`[Folders API] Origin: ${req.headers.origin}`);
+  console.log(`[Folders API] Access-Control-Request-Method: ${req.headers['access-control-request-method']}`);
+  console.log(`[Folders API] Access-Control-Request-Headers: ${req.headers['access-control-request-headers']}`);
   
-  // Set CORS headers (in addition to vercel.json headers for reliability)
-  try {
-    setCorsHeaders(res, req.headers.origin);
-  } catch (e) {
-    console.error('[Folders API] Failed to set CORS headers:', e);
-    // Fallback CORS headers
-    res.setHeader('Access-Control-Allow-Origin', 'https://data-room-196e.vercel.app');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin, Cache-Control, Pragma');
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader('Access-Control-Max-Age', '86400');
-  }
-
-  // Handle OPTIONS preflight requests FIRST
-  if (req.method === 'OPTIONS') {
-    console.log('[Folders API] Handling OPTIONS preflight request - returning 200');
-    res.status(200).end();
-    return;
+  // Handle CORS - this MUST be first
+  const corsHandled = handleCORS(req, res);
+  if (corsHandled) {
+    console.log('[Folders API] CORS preflight handled, returning early');
+    return; // OPTIONS request was handled
   }
 
   const userId = authenticateToken(req);
@@ -100,38 +98,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     console.log(`[Folders API] Authenticated user: ${userId}`);
     
-    // Test database connection with retry
-    let dbConnected = false;
-    let retryCount = 0;
-    const maxRetries = 3;
-    
-    while (!dbConnected && retryCount < maxRetries) {
-      try {
-        await prisma.$queryRaw`SELECT 1`;
-        console.log('[Folders API] Database connection successful');
-        dbConnected = true;
-      } catch (dbError) {
-        retryCount++;
-        console.error(`[Folders API] Database connection attempt ${retryCount} failed:`, dbError);
-        
-        if (retryCount >= maxRetries) {
-          console.error('[Folders API] Database connection failed after all retries');
-          setCorsHeaders(res, req.headers.origin);
-          res.status(500).json({ 
-            error: 'Database connection failed',
-            message: dbError instanceof Error ? dbError.message : 'Unknown database error',
-            retries: retryCount
-          });
-          return;
-        }
-        
-        // Wait before retry
-        await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
-      }
-    }
+    // Get Prisma client instance
+    const prisma = getPrismaClient();
   } catch (error) {
     console.error('[Folders API] Error in handler setup:', error);
-    setCorsHeaders(res, req.headers.origin);
+    handleCORS(req, res);
     res.status(500).json({ error: 'Internal server error during setup' });
     return;
   }
@@ -380,16 +351,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
     
     // Ensure CORS headers are set even on error
-    setCorsHeaders(res, req.headers.origin);
-    res.status(500).json({ 
-      error: 'Internal server error',
-      message: error instanceof Error ? error.message : 'Unknown error'
-    });
-  } finally {
-    try {
-      await prisma.$disconnect();
-    } catch (disconnectError) {
-      console.error('[Folders API] Error disconnecting Prisma:', disconnectError);
+    handleCORS(req, res);
+    
+    if (!res.headersSent) {
+      res.status(500).json({ 
+        error: 'Internal server error',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      });
     }
   }
+  // Note: Don't disconnect Prisma in serverless - let it reuse connections
 }

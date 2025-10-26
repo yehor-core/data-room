@@ -1,7 +1,7 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { PrismaClient } from '@prisma/client';
 import jwt from 'jsonwebtoken';
-import { setCorsHeaders, handlePreflight } from '../src/config/cors';
+import { handleCORS } from './_cors';
 import formidable from 'formidable';
 import { uploadFile } from '../src/utils/supabase';
 import { promises as fs } from 'fs';
@@ -29,19 +29,23 @@ const authenticateToken = (req: VercelRequest): string | null => {
   }
 };
 
-const prisma = new PrismaClient({
-  log: ['query', 'info', 'warn', 'error'],
-  datasources: {
-    db: {
-      url: process.env.DATABASE_URL
-    }
-  }
-});
+// Use a singleton pattern for Prisma Client in serverless
+let prisma: PrismaClient;
 
-// Test database connection
-prisma.$connect().catch((error) => {
-  console.error('[Files API] Database connection failed:', error);
-});
+function getPrismaClient() {
+  if (!prisma) {
+    console.log('[Files API] Creating new Prisma Client instance');
+    prisma = new PrismaClient({
+      log: ['error', 'warn'],
+      datasources: {
+        db: {
+          url: process.env.DATABASE_URL
+        }
+      }
+    });
+  }
+  return prisma;
+}
 
 // Helper function to convert BigInt to string for JSON serialization
 const serializeBigInt = (obj: any): any => {
@@ -66,73 +70,45 @@ export const config = {
 };
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  console.log(`[Files API] Incoming request: ${req.method} ${req.url}`);
-  console.log('[Files API] Headers:', JSON.stringify(req.headers, null, 2));
+  console.log(`[Files API] ==================== NEW REQUEST ====================`);
+  console.log(`[Files API] ${req.method} ${req.url}`);
+  console.log(`[Files API] Origin: ${req.headers.origin}`);
+  console.log(`[Files API] Access-Control-Request-Method: ${req.headers['access-control-request-method']}`);
+  console.log(`[Files API] Access-Control-Request-Headers: ${req.headers['access-control-request-headers']}`);
   
-  // Set CORS headers (in addition to vercel.json headers for reliability)
-  try {
-    setCorsHeaders(res, req.headers.origin);
-  } catch (e) {
-    console.error('[Files API] Failed to set CORS headers:', e);
-    // Fallback CORS headers
-    res.setHeader('Access-Control-Allow-Origin', 'https://data-room-196e.vercel.app');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin, Cache-Control, Pragma');
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader('Access-Control-Max-Age', '86400');
-  }
-
-  // Handle OPTIONS preflight requests FIRST
-  if (req.method === 'OPTIONS') {
-    console.log('[Files API] Handling OPTIONS preflight request - returning 200');
-    res.status(200).end();
-    return;
+  // Handle CORS - this MUST be first
+  const corsHandled = handleCORS(req, res);
+  if (corsHandled) {
+    console.log('[Files API] CORS preflight handled, returning early');
+    return; // OPTIONS request was handled
   }
 
   const { id, action } = req.query;
   const userId = authenticateToken(req);
   
-  try {
-    console.log(`[Files API] ${req.method} ${req.url}`, {
-      origin: req.headers.origin,
-      userAgent: req.headers['user-agent'],
-      query: req.query,
-      contentType: req.headers['content-type']
-    });
+  console.log(`[Files API] ${req.method} ${req.url}`, {
+    origin: req.headers.origin,
+    userAgent: req.headers['user-agent'],
+    query: req.query,
+    contentType: req.headers['content-type']
+  });
 
-    console.log('🔐 Auth check:', { 
-      userId, 
-      hasAuthHeader: !!req.headers.authorization,
-      action,
-      method: req.method 
-    });
-    
-    if (!userId) {
-      console.error('❌ Unauthorized - no valid token');
-      res.status(401).json({ error: 'Unauthorized' });
-      return;
-    }
-
-    // Test database connection
-    try {
-      await prisma.$queryRaw`SELECT 1`;
-      console.log('[Files API] Database connection successful');
-    } catch (dbError) {
-      console.error('[Files API] Database connection failed:', dbError);
-      setCorsHeaders(res, req.headers.origin);
-      res.status(500).json({ 
-        error: 'Database connection failed',
-        message: dbError instanceof Error ? dbError.message : 'Unknown database error'
-      });
-      return;
-    }
-  } catch (error) {
-    console.error('[Files API] Error in handler setup:', error);
-    setCorsHeaders(res, req.headers.origin);
-    res.status(500).json({ error: 'Internal server error during setup' });
+  console.log('🔐 Auth check:', { 
+    userId, 
+    hasAuthHeader: !!req.headers.authorization,
+    action,
+    method: req.method 
+  });
+  
+  if (!userId) {
+    console.error('❌ Unauthorized - no valid token');
+    res.status(401).json({ error: 'Unauthorized' });
     return;
   }
 
+  // Get Prisma client instance
+  const prisma = getPrismaClient();
+  
   try {
     if (req.method === 'POST' && action === 'upload') {
       console.log('[Files API] Starting file upload process');
