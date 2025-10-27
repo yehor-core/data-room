@@ -32,6 +32,8 @@ model DataRoom {
   files       File[]
   folders     Folder[]
 
+  @@index([ownerId])
+  @@index([createdAt])
   @@map("data_rooms")
 }
 
@@ -49,6 +51,11 @@ model Folder {
   children   Folder[] @relation("FolderHierarchy")
   files      File[]
 
+  @@index([dataRoomId])
+  @@index([parentId])
+  @@index([userId])
+  @@index([dataRoomId, parentId])
+  @@index([createdAt])
   @@map("folders")
 }
 
@@ -67,5 +74,10 @@ model File {
   folder     Folder?  @relation(fields: [folderId], references: [id], onDelete: Cascade)
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([folderId])
+  @@index([dataRoomId])
+  @@index([userId])
+  @@index([dataRoomId, folderId])
+  @@index([createdAt])
   @@map("files")
 }

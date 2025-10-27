@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, memo } from 'react';
 import { ChevronRight, ChevronDown, Folder, FolderOpen, FileText } from 'lucide-react';
 import { Folder as FolderType, File as FileType } from '../types';
 
@@ -18,7 +18,7 @@ interface TreeNode {
   expanded?: boolean;
 }
 
-export const FileTree: React.FC<FileTreeProps> = ({
+export const FileTree: React.FC<FileTreeProps> = memo(({
   folders,
   files,
   onFolderClick,
@@ -54,7 +54,7 @@ export const FileTree: React.FC<FileTreeProps> = ({
     });
   }, [folders, currentPath]);
 
-  const toggleExpanded = (folderId: string) => {
+  const toggleExpanded = useCallback((folderId: string) => {
     const newExpanded = new Set(expandedFolders);
     if (newExpanded.has(folderId)) {
       newExpanded.delete(folderId);
@@ -62,9 +62,9 @@ export const FileTree: React.FC<FileTreeProps> = ({
       newExpanded.add(folderId);
     }
     setExpandedFolders(newExpanded);
-  };
+  }, [expandedFolders]);
 
-  const buildTree = (): TreeNode[] => {
+  const buildTree = useMemo((): TreeNode[] => {
     // Safety check: ensure folders and files are arrays
     if (!Array.isArray(folders) || !Array.isArray(files)) {
       console.warn('FileTree: folders or files is not an array', { folders, files });
@@ -102,9 +102,9 @@ export const FileTree: React.FC<FileTreeProps> = ({
     // Start with root folders (folders with no parent)
     const rootFolders = folders.filter(folder => !folder.parentId);
     return rootFolders.map(folder => buildNode(folder));
-  };
+  }, [folders, files]);
 
-  const renderTreeNode = (node: TreeNode, level: number = 0) => {
+  const renderTreeNode = useCallback((node: TreeNode, level: number = 0) => {
     const isExpanded = expandedFolders.has(node.id);
     const hasChildren = node.children && node.children.length > 0;
     const isActive = currentPath === node.id;
@@ -165,16 +165,14 @@ export const FileTree: React.FC<FileTreeProps> = ({
         )}
       </div>
     );
-  };
-
-  const treeNodes = buildTree();
+  }, [expandedFolders, currentPath, onFolderClick, onFileClick, toggleExpanded]);
 
   return (
     <div className="w-64 bg-white border-r border-gray-200 p-4 overflow-y-auto">
       <h3 className="text-sm font-semibold text-gray-700 mb-4">File Tree</h3>
       <div className="space-y-1">
-        {treeNodes.length > 0 ? (
-          treeNodes.map(node => renderTreeNode(node))
+        {buildTree.length > 0 ? (
+          buildTree.map(node => renderTreeNode(node))
         ) : (
           <div className="text-sm text-gray-500 text-center py-4">
             No folders or files yet
@@ -183,4 +181,4 @@ export const FileTree: React.FC<FileTreeProps> = ({
       </div>
     </div>
   );
-};
+});

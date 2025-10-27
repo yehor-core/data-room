@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Plus, Folder, FileText, Trash2, Edit, Upload, Search, Copy, MoreVertical } from 'lucide-react';
@@ -7,9 +7,12 @@ import { Button } from '../components/ui/Button';
 import { Card, CardContent } from '../components/ui/Card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../components/ui/Dialog';
 import { Input } from '../components/ui/Input';
+import { Skeleton } from '../components/ui/Skeleton';
 import { FileTree } from '../components/FileTree';
 import { formatDate, formatBytes } from '../lib/utils';
 import { api } from '../lib/api';
+import { toast } from '../lib/toast';
+import { getErrorMessage, SUCCESS_MESSAGES, LOADING_MESSAGES } from '../lib/errorMessages';
 
 
 export const DataRoomView: React.FC = () => {
@@ -24,8 +27,19 @@ export const DataRoomView: React.FC = () => {
   const [newName, setNewName] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadFileName, setUploadFileName] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchInput, setSearchInput] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; item: { id: string; name: string; type: 'folder' | 'file' } } | null>(null);
+  
+  // Debounce search input (wait 300ms after last keystroke)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchInput);
+      console.log('🔍 Search updated:', searchInput);
+    }, 300);
+    
+    return () => clearTimeout(timer);
+  }, [searchInput]);
   
   // Close context menu on click outside
   useEffect(() => {
@@ -42,6 +56,8 @@ export const DataRoomView: React.FC = () => {
       return response.data;
     },
     enabled: !!id && !folderId,
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    gcTime: 5 * 60 * 1000, // 5 minutes cache
   });
 
   // Fetch folder contents
@@ -52,6 +68,8 @@ export const DataRoomView: React.FC = () => {
       return response.data;
     },
     enabled: !!folderId,
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    gcTime: 5 * 60 * 1000, // 5 minutes cache
   });
 
   // Fetch folders for data room
@@ -63,6 +81,8 @@ export const DataRoomView: React.FC = () => {
       return response.data;
     },
     enabled: !!id,
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    gcTime: 5 * 60 * 1000, // 5 minutes cache
   });
 
   // Fetch files for data room or folder
@@ -74,6 +94,8 @@ export const DataRoomView: React.FC = () => {
       return response.data;
     },
     enabled: !!id,
+    staleTime: 1 * 60 * 1000, // 1 minute - files change more frequently
+    gcTime: 3 * 60 * 1000, // 3 minutes cache
   });
 
   const createFolderMutation = useMutation({
@@ -96,11 +118,8 @@ export const DataRoomView: React.FC = () => {
       }
     },
     onError: (error: any) => {
-      console.error('Folder creation error:', error);
-      const message = error.response?.status === 409
-        ? error.response.data.error
-        : `Failed to create folder: ${error.message}`;
-      alert(message);
+      const errorMessage = getErrorMessage(error);
+      toast.error(errorMessage);
     },
   });
 
@@ -124,7 +143,7 @@ export const DataRoomView: React.FC = () => {
       }
     },
     onSuccess: () => {
-      alert('✅ Folder deleted successfully!');
+      toast.success(SUCCESS_MESSAGES.FOLDER_DELETED);
       // Invalidate ALL related queries to refresh file tree
       queryClient.invalidateQueries({ queryKey: ['dataRoom', id] });
       queryClient.invalidateQueries({ queryKey: ['folders', id] });
@@ -133,24 +152,8 @@ export const DataRoomView: React.FC = () => {
       }
     },
     onError: (error: any) => {
-      console.error('❌ Delete folder error:', error);
-      let message = 'Failed to delete folder';
-      
-      if (error.code === 'ERR_NETWORK') {
-        message = 'Network error. Please check your connection and try again.';
-      } else if (error.response?.status === 401) {
-        message = 'Authentication failed. Please log in again.';
-      } else if (error.response?.status === 404) {
-        message = 'Folder not found. It may have already been deleted.';
-      } else if (error.response?.status === 403) {
-        message = 'You do not have permission to delete this folder.';
-      } else if (error.response?.data?.error) {
-        message = error.response.data.error;
-      } else if (error.message) {
-        message = error.message;
-      }
-      
-      alert(`❌ ${message}`);
+      const errorMessage = getErrorMessage(error);
+      toast.error(errorMessage);
     },
   });
 
@@ -174,7 +177,7 @@ export const DataRoomView: React.FC = () => {
       }
     },
     onSuccess: () => {
-      alert('✅ File deleted successfully!');
+      toast.success(SUCCESS_MESSAGES.FILE_DELETED);
       // Invalidate ALL related queries to refresh file tree
       queryClient.invalidateQueries({ queryKey: ['dataRoom', id] });
       queryClient.invalidateQueries({ queryKey: ['folders', id] });
@@ -184,24 +187,8 @@ export const DataRoomView: React.FC = () => {
       }
     },
     onError: (error: any) => {
-      console.error('❌ Delete file error:', error);
-      let message = 'Failed to delete file';
-      
-      if (error.code === 'ERR_NETWORK') {
-        message = 'Network error. Please check your connection and try again.';
-      } else if (error.response?.status === 401) {
-        message = 'Authentication failed. Please log in again.';
-      } else if (error.response?.status === 404) {
-        message = 'File not found. It may have already been deleted.';
-      } else if (error.response?.status === 403) {
-        message = 'You do not have permission to delete this file.';
-      } else if (error.response?.data?.error) {
-        message = error.response.data.error;
-      } else if (error.message) {
-        message = error.message;
-      }
-      
-      alert(`❌ ${message}`);
+      const errorMessage = getErrorMessage(error);
+      toast.error(errorMessage);
     },
   });
 
@@ -269,7 +256,7 @@ export const DataRoomView: React.FC = () => {
         message = error.message;
       }
       
-      alert(`❌ ${message}`);
+      toast.error(getErrorMessage(error));
     },
   });
 
@@ -280,7 +267,7 @@ export const DataRoomView: React.FC = () => {
       return response.data.data;
     },
     onSuccess: () => {
-      alert('✅ Folder duplicated successfully!');
+      toast.success(SUCCESS_MESSAGES.FOLDER_DUPLICATED);
       queryClient.invalidateQueries({ queryKey: ['dataRoom', id] });
       queryClient.invalidateQueries({ queryKey: ['folders', id] });
       if (folderId) {
@@ -288,7 +275,7 @@ export const DataRoomView: React.FC = () => {
       }
     },
     onError: (error: any) => {
-      alert(`Failed to duplicate folder: ${error.response?.data?.error || error.message}`);
+      toast.error(getErrorMessage(error));
     },
   });
 
@@ -299,7 +286,7 @@ export const DataRoomView: React.FC = () => {
       return response.data.data;
     },
     onSuccess: () => {
-      alert('✅ File duplicated successfully!');
+      toast.success(SUCCESS_MESSAGES.FILE_DUPLICATED);
       queryClient.invalidateQueries({ queryKey: ['dataRoom', id] });
       queryClient.invalidateQueries({ queryKey: ['folders', id] });
       if (folderId) {
@@ -308,7 +295,7 @@ export const DataRoomView: React.FC = () => {
       }
     },
     onError: (error: any) => {
-      alert(`Failed to duplicate file: ${error.response?.data?.error || error.message}`);
+      toast.error(getErrorMessage(error));
     },
   });
 
@@ -338,7 +325,7 @@ export const DataRoomView: React.FC = () => {
       setIsUploadDialogOpen(false);
       setSelectedFile(null);
       setUploadFileName('');
-      alert('✅ File uploaded successfully!');
+      toast.success(SUCCESS_MESSAGES.FILE_UPLOADED);
       // Invalidate ALL related queries to refresh file tree
       queryClient.invalidateQueries({ queryKey: ['dataRoom', id] });
       queryClient.invalidateQueries({ queryKey: ['folders', id] });
@@ -371,7 +358,7 @@ export const DataRoomView: React.FC = () => {
         message = error.message;
       }
       
-      alert(`❌ Upload failed: ${message}`);
+      toast.error(getErrorMessage(error));
     },
   });
 
@@ -435,7 +422,7 @@ export const DataRoomView: React.FC = () => {
         // At root level - create a default folder if none exists
         const rootFolders = foldersData?.data || [];
         if (rootFolders.length === 0) {
-          alert('Please create a folder first before uploading files');
+          toast.warning('Please create a folder first before uploading files');
           return;
         }
         targetFolderId = rootFolders[0].id;
@@ -458,13 +445,13 @@ export const DataRoomView: React.FC = () => {
     }
   };
 
-  // Search across entire data room
-  const searchAllContent = () => {
-    if (!searchQuery.trim()) {
+  // Search across entire data room (using debounced search)
+  const searchAllContent = useMemo(() => {
+    if (!debouncedSearch.trim()) {
       return { folders, files };
     }
 
-    const query = searchQuery.toLowerCase();
+    const query = debouncedSearch.toLowerCase();
     
     // Get ALL folders from data room (root level)
     const allFolders = Array.isArray(foldersData?.data) 
@@ -494,7 +481,7 @@ export const DataRoomView: React.FC = () => {
     );
 
     return { folders: matchingFolders, files: matchingFiles };
-  };
+  }, [debouncedSearch, folders, files, foldersData]);
 
   const { folders: filteredFolders, files: filteredFiles } = searchAllContent();
 
@@ -511,7 +498,7 @@ export const DataRoomView: React.FC = () => {
     
     if (!file) {
       console.error('❌ File not found in any files list:', fileId);
-      alert('File not found. Please refresh the page.');
+      toast.error('File not found. Please refresh the page.');
       return;
     }
 
@@ -564,7 +551,7 @@ export const DataRoomView: React.FC = () => {
             console.log('✅ PDF opened successfully');
           } else {
             console.error('❌ Failed to open PDF window - popup blocked?');
-            alert('Failed to open PDF. Please check if popups are blocked.');
+            toast.error('Failed to open PDF. Please check if popups are blocked.');
           }
         } else {
           // For other file types, create a download link
@@ -579,11 +566,11 @@ export const DataRoomView: React.FC = () => {
         }
       } catch (error) {
         console.error('❌ Error opening file:', error);
-        alert(`Error opening file: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        toast.error(`Error opening file: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
     } else {
       console.error('❌ File has no blobUrl:', file);
-      alert(`File not found. The file "${file.name}" may have been corrupted or deleted. Please re-upload the file.`);
+      toast.error(`File "${file.name}" not found. It may have been deleted. Please re-upload.`);
     }
   };
 
@@ -644,8 +631,8 @@ export const DataRoomView: React.FC = () => {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search files and folders..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
               className="pl-10"
             />
           </div>
@@ -774,7 +761,7 @@ export const DataRoomView: React.FC = () => {
                               <h3 className="font-medium truncate">{file.name}</h3>
                               <p className="text-sm text-muted-foreground">
                                 {file.fileSize ? formatBytes(file.fileSize) : (file.size ? formatBytes(file.size) : 'Unknown size')} · {formatDate(file.createdAt)}
-                                {searchQuery.trim() && fileFolder && (
+                                {debouncedSearch.trim() && fileFolder && (
                                   <span className="ml-2 text-blue-600">in {fileFolder.name}</span>
                                 )}
                               </p>

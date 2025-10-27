@@ -6,11 +6,14 @@ import { Button } from '../components/ui/Button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/Card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../components/ui/Dialog';
 import { Input } from '../components/ui/Input';
+import { Skeleton } from '../components/ui/Skeleton';
 import { formatDate } from '../lib/utils';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { api } from '../lib/api';
 import { DataRoom } from '../types';
+import { toast } from '../lib/toast';
+import { getErrorMessage, SUCCESS_MESSAGES } from '../lib/errorMessages';
 
 export const DataRooms: React.FC = () => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -31,6 +34,9 @@ export const DataRooms: React.FC = () => {
       return response.data.data || [];
     },
     enabled: !!user, // Only run when user is available
+    staleTime: 5 * 60 * 1000, // 5 minutes - data rooms don't change often
+    gcTime: 10 * 60 * 1000, // 10 minutes cache time (replaces cacheTime)
+    refetchOnWindowFocus: false, // Don't refetch when window regains focus
   });
 
   const createMutation = useMutation({
@@ -41,28 +47,45 @@ export const DataRooms: React.FC = () => {
       const response = await api.post('/data-rooms', { name });
       return response.data.data;
     },
+    // Optimistic update: Add immediately to UI
+    onMutate: async (name: string) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['dataRooms'] });
+      
+      // Snapshot previous value
+      const previousDataRooms = queryClient.getQueryData<DataRoom[]>(['dataRooms']);
+      
+      // Optimistically update with temporary data room
+      const tempDataRoom: DataRoom = {
+        id: `temp-${Date.now()}`, // Temporary ID
+        name,
+        description: null,
+        ownerId: user?.id || '',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      
+      queryClient.setQueryData<DataRoom[]>(['dataRooms'], (old = []) => [tempDataRoom, ...old]);
+      
+      console.log('✨ Optimistically added data room to UI');
+      
+      // Return context with snapshot
+      return { previousDataRooms };
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['dataRooms'] });
       setIsCreateDialogOpen(false);
       setNewDataRoomName('');
+      toast.success(SUCCESS_MESSAGES.DATA_ROOM_CREATED);
     },
-    onError: (error: any) => {
-      const status = error.response?.status;
-      const responseData = error.response?.data;
-      
-      let message = 'Failed to create data room';
-      
-      if (status === 409) {
-        message = responseData?.error || 'A data room with this name already exists';
-      } else if (status === 401) {
-        message = 'Authentication failed. Please try logging out and back in.';
-      } else if (responseData?.error) {
-        message = responseData.error;
-      } else if (error.message) {
-        message = error.message;
+    // On error, rollback to previous state
+    onError: (error: any, name: string, context: any) => {
+      if (context?.previousDataRooms) {
+        queryClient.setQueryData(['dataRooms'], context.previousDataRooms);
       }
       
-      alert(`❌ ${message}`);
+      const errorMessage = getErrorMessage(error);
+      toast.error(errorMessage);
     },
   });
 
@@ -73,12 +96,36 @@ export const DataRooms: React.FC = () => {
       const response = await api.delete(`/data-rooms?id=${id}`);
       return response.data;
     },
+    // Optimistic update: Remove immediately from UI
+    onMutate: async (id: string) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['dataRooms'] });
+      
+      // Snapshot previous value
+      const previousDataRooms = queryClient.getQueryData<DataRoom[]>(['dataRooms']);
+      
+      // Optimistically remove from UI
+      queryClient.setQueryData<DataRoom[]>(['dataRooms'], (old = []) =>
+        old.filter(dataRoom => dataRoom.id !== id)
+      );
+      
+      console.log('✨ Optimistically removed data room from UI');
+      
+      // Return context with snapshot
+      return { previousDataRooms };
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['dataRooms'] });
+      toast.success(SUCCESS_MESSAGES.DATA_ROOM_DELETED);
     },
-    onError: (error: any) => {
-      const message = error.response?.data?.error || error.message || 'Failed to delete data room';
-      alert(`❌ ${message}`);
+    // On error, rollback to previous state
+    onError: (error: any, id: string, context: any) => {
+      if (context?.previousDataRooms) {
+        queryClient.setQueryData(['dataRooms'], context.previousDataRooms);
+      }
+      
+      const errorMessage = getErrorMessage(error);
+      toast.error(errorMessage);
     },
   });
 
@@ -93,6 +140,30 @@ export const DataRooms: React.FC = () => {
     if (window.confirm('Are you sure? This will delete all folders and files in this data room.')) {
       deleteMutation.mutate(id);
     }
+  };
+
+  // Prefetch data room data on hover
+  const handleDataRoomHover = (dataRoomId: string) => {
+    queryClient.prefetchQuery({
+      queryKey: ['dataRoom', dataRoomId],
+      queryFn: async () => {
+        const response = await api.get(`/data-rooms`, { params: { id: dataRoomId } });
+        return response.data;
+      },
+      staleTime: 2 * 60 * 1000, // 2 minutes
+    });
+    
+    // Also prefetch folders for this data room
+    queryClient.prefetchQuery({
+      queryKey: ['folders', dataRoomId],
+      queryFn: async () => {
+        const response = await api.get(`/data-rooms?id=${dataRoomId}&action=folders`);
+        return response.data;
+      },
+      staleTime: 2 * 60 * 1000, // 2 minutes
+    });
+    
+    console.log('🔮 Prefetching data for data room:', dataRoomId);
   };
 
   return (
@@ -113,13 +184,22 @@ export const DataRooms: React.FC = () => {
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[1, 2, 3].map((i) => (
-            <Card key={i} className="animate-pulse">
+            <Card key={i}>
               <CardHeader>
-                <div className="h-6 bg-gray-200 rounded w-3/4"></div>
-                <div className="h-4 bg-gray-200 rounded w-1/2 mt-2"></div>
+                <div className="flex items-center gap-2 mb-2">
+                  <Skeleton className="h-5 w-5 rounded" />
+                  <Skeleton className="h-6 w-3/4" />
+                </div>
+                <Skeleton className="h-4 w-1/2" />
               </CardHeader>
               <CardContent>
-                <div className="h-4 bg-gray-200 rounded w-full"></div>
+                <div className="flex justify-between items-center">
+                  <Skeleton className="h-4 w-20" />
+                  <div className="flex gap-2">
+                    <Skeleton className="h-9 w-16" />
+                    <Skeleton className="h-9 w-9" />
+                  </div>
+                </div>
               </CardContent>
             </Card>
           ))}
@@ -127,7 +207,11 @@ export const DataRooms: React.FC = () => {
       ) : dataRooms && dataRooms.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {dataRooms.map((dataRoom) => (
-            <Card key={dataRoom.id} className="hover:shadow-lg transition-shadow">
+            <Card 
+              key={dataRoom.id} 
+              className="hover:shadow-lg transition-shadow"
+              onMouseEnter={() => handleDataRoomHover(dataRoom.id)}
+            >
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <FolderOpen className="h-5 w-5 text-primary" />
