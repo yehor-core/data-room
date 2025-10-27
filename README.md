@@ -1,554 +1,448 @@
-# Data Room - Secure Document Management
+# 📁 Data Room - Secure Document Management System
 
-A modern, secure document management system built with React, Node.js, and Supabase. Manage your confidential documents with nested folder structures, Google OAuth authentication, and cloud storage.
+A comprehensive, full-stack web application for secure file and folder management with real-time collaboration features. Built with modern technologies and designed for enterprise-grade security and performance.
 
-![Tech Stack](https://img.shields.io/badge/React-18.x-blue)
-![Node.js](https://img.shields.io/badge/Node.js-18.x-green)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue)
-![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-green)
+## 🌟 Features
 
----
+- **🔐 Secure Authentication** - Google OAuth integration via Supabase
+- **📂 Hierarchical File Management** - Create, organize, and manage folders and files
+- **🔍 Advanced Search** - Search across all files and folders with debounced input
+- **📱 Responsive Design** - Works seamlessly on desktop, tablet, and mobile
+- **⚡ Real-time Updates** - Optimistic UI updates with React Query
+- **🎨 Modern UI** - Clean, intuitive interface built with Tailwind CSS
+- **🔒 Enterprise Security** - JWT-based authentication with CORS protection
+- **📊 File Tree Navigation** - Visual file browser similar to VS Code
+- **🚀 Performance Optimized** - Lazy loading, caching, and code splitting
 
-## ⚡ IMPORTANT: Vercel-Only Project
+## 🏗️ Architecture Overview
 
-**This project runs entirely on Vercel - NO local servers needed!**
-
-To start/test your project:
-1. Make changes to your code
-2. Run `git push origin main`
-3. Vercel automatically deploys
-4. Test at your Vercel URLs
-
-### 📖 Documentation Guide
-- **👉 New here?** Start with [START_HERE.md](./START_HERE.md) to choose the right guide
-- **⚡ Quick start**: [QUICK_START.md](./QUICK_START.md) - Deploy in minutes
-- **🔧 Full setup**: [VERCEL_DEPLOYMENT_GUIDE.md](./VERCEL_DEPLOYMENT_GUIDE.md) - Complete deployment guide
-- **📋 Daily workflow**: [VERCEL_WORKFLOW.md](./VERCEL_WORKFLOW.md) - Quick reference for daily use
-
----
-
-## 📋 Table of Contents
-
-- [Features](#features)
-- [Tech Stack](#tech-stack)
-- [Prerequisites](#prerequisites)
-- [Getting Started](#getting-started)
-- [Environment Variables](#environment-variables)
-- [Running the Application](#running-the-application)
-- [Project Structure](#project-structure)
-- [API Documentation](#api-documentation)
-- [Deployment](#deployment)
-- [Contributing](#contributing)
-- [License](#license)
-
----
-
-## ✨ Features
-
-### Core Features
-- 🔐 **Google OAuth Authentication** - Secure, one-click sign-in
-- 📁 **Nested Folder Structure** - Organize documents with unlimited folder depth
-- 📄 **PDF Upload & Management** - Upload documents up to 50MB
-- ✏️ **Rename & Delete** - Full CRUD operations on folders and files
-- 🔍 **Search Functionality** - Find documents quickly
-- 🎨 **Modern UI** - Clean, responsive design with Tailwind CSS
-- 🔒 **Secure by Default** - All data scoped to authenticated users
-
-### Security Features
-- JWT-based authentication
-- Resource ownership verification
-- File type validation (PDF only)
-- Size limits (50MB per file)
-- HTTPS-ready for production
-
----
-
-## 🛠 Tech Stack
-
-### Frontend
-- **React 18** - UI framework
-- **TypeScript** - Type safety
-- **React Router** - Client-side routing
-- **React Query** - Server state management
-- **Axios** - HTTP client
-- **Tailwind CSS** - Utility-first styling
-- **Lucide React** - Icon library
-
-### Backend
-- **Node.js** - JavaScript runtime
-- **Express.js** - Web framework
-- **TypeScript** - Type safety
-- **Prisma** - Type-safe ORM
-- **JWT** - Authentication tokens
-- **Multer** - File upload handling
-
-### Infrastructure
-- **Supabase PostgreSQL** - Managed database
-- **Supabase Storage** - File storage with CDN
-- **Supabase Auth** - OAuth provider management
-
----
-
-## 📦 Prerequisites
-
-Before you begin, ensure you have the following installed:
-
-- **Node.js** 18.x or higher ([Download](https://nodejs.org/))
-- **npm** or **yarn** package manager
-- **Supabase Account** ([Sign up free](https://supabase.com/))
-- **Google Cloud Account** (for OAuth - [Get started](https://console.cloud.google.com/))
-
----
-
-## 🚀 Getting Started
-
-### 1. Clone the Repository
-
-```bash
-git clone https://github.com/yourusername/data-room.git
-cd data-room
-```
-
-### 2. Set Up Supabase
-
-#### Create a Supabase Project
-
-1. Go to [Supabase Dashboard](https://app.supabase.com/)
-2. Click **"New Project"**
-3. Fill in:
-   - **Name**: `data-room` (or any name)
-   - **Database Password**: Save this securely!
-   - **Region**: Choose closest to you
-4. Wait for project to initialize (~2 minutes)
-
-#### Get Supabase Credentials
-
-From your Supabase project dashboard:
-
-1. Go to **Settings** → **API**
-2. Copy:
-   - **Project URL** (e.g., `https://xyz.supabase.co`)
-   - **Anon/Public Key** (starts with `eyJh...`)
-3. Go to **Settings** → **Database**
-4. Under **Connection Pooling**, copy:
-   - **Session Mode** connection string (port `6543`)
-   - Format: `postgresql://postgres.xxx:password@aws-0-us-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true`
-
-#### Create Storage Bucket
-
-1. Go to **Storage** in Supabase dashboard
-2. Click **"New bucket"**
-3. Name: `data-room-files`
-4. **Public bucket**: ❌ No (keep private)
-5. Click **"Create bucket"**
-
-### 3. Set Up Google OAuth
-
-#### Create Google OAuth Client
-
-1. Go to [Google Cloud Console](https://console.cloud.google.com/)
-2. Create a new project or select existing
-3. Go to **APIs & Services** → **Credentials**
-4. Click **"Create Credentials"** → **"OAuth client ID"**
-5. If prompted, configure the **OAuth consent screen**:
-   - User Type: **External**
-   - App name: `Data Room`
-   - User support email: Your email
-   - Authorized domains: `supabase.co`
-6. Create **OAuth client ID**:
-   - Application type: **Web application**
-   - Name: `Data Room`
-   - Authorized redirect URIs:
-     ```
-     https://YOUR_PROJECT_REF.supabase.co/auth/v1/callback
-     ```
-     (Replace `YOUR_PROJECT_REF` with your Supabase project reference)
-7. Copy **Client ID** and **Client Secret**
-
-#### Configure Google OAuth in Supabase
-
-1. In Supabase dashboard, go to **Authentication** → **Providers**
-2. Find **Google** and click to expand
-3. Enable Google provider
-4. Paste:
-   - **Client ID** (from Google Console)
-   - **Client Secret** (from Google Console)
-5. Click **"Save"**
-
-### 4. Configure Environment Variables (for Vercel)
-
-You'll set these environment variables in the **Vercel Dashboard** (not in local files).
-
-#### Backend Environment Variables (Set in Vercel)
-
-```env
-# Database (Use port 5432 for Vercel production)
-DATABASE_URL=postgresql://postgres.YOUR_PROJECT_REF:YOUR_PASSWORD@aws-0-us-east-1.pooler.supabase.com:5432/postgres
-
-# JWT Secret (generate a random string)
-JWT_SECRET=your-super-secret-jwt-key-make-it-long-and-random
-
-# Supabase
-SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
-SUPABASE_SERVICE_KEY=your-supabase-service-role-key
-
-# Node Environment
-NODE_ENV=production
-
-# CORS
-ALLOWED_ORIGINS=https://your-frontend.vercel.app
-```
-
-#### Frontend Environment Variables (Set in Vercel)
-
-```env
-REACT_APP_API_URL=https://your-backend.vercel.app/api
-REACT_APP_SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
-REACT_APP_SUPABASE_ANON_KEY=your-supabase-anon-key
-```
-
-**See [VERCEL_DEPLOYMENT_GUIDE.md](./VERCEL_DEPLOYMENT_GUIDE.md) for complete setup instructions.**
-
----
-
-## 🏃 Running the Application
-
-### ⚠️ IMPORTANT: This Project Uses Vercel for Testing
-
-**No local servers needed!** This project is designed to run entirely on Vercel.
-
-### Deploy & Test on Vercel
-
-1. **Push your code to Git**:
-   ```bash
-   git add .
-   git commit -m "Your changes"
-   git push origin main
-   ```
-
-2. **Vercel will automatically deploy** your changes
-
-3. **Access your application** at your Vercel URLs:
-   - Frontend: `https://your-frontend.vercel.app`
-   - Backend: `https://your-backend.vercel.app`
-
-### First Time Setup
-
-For detailed deployment instructions, see **[VERCEL_DEPLOYMENT_GUIDE.md](./VERCEL_DEPLOYMENT_GUIDE.md)**
-
-**Quick Steps**:
-1. Create two Vercel projects (one for backend, one for frontend)
-2. Set environment variables in Vercel dashboard
-3. Deploy both projects
-4. Update CORS and Google OAuth settings
-5. Test your live application
-
----
-
-## 🔧 Environment Variables
-
-All environment variables are set in the **Vercel Dashboard** (Settings → Environment Variables).
-
-### Backend Variables (Vercel)
-
-| Variable | Description | Production Value |
-|----------|-------------|------------------|
-| `NODE_ENV` | Environment mode | `production` |
-| `DATABASE_URL` | Supabase PostgreSQL (port **5432**) | `postgresql://postgres.xxx:pass@...pooler.supabase.com:5432/postgres` |
-| `JWT_SECRET` | Secret for JWT token signing | Generate: `openssl rand -base64 32` |
-| `SUPABASE_URL` | Supabase project URL | `https://xxx.supabase.co` |
-| `SUPABASE_SERVICE_KEY` | Supabase service role key | From Supabase Settings → API |
-| `ALLOWED_ORIGINS` | Frontend URL for CORS | `https://your-frontend.vercel.app` |
-
-### Frontend Variables (Vercel)
-
-| Variable | Description | Production Value |
-|----------|-------------|------------------|
-| `REACT_APP_API_URL` | Backend API URL | `https://your-backend.vercel.app/api` |
-| `REACT_APP_SUPABASE_URL` | Supabase project URL | `https://xxx.supabase.co` |
-| `REACT_APP_SUPABASE_ANON_KEY` | Supabase anonymous key | From Supabase Settings → API |
-
----
-
-## 📁 Project Structure
+This is a **monorepo** containing both frontend and backend applications:
 
 ```
 data-room/
-├── backend/
-│   ├── src/
-│   │   ├── routes/           # API route handlers
-│   │   │   ├── auth.ts       # Authentication routes
-│   │   │   ├── dataRooms.ts  # Data room CRUD
-│   │   │   ├── folders.ts    # Folder CRUD
-│   │   │   └── files.ts      # File upload/management
-│   │   ├── middleware/       # Express middleware
-│   │   │   ├── auth.ts       # JWT verification
-│   │   │   └── errorHandler.ts
-│   │   ├── utils/            # Utility functions
-│   │   │   └── supabase.ts   # Supabase Storage helpers
-│   │   ├── types/            # TypeScript type definitions
-│   │   └── index.ts          # Server entry point
-│   ├── prisma/
-│   │   └── schema.prisma     # Database schema
-│   ├── package.json
-│   ├── tsconfig.json
-│   └── .env                  # Environment variables (create this)
-│
-├── frontend/
-│   ├── src/
-│   │   ├── components/       # React components
-│   │   │   ├── ui/           # Reusable UI components
-│   │   │   ├── Layout.tsx    # App layout (header, footer)
-│   │   │   └── ProtectedRoute.tsx
-│   │   ├── pages/            # Page components
-│   │   │   ├── Login.tsx     # Login page
-│   │   │   ├── AuthCallback.tsx  # OAuth callback handler
-│   │   │   ├── Dashboard.tsx # User dashboard
-│   │   │   └── DataRoomView.tsx  # Data room detail view
-│   │   ├── contexts/         # React contexts
-│   │   │   └── AuthContext.tsx
-│   │   ├── lib/              # Utilities
-│   │   │   ├── api.ts        # Axios instance
-│   │   │   └── supabase.ts   # Supabase client
-│   │   ├── App.tsx           # Main app component
-│   │   └── index.tsx         # React entry point
-│   ├── public/
-│   ├── package.json
-│   ├── tsconfig.json
-│   └── .env                  # Environment variables (create this)
-│
-├── ARCHITECTURE.md           # Architecture documentation
-├── README.md                 # This file
-└── package.json
+├── frontend/          # React + TypeScript frontend
+├── backend/           # Node.js + Express API
+├── fixes/            # Documentation and fixes
+└── package.json      # Root package with scripts
 ```
 
----
+### Tech Stack
 
-## 📚 API Documentation
+**Frontend:**
+- React 19 with TypeScript
+- React Query for data fetching and caching
+- React Router for navigation
+- Tailwind CSS for styling
+- Lucide React for icons
+- Axios for HTTP requests
 
-### Authentication
+**Backend:**
+- Node.js with Express
+- TypeScript for type safety
+- Prisma ORM with PostgreSQL
+- Supabase for authentication and file storage
+- Vercel serverless functions
+- JWT for API authentication
 
-#### Sign In with Google
-```http
-POST /api/auth/google
-Content-Type: application/json
+**Database:**
+- PostgreSQL (via Supabase)
+- Prisma for database management
+- Cascading deletes for data integrity
 
-{
-  "supabaseUser": {
-    "id": "...",
-    "email": "user@example.com",
-    "user_metadata": { "name": "John Doe" }
-  }
-}
+## 🚀 Quick Start
 
-Response:
-{
-  "success": true,
-  "data": {
-    "user": { "id": "...", "email": "...", "name": "..." },
-    "token": "eyJhbGc..."
-  }
-}
-```
+### Prerequisites
 
-### Data Rooms
+- Node.js 18+ and npm
+- PostgreSQL database (or Supabase account)
+- Google OAuth credentials
 
-#### List Data Rooms
-```http
-GET /api/data-rooms
-Authorization: Bearer {token}
+### 1. Clone and Install
 
-Response:
-{
-  "success": true,
-  "data": [
-    { "id": "...", "name": "My Data Room", "description": "..." }
-  ]
-}
-```
-
-#### Create Data Room
-```http
-POST /api/data-rooms
-Authorization: Bearer {token}
-Content-Type: application/json
-
-{
-  "name": "New Data Room",
-  "description": "Optional description"
-}
-
-Response:
-{
-  "success": true,
-  "data": { "id": "...", "name": "...", ... }
-}
-```
-
-### Folders
-
-#### Create Folder
-```http
-POST /api/folders
-Authorization: Bearer {token}
-Content-Type: application/json
-
-{
-  "name": "New Folder",
-  "dataRoomId": "uuid",
-  "parentId": "uuid or null"
-}
-
-Response:
-{
-  "success": true,
-  "data": { "id": "...", "name": "...", ... }
-}
-```
-
-### Files
-
-#### Upload File
-```http
-POST /api/files/upload
-Authorization: Bearer {token}
-Content-Type: multipart/form-data
-
-FormData:
-- file: [PDF file, max 50MB]
-- name: "Document Name"
-- folderId: "uuid"
-
-Response:
-{
-  "success": true,
-  "data": { "id": "...", "name": "...", "blobUrl": "...", ... }
-}
-```
-
-For complete API documentation, see [ARCHITECTURE.md](./ARCHITECTURE.md#api-design).
-
----
-
-## 🚢 Deployment
-
-### Deploy to Vercel (Required for Testing)
-
-This project **requires Vercel** for testing and production. No local servers are used.
-
-**📖 Complete Deployment Guide**: See **[VERCEL_DEPLOYMENT_GUIDE.md](./VERCEL_DEPLOYMENT_GUIDE.md)**
-
-**Quick Overview**:
-1. Connect your Git repository to Vercel
-2. Create two projects: one for `backend`, one for `frontend`
-3. Set environment variables in Vercel dashboard
-4. Deploy both projects
-5. Update CORS and Google OAuth settings with production URLs
-
-**To Update Your App**:
 ```bash
-git push origin main
+# Clone the repository
+git clone <your-repo-url>
+cd data-room
+
+# Install all dependencies
+npm run install:all
 ```
-Vercel automatically redeploys on every push!
 
----
+### 2. Environment Setup
 
-## 🧪 Testing
+#### Backend Environment Variables
 
-### Live Testing on Vercel
-Test your application by visiting your deployed Vercel URLs:
-- **Frontend**: `https://your-frontend.vercel.app`
-- **Backend**: `https://your-backend.vercel.app/api/health`
+Create `backend/.env`:
 
-### Unit Tests (Optional - Local Only)
-If you want to run unit tests locally:
+```env
+# Database
+DATABASE_URL="postgresql://username:password@localhost:5432/datroom_db"
+
+# Supabase Configuration
+SUPABASE_URL="your-supabase-project-url"
+SUPABASE_ANON_KEY="your-supabase-anon-key"
+SUPABASE_SERVICE_ROLE_KEY="your-supabase-service-role-key"
+
+# JWT Secret (generate a random string)
+JWT_SECRET="your-super-secret-jwt-key"
+
+# Google OAuth (optional - for custom OAuth flow)
+GOOGLE_CLIENT_ID="your-google-client-id"
+GOOGLE_CLIENT_SECRET="your-google-client-secret"
+
+# Frontend URL
+FRONTEND_URL="http://localhost:3000"
+```
+
+#### Frontend Environment Variables
+
+Create `frontend/.env`:
+
+```env
+# Supabase Configuration
+REACT_APP_SUPABASE_URL="your-supabase-project-url"
+REACT_APP_SUPABASE_ANON_KEY="your-supabase-anon-key"
+
+# API Base URL
+REACT_APP_API_URL="http://localhost:3001"
+```
+
+### 3. Database Setup
+
 ```bash
-cd backend && npm test
-cd frontend && npm test
-```
-*Note: These tests don't require running the actual servers.*
+# Generate Prisma client
+npm run db:generate
 
----
+# Push database schema
+npm run db:push
+
+# (Optional) Seed database with sample data
+cd backend && npm run db:seed
+```
+
+### 4. Start Development Servers
+
+```bash
+# Start both frontend and backend
+npm run dev
+
+# Or start individually:
+npm run dev:frontend  # Frontend on http://localhost:3000
+npm run dev:backend   # Backend on http://localhost:3001
+```
+
+## 🌐 Deployment
+
+### Vercel Deployment (Recommended)
+
+This project is optimized for Vercel deployment with serverless functions.
+
+#### 1. Deploy Backend
+
+```bash
+# Install Vercel CLI
+npm i -g vercel
+
+# Deploy backend
+cd backend
+vercel
+
+# Set environment variables in Vercel dashboard
+```
+
+#### 2. Deploy Frontend
+
+```bash
+# Deploy frontend
+cd frontend
+vercel
+
+# Set environment variables in Vercel dashboard
+```
+
+#### 3. Environment Variables for Production
+
+Set these in your Vercel project settings:
+
+**Backend Environment Variables:**
+- `DATABASE_URL` - Your PostgreSQL connection string
+- `SUPABASE_URL` - Your Supabase project URL
+- `SUPABASE_ANON_KEY` - Your Supabase anonymous key
+- `SUPABASE_SERVICE_ROLE_KEY` - Your Supabase service role key
+- `JWT_SECRET` - A secure random string
+- `FRONTEND_URL` - Your frontend domain (e.g., `https://your-app.vercel.app`)
+
+**Frontend Environment Variables:**
+- `REACT_APP_SUPABASE_URL` - Your Supabase project URL
+- `REACT_APP_SUPABASE_ANON_KEY` - Your Supabase anonymous key
+- `REACT_APP_API_URL` - Your backend API URL (e.g., `https://your-api.vercel.app`)
+
+### Local Production Build
+
+```bash
+# Build both applications
+npm run build
+
+# Start production servers
+cd backend && npm start
+cd frontend && npm start
+```
+
+## 🛠️ Development
+
+### Available Scripts
+
+```bash
+# Development
+npm run dev              # Start both frontend and backend
+npm run dev:frontend     # Start only frontend
+npm run dev:backend      # Start only backend
+
+# Building
+npm run build            # Build both applications
+npm run build:frontend   # Build only frontend
+npm run build:backend    # Build only backend
+
+# Testing
+npm run test             # Run all tests
+npm run test:frontend    # Run frontend tests
+npm run test:backend     # Run backend tests
+
+# Database
+npm run db:generate      # Generate Prisma client
+npm run db:push          # Push schema to database
+npm run db:migrate        # Run database migrations
+npm run db:studio        # Open Prisma Studio
+```
+
+### Project Structure
+
+```
+frontend/src/
+├── components/          # Reusable UI components
+│   ├── ui/             # Basic UI components (Button, Input, etc.)
+│   ├── FileTree.tsx    # File tree navigation component
+│   ├── Layout.tsx      # Main layout wrapper
+│   └── PrivateRoute.tsx # Route protection component
+├── contexts/           # React contexts
+│   └── AuthContext.tsx # Authentication context
+├── lib/                # Utility libraries
+│   ├── api.ts          # API client configuration
+│   ├── supabase.ts     # Supabase client
+│   ├── utils.ts        # Utility functions
+│   ├── toast.ts        # Toast notifications
+│   └── errorMessages.ts # Error message constants
+├── pages/              # Page components
+│   ├── Login.tsx       # Login page
+│   ├── Signup.tsx      # Signup page
+│   ├── DataRooms.tsx   # Data rooms listing
+│   └── DataRoomView.tsx # Individual data room view
+└── types/              # TypeScript type definitions
+
+backend/
+├── api/                # Vercel serverless functions
+│   ├── _cors.ts        # CORS middleware
+│   ├── data-rooms.ts  # Data rooms API
+│   ├── folders.ts     # Folders API
+│   └── files.ts        # Files API
+├── prisma/             # Database schema and migrations
+│   ├── schema.prisma   # Database schema
+│   └── seed.ts         # Database seeding
+└── src/                # Source code (legacy)
+```
+
+## 🔧 Configuration
+
+### Supabase Setup
+
+1. Create a new Supabase project
+2. Enable Google OAuth in Authentication settings
+3. Add your domain to allowed origins
+4. Create a storage bucket for file uploads
+5. Set up Row Level Security (RLS) policies
+
+### Google OAuth Setup
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a new project or select existing
+3. Enable Google+ API
+4. Create OAuth 2.0 credentials
+5. Add authorized redirect URIs:
+   - `http://localhost:3000` (development)
+   - `https://your-domain.com` (production)
+   - `https://your-supabase-project.supabase.co/auth/v1/callback`
 
 ## 🐛 Troubleshooting
 
-### Deployment Issues
+### Common Issues
 
-**Error**: `Can't reach database server` on Vercel
-- **Solution**: Use port **5432** (not 6543) in `DATABASE_URL` for production
-- Format: `postgresql://postgres.xxx:pass@...pooler.supabase.com:5432/postgres`
+#### 1. CORS Errors
 
-**Error**: `CORS policy blocked`
-- **Solution**: Set `ALLOWED_ORIGINS` in backend to exact frontend URL
-- Must match exactly: `https://your-frontend.vercel.app`
+**Problem:** Browser blocks API requests with CORS errors.
 
-**Error**: `Network Error` from frontend
-- **Solution**: Check `REACT_APP_API_URL` includes `/api` at the end
-- Format: `https://your-backend.vercel.app/api`
+**Solution:**
+- Ensure `REACT_APP_API_URL` matches your backend URL
+- Check that CORS middleware is properly configured
+- Verify allowed origins in `backend/api/_cors.ts`
 
-### Google OAuth Issues
+#### 2. Authentication Issues
 
-**Error**: `redirect_uri_mismatch`
-- **Solution**: Add production URLs to Google Cloud Console redirect URIs:
-  - `https://YOUR_PROJECT_REF.supabase.co/auth/v1/callback`
-  - `https://your-frontend.vercel.app`
+**Problem:** Users can't log in or get "Unauthorized" errors.
 
-**Error**: `Bad ID token`
-- **Solution**: Ensure Google OAuth is enabled in Supabase dashboard
+**Solution:**
+- Verify Supabase environment variables are correct
+- Check Google OAuth configuration in Supabase
+- Ensure JWT secret is set in backend environment
+- Check browser console for token errors
 
-### File Upload Issues
+#### 3. Database Connection Issues
 
-**Error**: `File too large`
-- **Solution**: Files must be under 50MB
+**Problem:** API returns database connection errors.
 
-**Error**: `Only PDF files are allowed`
-- **Solution**: Upload only PDF files
+**Solution:**
+- Verify `DATABASE_URL` is correct
+- Check if database is accessible from your deployment
+- Run `npm run db:push` to sync schema
+- Check Prisma client generation: `npm run db:generate`
 
-### Changes Not Appearing
+#### 4. File Upload Issues
 
-**Issue**: Code changes not reflecting on Vercel
-- **Solution**: Push to git (`git push origin main`)
-- Wait 1-2 minutes for deployment
-- Hard refresh browser (Ctrl+Shift+R)
+**Problem:** Files fail to upload or show "File not found" errors.
 
----
+**Solution:**
+- Check Supabase storage bucket configuration
+- Verify file size limits (100MB max for Vercel Pro)
+- Check storage policies and permissions
+- Ensure `SUPABASE_SERVICE_ROLE_KEY` is set
+
+#### 5. Build Errors
+
+**Problem:** Build fails with TypeScript or dependency errors.
+
+**Solution:**
+- Run `npm run install:all` to reinstall dependencies
+- Check Node.js version (requires 18+)
+- Clear node_modules and reinstall: `rm -rf node_modules && npm install`
+- Check for TypeScript errors: `npx tsc --noEmit`
+
+### Performance Issues
+
+#### Slow Loading
+
+- Check React Query cache configuration
+- Verify lazy loading is working
+- Monitor network requests in browser dev tools
+- Check database query performance
+
+#### Memory Issues
+
+- Monitor Prisma client connections
+- Check for memory leaks in React components
+- Verify proper cleanup in useEffect hooks
+
+### Debug Mode
+
+Enable debug logging by setting:
+
+```env
+NODE_ENV=development
+DEBUG=true
+```
+
+## 📚 Design Decisions
+
+### Why These Technologies?
+
+**React + TypeScript:**
+- Type safety prevents runtime errors
+- Excellent developer experience
+- Large ecosystem and community support
+
+**React Query:**
+- Automatic caching and background updates
+- Optimistic updates for better UX
+- Built-in loading and error states
+
+**Prisma:**
+- Type-safe database queries
+- Excellent migration system
+- Works well with serverless environments
+
+**Supabase:**
+- Handles authentication complexity
+- Built-in file storage
+- Real-time capabilities
+- PostgreSQL with excellent tooling
+
+**Vercel:**
+- Optimized for React and serverless functions
+- Excellent developer experience
+- Built-in CI/CD
+- Global CDN
+
+### Architecture Decisions
+
+**Monorepo Structure:**
+- Easier dependency management
+- Shared types and utilities
+- Single deployment pipeline
+
+**Serverless Functions:**
+- Automatic scaling
+- Pay-per-use pricing
+- No server management
+
+**JWT Authentication:**
+- Stateless authentication
+- Works well with serverless
+- Secure and scalable
+
+**CORS Middleware:**
+- Centralized CORS handling
+- Consistent security policies
+- Easy to maintain
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please follow these steps:
-
 1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Commit changes: `git commit -m 'Add amazing feature'`
+4. Push to branch: `git push origin feature/amazing-feature`
 5. Open a Pull Request
 
----
+### Code Style
+
+- Use TypeScript for all new code
+- Follow React best practices
+- Use meaningful variable and function names
+- Add comments for complex logic
+- Write tests for new features
 
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
+## 🆘 Support
+
+If you encounter any issues or have questions:
+
+1. Check the troubleshooting section above
+2. Search existing issues in the repository
+3. Create a new issue with detailed information
+4. Include error messages, steps to reproduce, and environment details
+
+## 🔮 Future Enhancements
+
+- [ ] Real-time collaboration features
+- [ ] Advanced file versioning
+- [ ] Bulk operations (upload, download, delete)
+- [ ] Advanced search with filters
+- [ ] User roles and permissions
+- [ ] Audit logs and activity tracking
+- [ ] Mobile app (React Native)
+- [ ] API rate limiting and analytics
+- [ ] Advanced security features (2FA, SSO)
+
 ---
 
-## 🙏 Acknowledgments
-
-- [Supabase](https://supabase.com/) - Backend as a Service
-- [Prisma](https://www.prisma.io/) - Next-generation ORM
-- [React Query](https://tanstack.com/query) - Powerful data fetching
-- [Tailwind CSS](https://tailwindcss.com/) - Utility-first CSS
-
----
-
-## 📞 Support
-
-If you have any questions or need help:
-
-- 📧 Email: support@dataroom.app
-- 🐛 Issues: [GitHub Issues](https://github.com/yourusername/data-room/issues)
-- 💬 Discussions: [GitHub Discussions](https://github.com/yourusername/data-room/discussions)
-
----
-
-**Built with ❤️ by [Your Name]**
-
+**Built with ❤️ using modern web technologies**

@@ -1,10 +1,47 @@
+/**
+ * ============================================
+ * DATA ROOMS API - Main Data Room Management
+ * ============================================
+ * 
+ * This API handles all data room operations:
+ * 1. Creating new data rooms
+ * 2. Listing user's data rooms
+ * 3. Getting specific data room details
+ * 4. Deleting data rooms
+ * 5. Getting folders and files for data rooms
+ * 
+ * For junior developers:
+ * - This is a REST API that follows HTTP methods (GET, POST, DELETE)
+ * - We use Prisma to interact with the database
+ * - Authentication is handled via JWT tokens from Supabase
+ * - CORS is handled first to allow frontend requests
+ * - All responses are JSON formatted
+ * 
+ * API Endpoints:
+ * - GET /api/data-rooms - List all data rooms for user
+ * - POST /api/data-rooms - Create new data room
+ * - GET /api/data-rooms?id=X - Get specific data room
+ * - DELETE /api/data-rooms?id=X - Delete data room
+ * - GET /api/data-rooms?id=X&action=folders - Get folders in data room
+ * - GET /api/data-rooms?id=X&action=files - Get files in data room
+ */
+
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { PrismaClient } from '@prisma/client';
 import jwt from 'jsonwebtoken';
 import { handleCORS } from './_cors';
 
-// Inline authentication middleware - validates Supabase JWT tokens
+/**
+ * AUTHENTICATION MIDDLEWARE
+ * 
+ * This function validates the JWT token sent by the frontend.
+ * Supabase handles token signing, we just need to decode and extract user ID.
+ * 
+ * @param req - The incoming request
+ * @returns User ID if valid token, null if invalid/missing
+ */
 const authenticateToken = (req: VercelRequest): string | null => {
+  // Extract token from Authorization header (format: "Bearer <token>")
   const authHeader = req.headers.authorization;
   const token = authHeader && authHeader.split(' ')[1];
 
@@ -18,7 +55,7 @@ const authenticateToken = (req: VercelRequest): string | null => {
 
   try {
     // Decode the Supabase JWT token (don't verify signature, Supabase handles that)
-    // We just need to extract the user ID
+    // We just need to extract the user ID from the token
     const decoded = jwt.decode(token) as any;
     
     if (!decoded || !decoded.sub) {
@@ -37,14 +74,19 @@ const authenticateToken = (req: VercelRequest): string | null => {
   }
 };
 
-// Use a singleton pattern for Prisma Client in serverless
+/**
+ * PRISMA CLIENT SINGLETON
+ * 
+ * In serverless environments, we need to reuse database connections.
+ * This singleton pattern ensures we don't create multiple Prisma clients.
+ */
 let prisma: PrismaClient;
 
 function getPrismaClient() {
   if (!prisma) {
     console.log('[Data Rooms API] Creating new Prisma Client instance');
     prisma = new PrismaClient({
-      log: ['error', 'warn'],
+      log: ['error', 'warn'], // Only log errors and warnings
       datasources: {
         db: {
           url: process.env.DATABASE_URL
@@ -55,7 +97,15 @@ function getPrismaClient() {
   return prisma;
 }
 
-// Helper function to convert BigInt to string for JSON serialization
+/**
+ * BIGINT SERIALIZATION HELPER
+ * 
+ * JavaScript can't serialize BigInt values to JSON.
+ * This function converts BigInt values to strings so they can be sent to the frontend.
+ * 
+ * @param obj - Any object that might contain BigInt values
+ * @returns Object with BigInt values converted to strings
+ */
 const serializeBigInt = (obj: any): any => {
   if (obj === null || obj === undefined) return obj;
   if (typeof obj === 'bigint') return obj.toString();
@@ -71,27 +121,44 @@ const serializeBigInt = (obj: any): any => {
   return obj;
 };
 
+/**
+ * MAIN API HANDLER
+ * 
+ * This is the main function that handles all requests to the data rooms API.
+ * It follows this flow:
+ * 1. Handle CORS (allow frontend requests)
+ * 2. Authenticate user (check JWT token)
+ * 3. Route to appropriate handler based on HTTP method and query parameters
+ * 4. Return JSON response
+ * 
+ * @param req - The incoming HTTP request
+ * @param res - The HTTP response object
+ */
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   console.log(`[Data Rooms API] ==================== NEW REQUEST ====================`);
   console.log(`[Data Rooms API] ${req.method} ${req.url}`);
   console.log(`[Data Rooms API] Origin: ${req.headers.origin}`);
   
-  // Handle CORS - this MUST be first
+  // STEP 1: Handle CORS - this MUST be first
+  // This allows our frontend to make requests to this API
   const corsHandled = handleCORS(req, res);
   if (corsHandled) {
     console.log('[Data Rooms API] CORS preflight handled, returning early');
     return; // OPTIONS request was handled
   }
 
+  // STEP 2: Authenticate user
+  // Extract user ID from JWT token sent by frontend
   const userId = authenticateToken(req);
   if (!userId) {
     res.status(401).json({ error: 'Unauthorized' });
     return;
   }
 
-  // Get Prisma client instance
+  // STEP 3: Get database connection
   const prisma = getPrismaClient();
 
+  // STEP 4: Extract query parameters
   const { id, action } = req.query;
 
   try {

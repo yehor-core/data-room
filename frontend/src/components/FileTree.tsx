@@ -1,23 +1,65 @@
+/**
+ * ============================================
+ * FILE TREE COMPONENT - Hierarchical File Browser
+ * ============================================
+ * 
+ * This component displays files and folders in a tree structure, similar to:
+ * - Windows Explorer
+ * - VS Code file explorer
+ * - Finder on macOS
+ * 
+ * Features:
+ * 1. Hierarchical folder structure with expand/collapse
+ * 2. Click chevron to expand/collapse folders
+ * 3. Click folder name to navigate into folder
+ * 4. Click file name to open file
+ * 5. Auto-expands folders when navigating
+ * 6. Shows current location with highlighting
+ * 
+ * For junior developers:
+ * - This is a recursive component that builds a tree from flat data
+ * - We use React.memo to prevent unnecessary re-renders
+ * - The tree structure is built from folders and files arrays
+ * - Each folder can contain other folders and files
+ */
+
 import React, { useState, useEffect, useMemo, useCallback, memo } from 'react';
 import { ChevronRight, ChevronDown, Folder, FolderOpen, FileText } from 'lucide-react';
 import { Folder as FolderType, File as FileType } from '../types';
 
+/**
+ * PROPS INTERFACE
+ * 
+ * This defines what data the FileTree component expects to receive.
+ */
 interface FileTreeProps {
-  folders: FolderType[];
-  files: FileType[];
-  onFolderClick: (folderId: string) => void;
-  onFileClick: (fileId: string) => void;
-  currentPath?: string;
+  folders: FolderType[];                    // Array of all folders
+  files: FileType[];                       // Array of all files
+  onFolderClick: (folderId: string) => void; // Function called when folder is clicked
+  onFileClick: (fileId: string) => void;   // Function called when file is clicked
+  currentPath?: string;                     // ID of currently selected folder
 }
 
+/**
+ * TREE NODE INTERFACE
+ * 
+ * This represents a single item in the tree (folder or file).
+ * Used internally to build the tree structure.
+ */
 interface TreeNode {
-  id: string;
-  name: string;
-  type: 'folder' | 'file';
-  children?: TreeNode[];
-  expanded?: boolean;
+  id: string;                               // Unique identifier
+  name: string;                             // Display name
+  type: 'folder' | 'file';                  // Whether it's a folder or file
+  children?: TreeNode[];                     // Sub-items (for folders)
+  expanded?: boolean;                        // Whether folder is expanded
 }
 
+/**
+ * FILE TREE COMPONENT
+ * 
+ * This is the main component that renders the file tree.
+ * It's wrapped in React.memo for performance optimization.
+ */
 export const FileTree: React.FC<FileTreeProps> = memo(({
   folders,
   files,
@@ -25,6 +67,8 @@ export const FileTree: React.FC<FileTreeProps> = memo(({
   onFileClick,
   currentPath
 }) => {
+  // STATE MANAGEMENT
+  // Track which folders are expanded (showing their contents)
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
 
   // Auto-expand all folders on initial load
@@ -123,14 +167,6 @@ export const FileTree: React.FC<FileTreeProps> = memo(({
             isActive ? 'bg-blue-100 text-blue-700' : ''
           }`}
           style={{ paddingLeft: `${level * 16 + 8}px` }}
-          onClick={() => {
-            if (node.type === 'folder') {
-              // Toggle expansion instead of navigating
-              toggleExpanded(node.id);
-            } else {
-              onFileClick(node.id);
-            }
-          }}
         >
           {node.type === 'folder' && (
             <div className="flex items-center gap-1">
@@ -140,7 +176,7 @@ export const FileTree: React.FC<FileTreeProps> = memo(({
                     e.stopPropagation();
                     toggleExpanded(node.id);
                   }}
-                  className="hover:bg-gray-200 rounded"
+                  className="hover:bg-gray-200 rounded p-0.5"
                 >
                   {isExpanded ? (
                     <ChevronDown className="h-4 w-4" />
@@ -150,20 +186,29 @@ export const FileTree: React.FC<FileTreeProps> = memo(({
                 </button>
               )}
               {!hasChildren && <div className="w-4 h-4" />}
-              {isActive ? (
-                <FolderOpen className="h-4 w-4 text-blue-500" />
-              ) : (
-                <Folder className="h-4 w-4 text-blue-500" />
-              )}
+              <div
+                className="flex items-center gap-2 flex-1"
+                onClick={() => onFolderClick(node.id)}
+              >
+                {isActive ? (
+                  <FolderOpen className="h-4 w-4 text-blue-500" />
+                ) : (
+                  <Folder className="h-4 w-4 text-blue-500" />
+                )}
+                <span className="text-sm truncate">{node.name}</span>
+              </div>
             </div>
           )}
           {node.type === 'file' && (
-            <>
+            <div
+              className="flex items-center gap-2 flex-1"
+              onClick={() => onFileClick(node.id)}
+            >
               <div className="w-4 h-4" />
               <FileText className="h-4 w-4 text-gray-500" />
-            </>
+              <span className="text-sm truncate">{node.name}</span>
+            </div>
           )}
-          <span className="text-sm truncate">{node.name}</span>
         </div>
         
         {node.type === 'folder' && isExpanded && hasChildren && (

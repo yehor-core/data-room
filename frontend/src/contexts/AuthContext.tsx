@@ -1,19 +1,59 @@
+/**
+ * ============================================
+ * AUTHENTICATION CONTEXT - User Management
+ * ============================================
+ * 
+ * This file manages user authentication throughout the app using Supabase.
+ * It provides:
+ * 1. User login/logout functionality
+ * 2. User state management
+ * 3. Session persistence
+ * 4. Google OAuth integration
+ * 
+ * For junior developers:
+ * - Context is React's way of sharing data between components
+ * - This context makes user data available everywhere in the app
+ * - Supabase handles the complex authentication logic for us
+ * - We use Google OAuth so users can sign in with their Google account
+ */
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { toast } from '../lib/toast';
 import { SUCCESS_MESSAGES } from '../lib/errorMessages';
 
+/**
+ * AUTH CONTEXT TYPE DEFINITION
+ * 
+ * This defines what data and functions our auth context provides.
+ * TypeScript uses this to ensure we don't make mistakes.
+ */
 interface AuthContextType {
-  user: User | null;
-  session: Session | null;
-  signInWithGoogle: () => Promise<void>;
-  signOut: () => Promise<void>;
-  loading: boolean;
+  user: User | null;                    // Current logged-in user (null if not logged in)
+  session: Session | null;             // Current session data
+  signInWithGoogle: () => Promise<void>; // Function to sign in with Google
+  signOut: () => Promise<void>;         // Function to sign out
+  loading: boolean;                     // Whether we're still checking auth status
 }
 
+/**
+ * CREATE AUTH CONTEXT
+ * 
+ * This creates the context that will hold our auth data.
+ * We start with undefined because we haven't provided it yet.
+ */
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+/**
+ * USE AUTH HOOK
+ * 
+ * This is a custom hook that components use to access auth data.
+ * It ensures the component is wrapped in an AuthProvider.
+ * 
+ * Usage in components:
+ * const { user, signInWithGoogle, signOut } = useAuth();
+ */
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {

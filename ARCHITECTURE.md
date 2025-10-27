@@ -1,672 +1,800 @@
-# Data Room Architecture
+# 🏗️ Data Room - System Architecture
 
-## Overview
+This document provides a comprehensive overview of the Data Room application architecture, including system design, data flow, security considerations, and scalability patterns.
 
-Data Room is a secure document management system built with a modern, scalable architecture. This document outlines the key design decisions, system architecture, and technical rationale behind the application.
+## 📋 Table of Contents
 
----
+- [System Overview](#system-overview)
+- [Architecture Patterns](#architecture-patterns)
+- [Technology Stack](#technology-stack)
+- [Data Flow](#data-flow)
+- [Database Design](#database-design)
+- [API Design](#api-design)
+- [Frontend Architecture](#frontend-architecture)
+- [Security Architecture](#security-architecture)
+- [Deployment Architecture](#deployment-architecture)
+- [Performance Considerations](#performance-considerations)
+- [Scalability Patterns](#scalability-patterns)
 
-## Table of Contents
+## 🎯 System Overview
 
-1. [System Architecture](#system-architecture)
-2. [Technology Stack](#technology-stack)
-3. [Design Decisions](#design-decisions)
-4. [Database Schema](#database-schema)
-5. [Authentication & Authorization](#authentication--authorization)
-6. [File Storage Strategy](#file-storage-strategy)
-7. [API Design](#api-design)
-8. [Frontend Architecture](#frontend-architecture)
-9. [Security Considerations](#security-considerations)
-10. [Scalability & Performance](#scalability--performance)
-
----
-
-## System Architecture
+The Data Room application is a **full-stack web application** designed for secure document management and collaboration. It follows a **client-server architecture** with a **serverless backend** and a **single-page application frontend**.
 
 ### High-Level Architecture
 
+```mermaid
+graph TB
+    subgraph "Client Layer"
+        A[Web Browser]
+        B[Mobile Browser]
+    end
+    
+    subgraph "CDN Layer"
+        C[Vercel CDN]
+    end
+    
+    subgraph "Frontend Layer"
+        D[React SPA]
+        E[Static Assets]
+    end
+    
+    subgraph "API Gateway"
+        F[Vercel Functions]
+    end
+    
+    subgraph "Backend Services"
+        G[Data Rooms API]
+        H[Files API]
+        I[Folders API]
+        J[CORS Middleware]
+    end
+    
+    subgraph "External Services"
+        K[Supabase Auth]
+        L[Supabase Storage]
+        M[PostgreSQL Database]
+    end
+    
+    A --> C
+    B --> C
+    C --> D
+    D --> F
+    F --> G
+    F --> H
+    F --> I
+    G --> K
+    G --> M
+    H --> L
+    H --> M
+    I --> M
 ```
-┌─────────────┐         ┌─────────────┐         ┌─────────────┐
-│   Browser   │ ◄─────► │   Backend   │ ◄─────► │  Supabase   │
-│   (React)   │         │  (Express)  │         │ PostgreSQL  │
-└─────────────┘         └─────────────┘         └─────────────┘
-                              │
-                              ▼
-                        ┌─────────────┐
-                        │  Supabase   │
-                        │   Storage   │
-                        └─────────────┘
-                              │
-                              ▼
-                        ┌─────────────┐
-                        │  Supabase   │
-                        │    Auth     │
-                        └─────────────┘
-```
 
-### Component Breakdown
+## 🏛️ Architecture Patterns
 
-**Frontend Layer**
-- React SPA with React Router for navigation
-- React Query for server state management
-- Tailwind CSS for styling
-- TypeScript for type safety
+### 1. **Serverless Architecture**
+- **Backend**: Vercel serverless functions
+- **Benefits**: Auto-scaling, pay-per-use, no server management
+- **Pattern**: Function-per-endpoint with shared middleware
 
-**Backend Layer**
-- Node.js with Express.js for API endpoints
-- Prisma ORM for database operations
-- JWT for session management
-- Multer for file upload handling
+### 2. **Single Page Application (SPA)**
+- **Frontend**: React with client-side routing
+- **Benefits**: Fast navigation, rich user experience
+- **Pattern**: Component-based architecture with lazy loading
 
-**Data Layer**
-- Supabase PostgreSQL (via Session Pooler for IPv4 compatibility)
-- Supabase Storage for file blobs
-- Supabase Auth for OAuth management
+### 3. **API-First Design**
+- **Backend**: RESTful APIs with JSON responses
+- **Benefits**: Decoupled frontend/backend, easy testing
+- **Pattern**: Resource-based URLs with HTTP methods
 
----
+### 4. **Database-First Development**
+- **ORM**: Prisma with schema-first approach
+- **Benefits**: Type safety, automatic migrations
+- **Pattern**: Schema definition drives API design
 
-## Technology Stack
+### 5. **Authentication as a Service**
+- **Provider**: Supabase Auth with Google OAuth
+- **Benefits**: Reduced complexity, enterprise-grade security
+- **Pattern**: JWT tokens with stateless validation
 
-### Backend Stack
-
-| Technology | Purpose | Why We Chose It |
-|------------|---------|-----------------|
-| **Node.js** | Runtime | JavaScript across the stack, excellent ecosystem, high performance for I/O operations |
-| **Express.js** | Web framework | Battle-tested, minimal overhead, extensive middleware ecosystem |
-| **TypeScript** | Language | Type safety, better developer experience, catch errors at compile time |
-| **Prisma** | ORM | Type-safe database access, excellent migrations, auto-generated types |
-| **Supabase PostgreSQL** | Database | Managed PostgreSQL, built-in features, generous free tier, excellent for production |
-| **JWT** | Authentication | Stateless, scalable, industry standard for API authentication |
+## 🛠️ Technology Stack
 
 ### Frontend Stack
 
-| Technology | Purpose | Why We Chose It |
-|------------|---------|-----------------|
-| **React** | UI framework | Component-based, large ecosystem, excellent developer tools |
-| **TypeScript** | Language | Type safety across the entire application |
-| **React Router** | Routing | De facto standard for React routing |
-| **React Query** | Data fetching | Server state management, caching, automatic refetching |
-| **Axios** | HTTP client | Interceptors for auth, better error handling than fetch |
-| **Tailwind CSS** | Styling | Utility-first, rapid development, consistent design |
-
-### Infrastructure
-
-| Technology | Purpose | Why We Chose It |
-|------------|---------|-----------------|
-| **Supabase** | Backend-as-a-Service | All-in-one: PostgreSQL, Auth, Storage; excellent free tier |
-| **Vercel** (recommended) | Deployment | Seamless Next.js/React deployment, global CDN, serverless functions |
-
----
-
-## Design Decisions
-
-### 1. Monorepo Structure
-
-**Decision**: Separate `frontend/` and `backend/` directories in a single repository.
-
-**Rationale**:
-- Easy to share types and interfaces
-- Simplified version control
-- Single source of truth for the entire application
-- Better for small to medium teams
-
-### 2. Prisma ORM
-
-**Decision**: Use Prisma instead of raw SQL or other ORMs.
-
-**Rationale**:
-- **Type Safety**: Auto-generated TypeScript types from schema
-- **Migrations**: Version-controlled database changes
-- **Developer Experience**: Excellent IDE autocomplete
-- **Performance**: Efficient query generation
-- **Database Agnostic**: Easy to switch databases if needed
-
-Example of type safety:
-```typescript
-const user = await prisma.user.findUnique({ where: { id } });
-// TypeScript knows exactly what fields `user` has
+```
+┌─────────────────────────────────────────┐
+│                Browser                   │
+├─────────────────────────────────────────┤
+│              React 19                   │
+│           + TypeScript                  │
+├─────────────────────────────────────────┤
+│         React Query (TanStack)           │
+│         React Router v7                  │
+├─────────────────────────────────────────┤
+│            Tailwind CSS                 │
+│           Lucide Icons                  │
+├─────────────────────────────────────────┤
+│              Axios                     │
+│         Supabase Client                 │
+└─────────────────────────────────────────┘
 ```
 
-### 3. Google OAuth Only
+**Key Technologies:**
+- **React 19**: Latest React with concurrent features
+- **TypeScript**: Type safety and better developer experience
+- **React Query**: Server state management and caching
+- **React Router**: Client-side routing
+- **Tailwind CSS**: Utility-first CSS framework
+- **Axios**: HTTP client for API communication
 
-**Decision**: Remove email/password authentication, use Google OAuth exclusively.
-
-**Rationale**:
-- **Security**: No password storage, no password reset flows
-- **User Experience**: One-click sign-in, no password to remember
-- **Trust**: Users trust Google's authentication
-- **Compliance**: Reduces security audit surface area
-- **Simplicity**: Fewer auth flows to maintain
-
-### 4. JWT for Session Management
-
-**Decision**: Use JWT tokens stored in localStorage.
-
-**Rationale**:
-- **Stateless**: Backend doesn't need to store sessions
-- **Scalable**: Works across multiple backend instances
-- **API-Friendly**: Easy to authenticate API requests
-- **Standard**: Industry-standard approach
-
-**Security Considerations**:
-- Short token expiration (24 hours)
-- HTTPS only in production
-- XSS protection via Content Security Policy
-
-### 5. Supabase Storage for Files
-
-**Decision**: Use Supabase Storage instead of local filesystem or S3.
-
-**Rationale**:
-- **Integration**: Seamless with Supabase PostgreSQL and Auth
-- **CDN**: Built-in CDN for fast file delivery
-- **Scalability**: Handles growth automatically
-- **Cost**: Free tier generous enough for development and small production
-- **Simplicity**: No need to manage S3 credentials or configure separate storage
-
-### 6. PDF-Only File Upload
-
-**Decision**: Restrict file uploads to PDF format only (50MB max).
-
-**Rationale**:
-- **Security**: Reduces attack surface (no executable files)
-- **Consistency**: PDFs are platform-independent
-- **Use Case**: Data rooms typically store documents (contracts, agreements)
-- **Preview**: PDFs can be previewed in browsers natively
-
-**Configurable**: Easy to extend to other formats by modifying multer configuration.
-
-### 7. Nested Folder Structure
-
-**Decision**: Support unlimited folder nesting with `parentId` relationship.
-
-**Rationale**:
-- **Flexibility**: Users can organize documents as they need
-- **Familiar**: Matches file system users are accustomed to
-- **Scalable**: Self-referential relationship scales well
-
-Database design:
-```prisma
-model Folder {
-  id       String   @id @default(uuid())
-  parentId String?  // null = root level
-  parent   Folder?  @relation("FolderHierarchy", fields: [parentId], references: [id])
-  children Folder[] @relation("FolderHierarchy")
-}
-```
-
-### 8. React Query for State Management
-
-**Decision**: Use React Query instead of Redux or Context API for server state.
-
-**Rationale**:
-- **Cache Management**: Automatic caching and invalidation
-- **Less Boilerplate**: No actions, reducers, or complex setup
-- **Optimistic Updates**: Built-in support
-- **Automatic Refetching**: Keeps data fresh
-- **Developer Experience**: Less code, more features
-
-Example:
-```typescript
-const { data, isLoading } = useQuery({
-  queryKey: ['dataRoom', id],
-  queryFn: () => api.get(`/data-rooms/${id}`),
-});
-```
-
----
-
-## Database Schema
-
-### Entity Relationship Diagram
+### Backend Stack
 
 ```
-┌─────────────┐
-│    User     │
-└─────────────┘
-      │ 1
-      │ owns
-      │
-      ▼ *
-┌─────────────┐
-│  DataRoom   │
-└─────────────┘
-      │ 1
-      │ contains
-      │
-      ▼ *
-┌─────────────┐      ┌─────────────┐
-│   Folder    │ ────►│    File     │
-└─────────────┘  1   └─────────────┘
-      │ *              contains
-      │
-      │ self-referential
-      │ (parent-child)
-      ▼
-┌─────────────┐
-│   Folder    │
-└─────────────┘
+┌─────────────────────────────────────────┐
+│           Vercel Functions              │
+├─────────────────────────────────────────┤
+│            Node.js 18+                  │
+│           + TypeScript                  │
+├─────────────────────────────────────────┤
+│              Express                    │
+│         CORS Middleware                 │
+├─────────────────────────────────────────┤
+│              Prisma                    │
+│         JWT Validation                  │
+├─────────────────────────────────────────┤
+│           PostgreSQL                    │
+│         Supabase Storage                │
+└─────────────────────────────────────────┘
 ```
 
-### Schema Details
+**Key Technologies:**
+- **Vercel Functions**: Serverless function execution
+- **Node.js**: JavaScript runtime
+- **Express**: Web framework (legacy, being phased out)
+- **Prisma**: Database ORM and query builder
+- **PostgreSQL**: Relational database
+- **Supabase**: Backend-as-a-Service platform
 
-**User**
-```prisma
-model User {
-  id        String     @id @default(uuid())
-  email     String     @unique
-  name      String?
-  dataRooms DataRoom[]
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-}
-```
-
-**Design Rationale**:
-- `id` as UUID: More secure than auto-incrementing integers
-- `email` unique: Primary identifier from Google OAuth
-- `name` optional: Some OAuth providers may not provide it
-- Timestamps: Audit trail for user creation/updates
-
-**DataRoom**
-```prisma
-model DataRoom {
-  id          String   @id @default(uuid())
-  name        String
-  description String?
-  ownerId     String
-  owner       User     @relation(fields: [ownerId], references: [id])
-  folders     Folder[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
-```
-
-**Design Rationale**:
-- Each data room belongs to one user
-- `description` optional: Flexibility for users
-- Cascade delete: When user is deleted, data rooms are deleted
-
-**Folder**
-```prisma
-model Folder {
-  id         String   @id @default(uuid())
-  name       String
-  dataRoomId String
-  dataRoom   DataRoom @relation(fields: [dataRoomId], references: [id], onDelete: Cascade)
-  parentId   String?
-  parent     Folder?  @relation("FolderHierarchy", fields: [parentId], references: [id])
-  children   Folder[] @relation("FolderHierarchy")
-  files      File[]
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-}
-```
-
-**Design Rationale**:
-- Self-referential relationship for nesting
-- `parentId` nullable: Root folders have `parentId = null`
-- Cascade delete: When data room deleted, all folders deleted
-- Index on `dataRoomId` and `parentId` for query performance
-
-**File**
-```prisma
-model File {
-  id        String   @id @default(uuid())
-  name      String
-  fileType  String
-  size      Int
-  blobUrl   String
-  folderId  String
-  folder    Folder   @relation(fields: [folderId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-```
-
-**Design Rationale**:
-- `blobUrl`: Reference to Supabase Storage
-- `size`: For quota management and display
-- `fileType`: MIME type for proper handling
-- Cascade delete: When folder deleted, files deleted
-
----
-
-## Authentication & Authorization
+## 🔄 Data Flow
 
 ### Authentication Flow
 
-```
-1. User clicks "Sign in with Google"
-   ↓
-2. Frontend redirects to Supabase Auth (Google OAuth)
-   ↓
-3. User authenticates with Google
-   ↓
-4. Google redirects back to /auth/callback
-   ↓
-5. Frontend gets Supabase session
-   ↓
-6. Frontend sends session.user to backend /auth/google
-   ↓
-7. Backend finds or creates user in Prisma
-   ↓
-8. Backend generates JWT token
-   ↓
-9. Frontend stores JWT + user data in localStorage
-   ↓
-10. Subsequent requests include JWT in Authorization header
-```
-
-### Authorization Model
-
-**Resource Ownership**:
-- Users can only access their own data rooms
-- Data rooms, folders, and files are scoped to the owner
-
-**Backend Enforcement**:
-```typescript
-// Every protected endpoint verifies ownership
-const dataRoom = await prisma.dataRoom.findFirst({
-  where: {
-    id: dataRoomId,
-    ownerId: req.user!.id, // Ensures user owns the data room
-  },
-});
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant F as Frontend
+    participant S as Supabase
+    participant A as API
+    participant D as Database
+    
+    U->>F: Click "Sign in with Google"
+    F->>S: Redirect to Google OAuth
+    S->>U: Google login page
+    U->>S: Enter credentials
+    S->>F: Return with JWT token
+    F->>F: Store token in memory
+    F->>A: API request with Bearer token
+    A->>A: Validate JWT token
+    A->>D: Query with user ID
+    D->>A: Return data
+    A->>F: Return response
+    F->>U: Display data
 ```
 
-**Frontend Protection**:
-- Protected routes redirect unauthenticated users to `/login`
-- Auth context provides user state across components
+### File Upload Flow
 
----
-
-## File Storage Strategy
-
-### Upload Flow
-
-```
-1. User selects file in browser
-   ↓
-2. Frontend validates file (type, size)
-   ↓
-3. FormData sent to backend /files/upload
-   ↓
-4. Multer middleware validates (50MB max, PDF only)
-   ↓
-5. Backend uploads to Supabase Storage
-   ↓
-6. Supabase returns blob URL
-   ↓
-7. Backend saves file metadata + blobUrl to PostgreSQL
-   ↓
-8. Frontend invalidates queries to refresh UI
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant F as Frontend
+    participant A as API
+    participant S as Supabase Storage
+    participant D as Database
+    
+    U->>F: Select file to upload
+    F->>F: Validate file size/type
+    F->>A: POST /files?action=upload
+    A->>A: Authenticate user
+    A->>A: Generate unique filename
+    A->>S: Upload file to storage
+    S->>A: Return public URL
+    A->>D: Save file record
+    D->>A: Confirm save
+    A->>F: Return file data
+    F->>U: Show success message
 ```
 
-### Storage Organization
+### Data Fetching Flow
 
-**Supabase Storage Bucket**: `data-room-files`
+```mermaid
+sequenceDiagram
+    participant F as Frontend
+    participant RQ as React Query
+    participant A as API
+    participant D as Database
+    
+    F->>RQ: Request data
+    RQ->>RQ: Check cache
+    alt Cache miss
+        RQ->>A: HTTP request
+        A->>D: Database query
+        D->>A: Return data
+        A->>RQ: JSON response
+        RQ->>RQ: Update cache
+    else Cache hit
+        RQ->>F: Return cached data
+    end
+    RQ->>F: Return data
+```
 
-**File Path Pattern**: `{dataRoomId}/{folderId}/{fileId}-{originalName}`
+## 🗄️ Database Design
 
-**Benefits**:
-- Easy to locate files by data room or folder
-- File ID prevents naming collisions
-- Original name preserved for user reference
+### Entity Relationship Diagram
 
-### File Validation
-
-**Backend (Multer)**:
-```typescript
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB
-  fileFilter: (req, file, cb) => {
-    if (file.mimetype === 'application/pdf') {
-      cb(null, true);
-    } else {
-      cb(new Error('Only PDF files are allowed'), false);
+```mermaid
+erDiagram
+    User ||--o{ DataRoom : owns
+    DataRoom ||--o{ Folder : contains
+    Folder ||--o{ Folder : "parent-child"
+    Folder ||--o{ File : contains
+    DataRoom ||--o{ File : contains
+    
+    User {
+        string id PK
+        string email
+        string name
+        datetime createdAt
+        datetime updatedAt
     }
-  },
-});
+    
+    DataRoom {
+        string id PK
+        string name
+        string ownerId FK
+        datetime createdAt
+        datetime updatedAt
+    }
+    
+    Folder {
+        string id PK
+        string name
+        string dataRoomId FK
+        string parentId FK
+        string userId FK
+        datetime createdAt
+        datetime updatedAt
+    }
+    
+    File {
+        string id PK
+        string name
+        string mimeType
+        bigint fileSize
+        string filePath
+        string folderId FK
+        string dataRoomId FK
+        string userId FK
+        datetime createdAt
+        datetime updatedAt
+    }
 ```
 
-**Frontend**:
-- File input accepts only PDFs: `accept="application/pdf"`
-- Client-side size validation before upload
-- User-friendly error messages
+### Database Schema (Prisma)
 
----
+```prisma
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  dataRooms DataRoom[]
+  folders   Folder[]
+  files     File[]
+}
 
-## API Design
+model DataRoom {
+  id        String   @id @default(cuid())
+  name      String
+  ownerId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  owner   User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  folders Folder[]
+  files   File[]
+}
 
-### RESTful Principles
+model Folder {
+  id         String   @id @default(cuid())
+  name       String
+  dataRoomId String
+  parentId   String?
+  userId     String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  
+  // Relations
+  dataRoom DataRoom @relation(fields: [dataRoomId], references: [id], onDelete: Cascade)
+  parent   Folder?  @relation("FolderHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children Folder[] @relation("FolderHierarchy")
+  files    File[]
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
 
-All endpoints follow REST conventions:
-
-| Method | Endpoint | Purpose |
-|--------|----------|---------|
-| `GET` | `/api/data-rooms` | List all data rooms |
-| `POST` | `/api/data-rooms` | Create new data room |
-| `GET` | `/api/data-rooms/:id` | Get data room details |
-| `PATCH` | `/api/data-rooms/:id` | Update data room |
-| `DELETE` | `/api/data-rooms/:id` | Delete data room |
-
-### Response Format
-
-**Success Response**:
-```json
-{
-  "success": true,
-  "data": { ... }
+model File {
+  id         String   @id @default(cuid())
+  name       String
+  mimeType   String
+  fileSize   BigInt
+  filePath   String
+  folderId   String?
+  dataRoomId String
+  userId     String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  
+  // Relations
+  folder   Folder?   @relation(fields: [folderId], references: [id], onDelete: Cascade)
+  dataRoom DataRoom  @relation(fields: [dataRoomId], references: [id], onDelete: Cascade)
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 ```
 
-**Error Response**:
-```json
-{
-  "success": false,
-  "error": "Error message"
+### Database Indexes
+
+```sql
+-- Performance indexes
+CREATE INDEX idx_datroom_owner ON "DataRoom"("ownerId");
+CREATE INDEX idx_folder_datroom ON "Folder"("dataRoomId");
+CREATE INDEX idx_folder_parent ON "Folder"("parentId");
+CREATE INDEX idx_file_folder ON "File"("folderId");
+CREATE INDEX idx_file_datroom ON "File"("dataRoomId");
+CREATE INDEX idx_file_user ON "File"("userId");
+
+-- Composite indexes for common queries
+CREATE INDEX idx_folder_datroom_parent ON "Folder"("dataRoomId", "parentId");
+CREATE INDEX idx_file_datroom_folder ON "File"("dataRoomId", "folderId");
+```
+
+## 🔌 API Design
+
+### RESTful API Endpoints
+
+#### Data Rooms API (`/api/data-rooms`)
+
+```typescript
+// List all data rooms for user
+GET /api/data-rooms
+Response: { success: boolean, data: DataRoom[], pagination: PaginationInfo }
+
+// Create new data room
+POST /api/data-rooms
+Body: { name: string }
+Response: { success: boolean, data: DataRoom, message: string }
+
+// Get specific data room
+GET /api/data-rooms?id={id}
+Response: { success: boolean, data: DataRoom }
+
+// Delete data room
+DELETE /api/data-rooms?id={id}
+Response: { success: boolean, message: string }
+
+// Get folders in data room
+GET /api/data-rooms?id={id}&action=folders
+Response: { success: boolean, data: Folder[] }
+
+// Get files in data room
+GET /api/data-rooms?id={id}&action=files&all=true
+Response: { success: boolean, data: File[] }
+```
+
+#### Folders API (`/api/folders`)
+
+```typescript
+// Create folder
+POST /api/folders
+Body: { name: string, dataRoomId: string, parentId?: string }
+Response: { success: boolean, data: Folder, message: string }
+
+// Get folder details
+GET /api/folders?id={id}
+Response: { success: boolean, data: Folder }
+
+// Update folder
+PATCH /api/folders?id={id}
+Body: { name: string }
+Response: { success: boolean, data: Folder, message: string }
+
+// Delete folder
+DELETE /api/folders?id={id}
+Response: { success: boolean, message: string }
+
+// Get files in folder
+GET /api/folders?id={id}&action=files
+Response: { success: boolean, data: File[] }
+```
+
+#### Files API (`/api/files`)
+
+```typescript
+// Upload file
+POST /api/files?action=upload
+Body: FormData { file: File, name: string, folderId: string }
+Response: { success: boolean, data: File, message: string }
+
+// Update file
+PATCH /api/files?id={id}
+Body: { name: string }
+Response: { success: boolean, data: File, message: string }
+
+// Delete file
+DELETE /api/files?id={id}
+Response: { success: boolean, message: string }
+```
+
+### API Response Format
+
+```typescript
+interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  message?: string;
+  error?: string;
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
 }
 ```
 
 ### Error Handling
 
-**Centralized Error Handler**:
 ```typescript
-app.use((err, req, res, next) => {
-  console.error(err);
-  res.status(err.statusCode || 500).json({
-    success: false,
-    error: err.message || 'Internal server error',
-  });
+// Standard HTTP status codes
+200 OK           // Success
+201 Created      // Resource created
+400 Bad Request  // Invalid input
+401 Unauthorized // Authentication required
+403 Forbidden    // Insufficient permissions
+404 Not Found    // Resource not found
+409 Conflict     // Duplicate resource
+500 Internal Server Error // Server error
+
+// Error response format
+{
+  "error": "Error type",
+  "message": "Human-readable error message",
+  "details": "Additional error information"
+}
+```
+
+## 🎨 Frontend Architecture
+
+### Component Hierarchy
+
+```
+App
+├── QueryClientProvider
+├── AuthProvider
+└── Router
+    ├── Public Routes
+    │   ├── Login
+    │   └── Signup
+    └── Private Routes
+        └── Layout
+            ├── Header
+            ├── Sidebar (FileTree)
+            └── Main Content
+                ├── DataRooms (List View)
+                └── DataRoomView (Detail View)
+                    ├── Breadcrumb
+                    ├── Search Bar
+                    ├── Action Buttons
+                    ├── Folders Grid
+                    └── Files List
+```
+
+### State Management
+
+#### React Query (Server State)
+- **Data Fetching**: Automatic caching and background updates
+- **Mutations**: Optimistic updates and error handling
+- **Cache Management**: Automatic invalidation and garbage collection
+
+#### React Context (Client State)
+- **Authentication**: User session and login state
+- **UI State**: Modal states, form data, etc.
+
+#### Local State (Component State)
+- **Form Inputs**: Controlled components
+- **UI Interactions**: Hover states, selections, etc.
+
+### Performance Optimizations
+
+#### Code Splitting
+```typescript
+// Lazy load pages
+const Login = lazy(() => import('./pages/Login'));
+const DataRooms = lazy(() => import('./pages/DataRooms'));
+```
+
+#### Memoization
+```typescript
+// Prevent unnecessary re-renders
+const FileTree = memo(({ folders, files, onFolderClick }) => {
+  // Component implementation
 });
+
+// Memoize expensive calculations
+const filteredData = useMemo(() => {
+  return expensiveFilter(data);
+}, [data, filterCriteria]);
 ```
 
-**Common HTTP Status Codes**:
-- `200 OK`: Successful GET/PATCH/DELETE
-- `201 Created`: Successful POST
-- `400 Bad Request`: Validation errors
-- `401 Unauthorized`: Missing/invalid token
-- `404 Not Found`: Resource doesn't exist
-- `409 Conflict`: Duplicate resource
-- `500 Internal Server Error`: Unexpected errors
-
----
-
-## Frontend Architecture
-
-### Component Structure
-
-```
-src/
-├── components/
-│   ├── ui/              # Reusable UI components (Button, Card, Dialog)
-│   ├── Layout.tsx       # App shell (header, footer, navigation)
-│   └── ProtectedRoute.tsx
-├── pages/               # Route components
-│   ├── Login.tsx
-│   ├── AuthCallback.tsx
-│   ├── Dashboard.tsx
-│   └── DataRoomView.tsx
-├── contexts/
-│   └── AuthContext.tsx  # Authentication state
-├── lib/
-│   ├── api.ts           # Axios instance with interceptors
-│   └── supabase.ts      # Supabase client
-└── App.tsx              # Route configuration
-```
-
-### State Management Strategy
-
-**Server State**: React Query
-- Data from API (data rooms, folders, files)
-- Automatic caching, refetching, invalidation
-
-**Client State**: React Context
-- User authentication state
-- UI state (modals, dialogs)
-
-**Local State**: useState
-   - Form inputs
-- Component-specific state
-
-### React Query Usage
-
-**Query Keys**:
+#### Debouncing
 ```typescript
-['dataRooms']                    // All data rooms
-['dataRoom', id]                 // Specific data room
-['folder', folderId]             // Folder contents
+// Debounce search input
+const [searchInput, setSearchInput] = useState('');
+const [debouncedSearch, setDebouncedSearch] = useState('');
+
+useEffect(() => {
+  const timer = setTimeout(() => {
+    setDebouncedSearch(searchInput);
+  }, 300);
+  return () => clearTimeout(timer);
+}, [searchInput]);
 ```
 
-**Automatic Invalidation**:
+## 🔒 Security Architecture
+
+### Authentication Flow
+
+```mermaid
+graph TB
+    A[User Login] --> B[Google OAuth]
+    B --> C[Supabase Auth]
+    C --> D[JWT Token]
+    D --> E[Frontend Storage]
+    E --> F[API Requests]
+    F --> G[Token Validation]
+    G --> H[Database Access]
+```
+
+### Security Layers
+
+#### 1. **Authentication Layer**
+- **Provider**: Supabase Auth with Google OAuth
+- **Token**: JWT with user ID and expiration
+- **Storage**: In-memory (no localStorage for security)
+
+#### 2. **Authorization Layer**
+- **API**: User ID validation on every request
+- **Database**: Row Level Security (RLS) policies
+- **Files**: User-specific access controls
+
+#### 3. **Network Security**
+- **HTTPS**: All communications encrypted
+- **CORS**: Restricted to allowed origins
+- **Headers**: Security headers via middleware
+
+#### 4. **Data Security**
+- **Encryption**: Files encrypted in Supabase Storage
+- **Validation**: Input validation on all endpoints
+- **Sanitization**: XSS protection in frontend
+
+### CORS Configuration
+
 ```typescript
-onSuccess: () => {
-  queryClient.invalidateQueries({ queryKey: ['dataRoom', id] });
-  // UI automatically refetches and updates
+const allowedOrigins = [
+  'https://data-room-196e.vercel.app',  // Production
+  'http://localhost:3000',             // Development
+  'http://localhost:3001'              // Alternative port
+];
+
+// CORS headers
+res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
+res.setHeader('Access-Control-Allow-Credentials', 'true');
+res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PATCH,DELETE,OPTIONS');
+res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization');
+```
+
+## 🚀 Deployment Architecture
+
+### Vercel Deployment
+
+```mermaid
+graph TB
+    subgraph "Vercel Platform"
+        A[Frontend Deployment]
+        B[API Functions]
+        C[CDN]
+        D[Edge Network]
+    end
+    
+    subgraph "External Services"
+        E[Supabase]
+        F[PostgreSQL]
+        G[Google OAuth]
+    end
+    
+    A --> C
+    B --> E
+    B --> F
+    A --> G
+    C --> D
+```
+
+### Environment Configuration
+
+#### Development
+```env
+# Local development with hot reload
+NODE_ENV=development
+REACT_APP_API_URL=http://localhost:3001
+DATABASE_URL=postgresql://localhost:5432/datroom_dev
+```
+
+#### Production
+```env
+# Production with optimizations
+NODE_ENV=production
+REACT_APP_API_URL=https://api.vercel.app
+DATABASE_URL=postgresql://prod-server:5432/datroom_prod
+```
+
+### Build Process
+
+```mermaid
+graph LR
+    A[Source Code] --> B[TypeScript Compilation]
+    B --> C[Prisma Generation]
+    C --> D[React Build]
+    D --> E[Static Assets]
+    E --> F[Vercel Deployment]
+    F --> G[CDN Distribution]
+```
+
+## ⚡ Performance Considerations
+
+### Frontend Performance
+
+#### 1. **Bundle Optimization**
+- **Code Splitting**: Lazy load routes and components
+- **Tree Shaking**: Remove unused code
+- **Minification**: Compress JavaScript and CSS
+
+#### 2. **Caching Strategy**
+- **React Query**: Automatic caching with stale-while-revalidate
+- **Browser Cache**: Static assets cached via CDN
+- **Service Worker**: Offline capability (future enhancement)
+
+#### 3. **Rendering Optimization**
+- **Virtual Scrolling**: For large file lists (future enhancement)
+- **Memoization**: Prevent unnecessary re-renders
+- **Debouncing**: Reduce API calls for search
+
+### Backend Performance
+
+#### 1. **Database Optimization**
+- **Indexes**: Optimized queries with proper indexing
+- **Connection Pooling**: Efficient database connections
+- **Query Optimization**: Prisma query optimization
+
+#### 2. **API Performance**
+- **Caching**: Response caching where appropriate
+- **Compression**: Gzip compression for responses
+- **Rate Limiting**: Prevent abuse and ensure fair usage
+
+#### 3. **File Handling**
+- **Streaming**: Large file uploads via streaming
+- **CDN**: File serving via Supabase CDN
+- **Compression**: Image optimization (future enhancement)
+
+### Performance Metrics
+
+```typescript
+// Key performance indicators
+interface PerformanceMetrics {
+  // Frontend metrics
+  firstContentfulPaint: number;    // < 1.5s
+  largestContentfulPaint: number;  // < 2.5s
+  cumulativeLayoutShift: number;    // < 0.1
+  timeToInteractive: number;        // < 3.5s
+  
+  // API metrics
+  apiResponseTime: number;          // < 200ms
+  databaseQueryTime: number;        // < 100ms
+  fileUploadTime: number;           // < 5s for 10MB
+  
+  // User experience
+  searchResponseTime: number;       // < 300ms
+  navigationTime: number;           // < 100ms
 }
 ```
 
----
+## 📈 Scalability Patterns
 
-## Security Considerations
+### Horizontal Scaling
 
-### 1. Authentication Security
+#### 1. **Serverless Functions**
+- **Auto-scaling**: Vercel functions scale automatically
+- **Cold Start**: Optimized for fast cold starts
+- **Concurrency**: Handle multiple requests simultaneously
 
-✅ **Google OAuth**: Delegates authentication to Google  
-✅ **HTTPS Only**: Production environment requires HTTPS  
-✅ **JWT Expiration**: Tokens expire after 24 hours  
-✅ **Token Validation**: Every protected endpoint validates JWT  
+#### 2. **Database Scaling**
+- **Connection Pooling**: Efficient connection management
+- **Read Replicas**: Distribute read load (future enhancement)
+- **Partitioning**: Partition by user ID (future enhancement)
 
-### 2. Authorization Security
+#### 3. **CDN Distribution**
+- **Global CDN**: Vercel's edge network
+- **Static Assets**: Cached at edge locations
+- **API Responses**: Cached where appropriate
 
-✅ **Ownership Verification**: All queries check `ownerId`  
-✅ **No Direct Access**: Can't access other users' resources  
-✅ **Cascade Deletes**: Related data deleted automatically  
+### Vertical Scaling
 
-### 3. File Upload Security
+#### 1. **Resource Optimization**
+- **Memory Usage**: Efficient memory management
+- **CPU Usage**: Optimized algorithms and queries
+- **Storage**: Efficient file storage and retrieval
 
-✅ **File Type Restriction**: PDF only  
-✅ **Size Limit**: 50MB maximum  
-✅ **Validation**: Both frontend and backend validation  
-✅ **Memory Storage**: Files don't touch filesystem  
-✅ **Unique IDs**: Prevents filename-based attacks  
+#### 2. **Caching Layers**
+- **Application Cache**: React Query caching
+- **Database Cache**: Query result caching
+- **CDN Cache**: Static asset caching
 
-### 4. Database Security
+### Future Scaling Considerations
 
-✅ **Parameterized Queries**: Prisma prevents SQL injection  
-✅ **Connection Pooling**: Supabase Session Pooler  
-✅ **Environment Variables**: Credentials not in code  
-✅ **UUID IDs**: Hard to guess resource IDs  
-
-### 5. Frontend Security
-
-✅ **XSS Protection**: React auto-escapes content  
-✅ **CORS**: Backend configures allowed origins  
-✅ **No Sensitive Data**: Tokens in httpOnly would be better (future improvement)  
-
----
-
-## Scalability & Performance
-
-### Database Performance
-
-**Indexes** (via Prisma):
-- Primary keys: Automatic B-tree index
-- Foreign keys: Indexed for join performance
-- Unique constraints: Indexed for fast lookups
-
-**Query Optimization**:
-```typescript
-// Efficient: Only fetch needed data
-include: {
-  folders: {
-    select: { id: true, name: true },
-  },
-}
-
-// Use pagination for large datasets (future improvement)
+#### 1. **Microservices Architecture**
+```mermaid
+graph TB
+    A[API Gateway] --> B[Auth Service]
+    A --> C[File Service]
+    A --> D[Data Room Service]
+    A --> E[Notification Service]
+    
+    B --> F[User Database]
+    C --> G[File Storage]
+    D --> H[Data Room Database]
+    E --> I[Message Queue]
 ```
 
-### Caching Strategy
+#### 2. **Event-Driven Architecture**
+- **Event Sourcing**: Track all changes as events
+- **Message Queues**: Asynchronous processing
+- **Webhooks**: Real-time notifications
 
-**React Query Cache**:
-- 5-minute stale time for data rooms
-- Aggressive invalidation on mutations
-- Background refetching when window refocuses
+#### 3. **Multi-Region Deployment**
+- **Geographic Distribution**: Deploy in multiple regions
+- **Data Replication**: Sync data across regions
+- **Failover**: Automatic failover between regions
 
-**Supabase CDN**:
-- Files served from global CDN
-- Reduced latency for file downloads
+## 🔮 Future Architecture Enhancements
 
-### Horizontal Scalability
+### Short Term (3-6 months)
+- [ ] **Real-time Collaboration**: WebSocket integration
+- [ ] **Advanced Search**: Full-text search with filters
+- [ ] **File Versioning**: Track file changes over time
+- [ ] **Bulk Operations**: Multi-file upload/download/delete
 
-**Stateless Backend**:
-- JWT tokens = no session storage
-- Can run multiple backend instances
-- Load balancer distributes requests
+### Medium Term (6-12 months)
+- [ ] **Mobile App**: React Native application
+- [ ] **API Rate Limiting**: Advanced rate limiting
+- [ ] **Audit Logging**: Comprehensive activity tracking
+- [ ] **Advanced Security**: 2FA, SSO integration
 
-**Database Pooling**:
-- Supabase Session Pooler handles connections
-- Efficient connection reuse
-
----
-
-## Future Improvements
-
-### Short Term
-- [ ] File download functionality
-- [ ] File preview (PDF viewer)
-- [ ] Drag & drop file upload
-- [ ] Bulk operations (select multiple files)
-- [ ] Search functionality
-
-### Medium Term
-- [ ] Sharing & permissions (read-only, edit access)
-- [ ] Activity logs (who accessed what, when)
-- [ ] File versioning
-- [ ] Trash/recycle bin
-- [ ] Advanced search with filters
-
-### Long Term
-- [ ] Real-time collaboration (WebSockets)
-- [ ] E-signature integration
-- [ ] Advanced analytics & reporting
-- [ ] Mobile app (React Native)
-- [ ] API rate limiting
-- [ ] Multi-factor authentication
+### Long Term (1-2 years)
+- [ ] **Microservices**: Break into smaller services
+- [ ] **Event Sourcing**: Event-driven architecture
+- [ ] **Multi-tenancy**: Support multiple organizations
+- [ ] **AI Features**: Smart categorization and search
 
 ---
 
-## Conclusion
-
-This architecture balances **simplicity**, **security**, and **scalability**. Key decisions prioritize:
-
-1. **Developer Experience**: TypeScript, Prisma, React Query
-2. **Security**: Google OAuth, ownership verification, file validation
-3. **Scalability**: Stateless backend, managed infrastructure
-4. **Maintainability**: Clear separation of concerns, documented code
-
-The system is designed to handle growth from prototype to production while maintaining code quality and security standards.
-
+**This architecture document is living documentation that evolves with the application. Last updated: December 2024**

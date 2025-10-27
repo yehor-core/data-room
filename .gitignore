@@ -252,6 +252,15 @@ docs/build/
 # Fixes documentation (temporary files)
 fixes/
 
+# Empty directories that might be created
+backend/src/models/
+frontend/fixes/
+
+# Unused React files (if they get regenerated)
+frontend/src/logo.svg
+frontend/src/App.test.tsx
+frontend/src/reportWebVitals.ts
+
 # ============================================
 # SECURITY & SECRETS
 # ============================================
