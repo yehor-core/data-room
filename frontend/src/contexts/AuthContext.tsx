@@ -31,7 +31,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [hasShownLoginToast, setHasShownLoginToast] = useState(false);
 
   useEffect(() => {
     console.log('🔍 [AuthContext] Initializing auth state');
@@ -59,25 +58,28 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         console.log('✅ [AuthContext] User authenticated:', {
           id: session.user.id,
           email: session.user.email,
-          user_metadata: session.user.user_metadata
+          user_metadata: session.user.user_metadata,
+          event
         });
         
         // Show login success toast only once on actual SIGN_IN event
-        // TOKEN_REFRESHED events happen when user returns to tab
-        if (event === 'SIGNED_IN' && !hasShownLoginToast) {
+        // Use sessionStorage to prevent showing toast multiple times in same session
+        // TOKEN_REFRESHED and INITIAL_SESSION events should not show toast
+        const loginToastShown = sessionStorage.getItem('login_toast_shown');
+        if (event === 'SIGNED_IN' && !loginToastShown) {
           toast.success(SUCCESS_MESSAGES.LOGIN_SUCCESS);
-          setHasShownLoginToast(true);
+          sessionStorage.setItem('login_toast_shown', 'true');
         }
       }
       
-      // Reset toast flag on sign out
+      // Clear toast flag on sign out
       if (event === 'SIGNED_OUT') {
-        setHasShownLoginToast(false);
+        sessionStorage.removeItem('login_toast_shown');
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [hasShownLoginToast]);
+  }, []);
 
   const signInWithGoogle = async () => {
     try {

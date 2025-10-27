@@ -41,7 +41,7 @@ api.interceptors.response.use(
     });
     return response;
   },
-  (error) => {
+  async (error) => {
     console.error('❌ [API] Request failed:', {
       url: error.config?.url,
       method: error.config?.method,
@@ -51,6 +51,9 @@ api.interceptors.response.use(
       message: error.message,
       code: error.code
     });
+
+    // Dynamically import toast to avoid circular dependency
+    const { toast } = await import('./toast');
 
     // Handle different types of errors
     if (error.response?.status === 401) {
@@ -65,6 +68,10 @@ api.interceptors.response.use(
       console.error('🚫 [API] Forbidden - check CORS configuration');
     } else if (error.code === 'ERR_NETWORK') {
       console.error('🌐 [API] Network error - check if backend is accessible');
+      toast.error('Unable to connect. Please check your internet connection and try again.');
+    } else if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT') {
+      console.error('⏰ [API] Request timed out');
+      toast.error('Request timed out. Please try again.');
     } else if (error.code === 'ERR_CANCELED') {
       console.error('⏹️ [API] Request was canceled');
     }

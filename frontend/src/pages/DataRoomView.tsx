@@ -279,24 +279,36 @@ export const DataRoomView: React.FC = () => {
 
   const uploadFileMutation = useMutation({
     mutationFn: async ({ file, name, folderId }: { file: File; name: string; folderId: string }) => {
-      // Check file size (Vercel Pro limit: 100MB)
-      const maxSize = 100 * 1024 * 1024; // 100MB in bytes
-      if (file.size && file.size > maxSize) {
-        throw new Error(`File size exceeds 100MB limit. Your file is ${(file.size / 1024 / 1024).toFixed(2)}MB. Please compress the file or upload a smaller file.`);
-      }
+      // Show loading toast
+      const toastId = toast.loading(LOADING_MESSAGES.UPLOADING_FILE);
+      
+      try {
+        // Check file size (Vercel Pro limit: 100MB)
+        const maxSize = 100 * 1024 * 1024; // 100MB in bytes
+        if (file.size && file.size > maxSize) {
+          throw new Error(`File size exceeds 100MB limit. Your file is ${(file.size / 1024 / 1024).toFixed(2)}MB. Please compress the file or upload a smaller file.`);
+        }
 
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('name', name);
-      formData.append('folderId', folderId);
-      
-      const response = await api.post('/files?action=upload', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-      
-      return response.data.data;
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('name', name);
+        formData.append('folderId', folderId);
+        
+        const response = await api.post('/files?action=upload', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+        
+        // Dismiss loading toast
+        toast.dismiss(toastId);
+        
+        return response.data.data;
+      } catch (error) {
+        // Dismiss loading toast on error
+        toast.dismiss(toastId);
+        throw error;
+      }
     },
     onSuccess: () => {
       setIsUploadDialogOpen(false);
@@ -384,9 +396,11 @@ export const DataRoomView: React.FC = () => {
 
   const handleCreateFolder = (e: React.FormEvent) => {
     e.preventDefault();
-    if (newFolderName.trim()) {
-      createFolderMutation.mutate(newFolderName);
+    if (!newFolderName.trim()) {
+      toast.error('Please enter a folder name');
+      return;
     }
+    createFolderMutation.mutate(newFolderName);
   };
 
   const handleUpload = (e: React.FormEvent) => {
@@ -557,7 +571,7 @@ export const DataRoomView: React.FC = () => {
   };
 
   return (
-    <div className="flex h-screen">
+    <div className="flex flex-col md:flex-row min-h-screen md:h-screen">
       {/* File Tree Sidebar */}
       <FileTree
         folders={getAllFoldersAndFiles().folders}
@@ -569,10 +583,11 @@ export const DataRoomView: React.FC = () => {
       
       {/* Main Content */}
       <div className="flex-1 overflow-auto">
-        <div className="container mx-auto px-4 py-8">
-      <div className="flex items-center gap-4 mb-6">
+        <div className="container mx-auto px-4 py-4 md:py-8">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6">
         <Button 
-          variant="outline" 
+          variant="outline"
+          size="sm"
           onClick={() => {
             if (folderId) {
               // If we're in a folder, check if it has a parent
@@ -590,24 +605,27 @@ export const DataRoomView: React.FC = () => {
             }
           }}
         >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          {folderId 
-            ? (folderData?.data?.parent?.name 
-                ? `Back to ${folderData.data.parent.name}` 
-                : 'Back to Data Room')
-            : 'Back to Data Rooms'}
+          <ArrowLeft className="h-4 w-4 sm:mr-2" />
+          <span className="hidden sm:inline">
+            {folderId 
+              ? (folderData?.data?.parent?.name 
+                  ? `Back to ${folderData.data.parent.name}` 
+                  : 'Back to Data Room')
+              : 'Back to Data Rooms'}
+          </span>
+          <span className="sm:hidden">Back</span>
         </Button>
         <div>
-          <h1 className="text-3xl font-bold">
+          <h1 className="text-2xl sm:text-3xl font-bold">
             {folderId ? folderData?.data?.name : dataRoomData?.data?.name}
           </h1>
-          <p className="text-muted-foreground">
+          <p className="text-sm text-muted-foreground">
             {folderId ? `Folder in ${dataRoomData?.data?.name}` : 'Data Room'}
           </p>
         </div>
       </div>
 
-      <div className="flex gap-4 mb-6">
+      <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 mb-6">
         <div className="flex-1">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -619,16 +637,20 @@ export const DataRoomView: React.FC = () => {
             />
           </div>
         </div>
-        <Button onClick={() => setIsCreateFolderDialogOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          New Folder
-        </Button>
-        {folderId && (
-          <Button onClick={() => setIsUploadDialogOpen(true)}>
-            <Upload className="mr-2 h-4 w-4" />
-            Upload File
+        <div className="flex gap-2">
+          <Button onClick={() => setIsCreateFolderDialogOpen(true)} size="sm" className="flex-1 sm:flex-none">
+            <Plus className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">New Folder</span>
+            <span className="sm:hidden">Folder</span>
           </Button>
-        )}
+          {folderId && (
+            <Button onClick={() => setIsUploadDialogOpen(true)} size="sm" className="flex-1 sm:flex-none">
+              <Upload className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Upload File</span>
+              <span className="sm:hidden">Upload</span>
+            </Button>
+          )}
+        </div>
       </div>
 
       {isLoading ? (

@@ -168,7 +168,7 @@ export const FileTree: React.FC<FileTreeProps> = memo(({
   }, [expandedFolders, currentPath, onFolderClick, onFileClick, toggleExpanded]);
 
   return (
-    <div className="w-64 bg-white border-r border-gray-200 p-4 overflow-y-auto">
+    <div className="w-full md:w-64 bg-white border-r border-gray-200 p-4 overflow-y-auto max-h-[300px] md:max-h-none">
       <h3 className="text-sm font-semibold text-gray-700 mb-4">File Tree</h3>
       <div className="space-y-1">
         {buildTree.length > 0 ? (

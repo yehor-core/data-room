@@ -225,7 +225,7 @@ export const DataRooms: React.FC = () => {
               <CardContent>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">
-                    0 folders
+                    {dataRoom._count?.folders ?? 0} {dataRoom._count?.folders === 1 ? 'folder' : 'folders'}
                   </span>
                   <div className="flex gap-2">
                     <Link to={`/data-rooms/${dataRoom.id}`}>
