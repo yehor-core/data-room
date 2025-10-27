@@ -59,7 +59,6 @@ export const DataRooms: React.FC = () => {
       const tempDataRoom: DataRoom = {
         id: `temp-${Date.now()}`, // Temporary ID
         name,
-        description: null,
         ownerId: user?.id || '',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
