@@ -199,64 +199,40 @@ export const DataRoomView: React.FC = () => {
       return response.data.data;
     },
     onSuccess: () => {
+      toast.success(SUCCESS_MESSAGES.FOLDER_UPDATED);
       setIsRenameDialogOpen(false);
       setRenameItem(null);
       setNewName('');
-      // Invalidate relevant queries
+      // Invalidate all relevant queries to update file tree
+      queryClient.invalidateQueries({ queryKey: ['folders', id] });
       if (folderId) {
         queryClient.invalidateQueries({ queryKey: ['folder', folderId] });
-      } else {
-        queryClient.invalidateQueries({ queryKey: ['folders', id] });
       }
+    },
+    onError: (error: any) => {
+      toast.error(getErrorMessage(error));
     },
   });
 
   const renameFileMutation = useMutation({
     mutationFn: async ({ id, name }: { id: string; name: string }) => {
       console.log('✏️ Renaming file:', { id, name });
-      try {
-        const response = await api.patch(`/files?id=${id}`, { name });
-        console.log('✅ Rename file response:', response);
-        return response.data.data;
-      } catch (error: any) {
-        console.error('❌ Rename file API error:', {
-          error,
-          code: error.code,
-          message: error.message,
-          status: error.response?.status,
-          statusText: error.response?.statusText,
-          data: error.response?.data
-        });
-        throw error;
-      }
+      const response = await api.patch(`/files?id=${id}`, { name });
+      console.log('✅ Rename file response:', response);
+      return response.data.data;
     },
     onSuccess: () => {
+      toast.success('File renamed successfully');
       setIsRenameDialogOpen(false);
       setRenameItem(null);
       setNewName('');
-      // Invalidate relevant queries
+      // Invalidate all relevant queries to update both file tree and file list
       queryClient.invalidateQueries({ queryKey: ['files', id, folderId] });
+      queryClient.invalidateQueries({ queryKey: ['files', id] });
+      queryClient.invalidateQueries({ queryKey: ['folders', id] });
     },
     onError: (error: any) => {
       console.error('❌ Rename file error:', error);
-      let message = 'Failed to rename file';
-      
-      if (error.code === 'ERR_NETWORK') {
-        message = 'Network error. Please check your connection and try again.';
-      } else if (error.response?.status === 401) {
-        message = 'Authentication failed. Please log in again.';
-      } else if (error.response?.status === 404) {
-        message = 'File not found. It may have been deleted.';
-      } else if (error.response?.status === 403) {
-        message = 'You do not have permission to rename this file.';
-      } else if (error.response?.status === 409) {
-        message = 'A file with this name already exists.';
-      } else if (error.response?.data?.error) {
-        message = error.response.data.error;
-      } else if (error.message) {
-        message = error.message;
-      }
-      
       toast.error(getErrorMessage(error));
     },
   });
@@ -454,7 +430,7 @@ export const DataRoomView: React.FC = () => {
 
     const query = debouncedSearch.toLowerCase();
     
-    // Get ALL folders from data room (root level)
+    // Get ALL folders from data room
     const allFolders = Array.isArray(foldersData?.data) 
       ? foldersData.data 
       : (foldersData?.data?.folders || []);
@@ -476,13 +452,18 @@ export const DataRoomView: React.FC = () => {
     // Search in current view AND all subfolders
     const matchingFolders = searchInFolders(allFolders);
     
-    // For files, search only in current folder (would need API endpoint for global file search)
-    const matchingFiles = files.filter((file: FileType) => 
+    // Get ALL files from the entire data room (not just current folder)
+    const allFiles = Array.isArray(filesData?.data) 
+      ? filesData.data 
+      : (filesData?.data?.files || []);
+    
+    // Search globally across ALL files in the data room
+    const matchingFiles = allFiles.filter((file: FileType) => 
       file.name.toLowerCase().includes(query)
     );
 
     return { folders: matchingFolders, files: matchingFiles };
-  }, [debouncedSearch, folders, files, foldersData]);
+  }, [debouncedSearch, folders, files, foldersData, filesData]);
 
   const { folders: filteredFolders, files: filteredFiles } = searchAllContent;
 
@@ -651,32 +632,65 @@ export const DataRoomView: React.FC = () => {
       </div>
 
       {isLoading ? (
-        <div>Loading...</div>
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <Card key={i}>
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-3">
+                    <Skeleton className="h-10 w-10 rounded" />
+                    <div className="flex-1 space-y-2">
+                      <Skeleton className="h-4 w-3/4" />
+                      <Skeleton className="h-3 w-1/2" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
       ) : (
         <div className="space-y-6">
           {/* Empty State */}
           {filteredFolders.length === 0 && filteredFiles.length === 0 && (
             <Card>
               <CardContent className="p-12 text-center">
-                <Folder className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-xl font-semibold mb-2">No files or folders yet</h3>
-                <p className="text-muted-foreground mb-6">
-                  {folderId 
-                    ? 'Upload files or create folders to get started'
-                    : 'Create folders to organize your documents'}
-                </p>
-                <div className="flex gap-4 justify-center">
-                  <Button onClick={() => setIsCreateFolderDialogOpen(true)}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Create Folder
-                  </Button>
-                  {folderId && (
-                    <Button variant="outline" onClick={() => setIsUploadDialogOpen(true)}>
-                      <Upload className="mr-2 h-4 w-4" />
-                      Upload File
+                {debouncedSearch.trim() ? (
+                  // Show "No results found" when searching
+                  <>
+                    <Search className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+                    <h3 className="text-xl font-semibold mb-2">No results found</h3>
+                    <p className="text-muted-foreground mb-6">
+                      No files or folders match "{debouncedSearch}"
+                    </p>
+                    <Button variant="outline" onClick={() => setSearchInput('')}>
+                      Clear Search
                     </Button>
-                  )}
-                </div>
+                  </>
+                ) : (
+                  // Show empty state when not searching
+                  <>
+                    <Folder className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+                    <h3 className="text-xl font-semibold mb-2">No files or folders yet</h3>
+                    <p className="text-muted-foreground mb-6">
+                      {folderId 
+                        ? 'Upload files or create folders to get started'
+                        : 'Create folders to organize your documents'}
+                    </p>
+                    <div className="flex gap-4 justify-center">
+                      <Button onClick={() => setIsCreateFolderDialogOpen(true)}>
+                        <Plus className="mr-2 h-4 w-4" />
+                        Create Folder
+                      </Button>
+                      {folderId && (
+                        <Button variant="outline" onClick={() => setIsUploadDialogOpen(true)}>
+                          <Upload className="mr-2 h-4 w-4" />
+                          Upload File
+                        </Button>
+                      )}
+                    </div>
+                  </>
+                )}
               </CardContent>
             </Card>
           )}
