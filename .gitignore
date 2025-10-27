@@ -266,21 +266,6 @@ fixes/
 secrets/
 .secrets/
 
-# Personal configuration files with credentials
-YOUR_CONFIG.md
-VERCEL_DEPLOYMENT_GUIDE.md
-DEPLOY_CORS_FIX.md
-ERROR_REPORT.MD
-FIXES_APPLIED.md
-LICENSE
-CORS_FIX.md
-QUICK_START.md
-VERCEL_WORKFLOW.md
-START_HERE.md
-START_GUIDE.md
-SUPABASE_MANUAL_SETUP.md
-PROJECT_CHECKLIST.md
-
 # ============================================
 # NOTES
 # ============================================
