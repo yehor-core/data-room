@@ -402,35 +402,6 @@ DEBUG=true
 - Consistent security policies
 - Easy to maintain
 
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/amazing-feature`
-3. Commit changes: `git commit -m 'Add amazing feature'`
-4. Push to branch: `git push origin feature/amazing-feature`
-5. Open a Pull Request
-
-### Code Style
-
-- Use TypeScript for all new code
-- Follow React best practices
-- Use meaningful variable and function names
-- Add comments for complex logic
-- Write tests for new features
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🆘 Support
-
-If you encounter any issues or have questions:
-
-1. Check the troubleshooting section above
-2. Search existing issues in the repository
-3. Create a new issue with detailed information
-4. Include error messages, steps to reproduce, and environment details
-
 ## 🔮 Future Enhancements
 
 - [ ] Real-time collaboration features
