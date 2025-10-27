@@ -33,41 +33,38 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    console.log('🔍 [AuthContext] Initializing auth state');
+    
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('🔍 [AuthContext] Initial session:', session ? 'Found' : 'Not found');
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
-      
-      // Redirect to data rooms if user just logged in and is on login page
-      if (session && window.location.pathname === '/login') {
-        window.location.href = '/';
-      }
     });
 
     // Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('🔍 [AuthContext] Auth state changed:', event, session ? 'Session exists' : 'No session');
+      
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
       
       // Debug user information
       if (session?.user) {
-        console.log('🔍 User authenticated:', {
+        console.log('✅ [AuthContext] User authenticated:', {
           id: session.user.id,
           email: session.user.email,
           user_metadata: session.user.user_metadata
         });
         
-        // Show login success toast
-        toast.success(SUCCESS_MESSAGES.LOGIN_SUCCESS);
-      }
-      
-      // Redirect to data rooms after successful login
-      if (session && (window.location.pathname === '/login' || window.location.hash.includes('access_token'))) {
-        window.location.href = '/';
+        // Show login success toast only on SIGN_IN event
+        if (event === 'SIGNED_IN') {
+          toast.success(SUCCESS_MESSAGES.LOGIN_SUCCESS);
+        }
       }
     });
 

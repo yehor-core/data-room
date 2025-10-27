@@ -8,10 +8,20 @@ console.log('URL:', supabaseUrl);
 console.log('Anon Key:', supabaseAnonKey ? 'SET' : 'NOT SET');
 console.log('Anon Key length:', supabaseAnonKey?.length);
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: true,
+    storageKey: 'data-room-auth',
+    storage: window.localStorage,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+    flowType: 'pkce'
+  }
+});
 
 // Test the client
 console.log('🔍 Supabase client created:', !!supabase);
+console.log('🔍 Supabase auth storage key:', 'data-room-auth');
 
 // Database types
 export interface DataRoom {

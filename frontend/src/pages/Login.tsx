@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/Card';
 import { useAuth } from '../contexts/AuthContext';
@@ -6,7 +7,16 @@ import { useAuth } from '../contexts/AuthContext';
 export const Login: React.FC = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signInWithGoogle } = useAuth();
+  const { signInWithGoogle, user, session } = useAuth();
+  const navigate = useNavigate();
+
+  // Redirect to home if user is already logged in
+  useEffect(() => {
+    if (user && session) {
+      console.log('✅ [Login] User already authenticated, redirecting to home');
+      navigate('/', { replace: true });
+    }
+  }, [user, session, navigate]);
 
   const handleGoogleLogin = async () => {
     try {
