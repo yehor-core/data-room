@@ -124,11 +124,13 @@ export const SUCCESS_MESSAGES = {
   FOLDER_CREATED: 'Folder created successfully!',
   FOLDER_DELETED: 'Folder deleted successfully!',
   FOLDER_RENAMED: 'Folder renamed successfully!',
+  FOLDER_DUPLICATED: 'Folder duplicated successfully!',
   
   FILE_UPLOADED: 'File uploaded successfully!',
   FILE_DELETED: 'File deleted successfully!',
   FILE_RENAMED: 'File renamed successfully!',
   FILE_DOWNLOADED: 'File downloaded successfully!',
+  FILE_DUPLICATED: 'File duplicated successfully!',
   
   LOGIN_SUCCESS: 'Welcome back!',
   LOGOUT_SUCCESS: 'Logged out successfully!',
