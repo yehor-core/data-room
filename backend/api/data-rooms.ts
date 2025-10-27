@@ -188,15 +188,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       return;
 
     } else if (action === 'files' && id && typeof id === 'string') {
-      // Get files for a data room (root level files)
+      // Get files for a data room
+      // If 'all' query param is present, get ALL files, otherwise just root level
+      const getAllFiles = req.query.all === 'true';
+      
       const files = await prisma.file.findMany({
-        where: { 
+        where: getAllFiles ? {
+          // Get ALL files in the data room
+          dataRoomId: id,
+          dataRoom: {
+            ownerId: userId
+          }
+        } : {
+          // Get only root level files
           folder: {
             dataRoomId: id,
             dataRoom: {
               ownerId: userId
             },
-            parentId: null // Only root level files
+            parentId: null
           }
         },
         orderBy: { createdAt: 'desc' }

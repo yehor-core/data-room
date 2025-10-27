@@ -27,6 +27,14 @@ export const FileTree: React.FC<FileTreeProps> = memo(({
 }) => {
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
 
+  // Auto-expand all folders on initial load
+  useEffect(() => {
+    if (folders.length > 0 && expandedFolders.size === 0) {
+      const allFolderIds = new Set(folders.map(f => f.id));
+      setExpandedFolders(allFolderIds);
+    }
+  }, [folders, expandedFolders.size]);
+
   // Auto-expand/collapse folder when navigating
   useEffect(() => {
     if (currentPath) {
@@ -39,9 +47,8 @@ export const FileTree: React.FC<FileTreeProps> = memo(({
     }
   }, [currentPath]);
 
-  // Clear expansion state when folders list changes significantly
+  // Keep only folders that still exist when folders list changes
   useEffect(() => {
-    // Keep only folders that still exist
     const folderIds = new Set(folders.map(f => f.id));
     setExpandedFolders(prev => {
       const newSet = new Set<string>();
@@ -118,7 +125,8 @@ export const FileTree: React.FC<FileTreeProps> = memo(({
           style={{ paddingLeft: `${level * 16 + 8}px` }}
           onClick={() => {
             if (node.type === 'folder') {
-              onFolderClick(node.id);
+              // Toggle expansion instead of navigating
+              toggleExpanded(node.id);
             } else {
               onFileClick(node.id);
             }

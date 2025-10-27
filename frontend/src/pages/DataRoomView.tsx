@@ -85,7 +85,7 @@ export const DataRoomView: React.FC = () => {
     gcTime: 5 * 60 * 1000, // 5 minutes cache
   });
 
-  // Fetch files for data room or folder
+  // Fetch files for data room or folder (current view)
   const { data: filesData } = useQuery({
     queryKey: ['files', id, folderId],
     queryFn: async () => {
@@ -96,6 +96,19 @@ export const DataRoomView: React.FC = () => {
     enabled: !!id,
     staleTime: 1 * 60 * 1000, // 1 minute - files change more frequently
     gcTime: 3 * 60 * 1000, // 3 minutes cache
+  });
+
+  // Fetch ALL files from entire data room (for search and file tree)
+  const { data: allFilesData } = useQuery({
+    queryKey: ['allFiles', id],
+    queryFn: async () => {
+      const response = await api.get(`/data-rooms?id=${id}&action=files&all=true`);
+      console.log('📄 All files response:', response.data);
+      return response.data;
+    },
+    enabled: !!id,
+    staleTime: 1 * 60 * 1000,
+    gcTime: 3 * 60 * 1000,
   });
 
   const createFolderMutation = useMutation({
@@ -229,6 +242,7 @@ export const DataRoomView: React.FC = () => {
       // Invalidate all relevant queries to update both file tree and file list
       queryClient.invalidateQueries({ queryKey: ['files', id, folderId] });
       queryClient.invalidateQueries({ queryKey: ['files', id] });
+      queryClient.invalidateQueries({ queryKey: ['allFiles', id] });
       queryClient.invalidateQueries({ queryKey: ['folders', id] });
     },
     onError: (error: any) => {
@@ -318,6 +332,7 @@ export const DataRoomView: React.FC = () => {
       // Invalidate ALL related queries to refresh file tree
       queryClient.invalidateQueries({ queryKey: ['dataRoom', id] });
       queryClient.invalidateQueries({ queryKey: ['folders', id] });
+      queryClient.invalidateQueries({ queryKey: ['allFiles', id] });
       if (folderId) {
         queryClient.invalidateQueries({ queryKey: ['folder', folderId] });
         queryClient.invalidateQueries({ queryKey: ['files', id, folderId] });
@@ -354,10 +369,20 @@ export const DataRoomView: React.FC = () => {
   // Get current folder's contents
   const getCurrentFolderContents = () => {
     if (folderId) {
-      // Show contents of specific folder
+      // Show contents of specific folder ONLY (not subfolders)
+      const currentFolderFiles = folderData?.data?.files || [];
+      
+      // Debug: Log which files belong to this folder
+      console.log('📂 Current folder files:', {
+        folderId,
+        folderName: folderData?.data?.name,
+        fileCount: currentFolderFiles.length,
+        files: currentFolderFiles.map((f: any) => ({ name: f.name, folderId: f.folderId }))
+      });
+      
       return {
         folders: folderData?.data?.children || [],
-        files: folderData?.data?.files || []
+        files: currentFolderFiles
       };
     } else {
       // Show root level contents (only folders with no parent, NO FILES at root level)
@@ -381,9 +406,17 @@ export const DataRoomView: React.FC = () => {
       ? foldersData.data 
       : (foldersData?.data?.folders || []);
     
-    const allFiles = Array.isArray(filesData?.data) 
-      ? filesData.data 
-      : (filesData?.data?.files || []);
+    // Use allFilesData which contains ALL files from entire data room
+    const allFiles = Array.isArray(allFilesData?.data) 
+      ? allFilesData.data 
+      : (allFilesData?.data?.files || []);
+    
+    // Debug: Log File Tree data
+    console.log('🌳 File Tree data:', {
+      folderCount: allFolders.length,
+      fileCount: allFiles.length,
+      files: allFiles.map((f: any) => ({ name: f.name, folderId: f.folderId }))
+    });
     
     return {
       folders: allFolders,
@@ -466,10 +499,10 @@ export const DataRoomView: React.FC = () => {
     // Search in current view AND all subfolders
     const matchingFolders = searchInFolders(allFolders);
     
-    // Get ALL files from the entire data room (not just current folder)
-    const allFiles = Array.isArray(filesData?.data) 
-      ? filesData.data 
-      : (filesData?.data?.files || []);
+    // Get ALL files from the entire data room (including all subfolders)
+    const allFiles = Array.isArray(allFilesData?.data) 
+      ? allFilesData.data 
+      : (allFilesData?.data?.files || []);
     
     // Search globally across ALL files in the data room
     const matchingFiles = allFiles.filter((file: FileType) => 
@@ -477,7 +510,7 @@ export const DataRoomView: React.FC = () => {
     );
 
     return { folders: matchingFolders, files: matchingFiles };
-  }, [debouncedSearch, folders, files, foldersData, filesData]);
+  }, [debouncedSearch, folders, files, foldersData, allFilesData]);
 
   const { folders: filteredFolders, files: filteredFiles } = searchAllContent;
 
