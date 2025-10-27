@@ -47,10 +47,11 @@ api.interceptors.response.use(
 
     // Handle different types of errors
     if (error.response?.status === 401) {
-      console.log('🔐 [API] Unauthorized - clearing tokens and redirecting to login');
+      console.log('🔐 [API] Unauthorized - clearing tokens');
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      window.location.href = '/login';
+      // Note: Let the PrivateRoute component handle redirect to login
+      // Avoid using window.location.href to prevent redirect loops
     } else if (error.response?.status === 404) {
       console.error('🔍 [API] Endpoint not found - check if backend is deployed correctly');
     } else if (error.response?.status === 403) {
