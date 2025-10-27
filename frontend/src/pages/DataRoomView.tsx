@@ -483,7 +483,7 @@ export const DataRoomView: React.FC = () => {
     return { folders: matchingFolders, files: matchingFiles };
   }, [debouncedSearch, folders, files, foldersData]);
 
-  const { folders: filteredFolders, files: filteredFiles } = searchAllContent();
+  const { folders: filteredFolders, files: filteredFiles } = searchAllContent;
 
   const handleFolderClick = (folderId: string) => {
     navigate(`/data-rooms/${id}/folders/${folderId}`);
