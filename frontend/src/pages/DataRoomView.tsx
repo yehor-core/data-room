@@ -199,7 +199,7 @@ export const DataRoomView: React.FC = () => {
       return response.data.data;
     },
     onSuccess: () => {
-      toast.success(SUCCESS_MESSAGES.FOLDER_UPDATED);
+      toast.success(SUCCESS_MESSAGES.FOLDER_RENAMED);
       setIsRenameDialogOpen(false);
       setRenameItem(null);
       setNewName('');
