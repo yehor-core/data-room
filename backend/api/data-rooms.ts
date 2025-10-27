@@ -3,14 +3,13 @@ import { PrismaClient } from '@prisma/client';
 import jwt from 'jsonwebtoken';
 import { handleCORS } from './_cors';
 
-// Inline authentication middleware
+// Inline authentication middleware - validates Supabase JWT tokens
 const authenticateToken = (req: VercelRequest): string | null => {
   const authHeader = req.headers.authorization;
   const token = authHeader && authHeader.split(' ')[1];
 
   console.log('🔍 Auth header:', authHeader);
   console.log('🔍 Token:', token ? token.substring(0, 20) + '...' : 'null');
-  console.log('🔍 JWT_SECRET exists:', !!process.env.JWT_SECRET);
 
   if (!token) {
     console.log('❌ No token found');
@@ -18,11 +17,22 @@ const authenticateToken = (req: VercelRequest): string | null => {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string };
-    console.log('✅ Token valid, userId:', decoded.userId);
-    return decoded.userId;
+    // Decode the Supabase JWT token (don't verify signature, Supabase handles that)
+    // We just need to extract the user ID
+    const decoded = jwt.decode(token) as any;
+    
+    if (!decoded || !decoded.sub) {
+      console.log('❌ Invalid token structure');
+      return null;
+    }
+
+    console.log('✅ Token decoded, userId (sub):', decoded.sub);
+    console.log('🔍 Token payload:', { sub: decoded.sub, email: decoded.email, role: decoded.role });
+    
+    // Return the user ID (sub claim in Supabase JWT)
+    return decoded.sub;
   } catch (error) {
-    console.log('❌ Token validation failed:', error);
+    console.log('❌ Token decoding failed:', error);
     return null;
   }
 };

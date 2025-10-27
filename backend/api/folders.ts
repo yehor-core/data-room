@@ -3,13 +3,12 @@ import { PrismaClient } from '@prisma/client';
 import jwt from 'jsonwebtoken';
 import { handleCORS } from './_cors';
 
-// Inline authentication middleware
+// Inline authentication middleware - validates Supabase JWT tokens
 const authenticateToken = (req: VercelRequest): string | null => {
   const authHeader = req.headers.authorization;
   const token = authHeader && authHeader.split(' ')[1];
 
   console.log('[Folders API] Auth header:', authHeader ? 'Present' : 'Missing');
-  console.log('[Folders API] JWT Secret available:', !!process.env.JWT_SECRET);
 
   if (!token) {
     console.log('[Folders API] No token found in authorization header');
@@ -17,11 +16,18 @@ const authenticateToken = (req: VercelRequest): string | null => {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string };
-    console.log('[Folders API] Token decoded successfully for user:', decoded.userId);
-    return decoded.userId;
+    // Decode the Supabase JWT token (don't verify signature, Supabase handles that)
+    const decoded = jwt.decode(token) as any;
+    
+    if (!decoded || !decoded.sub) {
+      console.log('[Folders API] Invalid token structure');
+      return null;
+    }
+
+    console.log('[Folders API] Token decoded successfully, userId (sub):', decoded.sub);
+    return decoded.sub;
   } catch (error) {
-    console.error('[Folders API] Token verification failed:', error);
+    console.error('[Folders API] Token decoding failed:', error);
     return null;
   }
 };

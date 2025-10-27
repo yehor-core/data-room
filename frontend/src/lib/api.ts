@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { supabase } from './supabase';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
 
@@ -14,11 +15,17 @@ export const api = axios.create({
 
 // Add token to requests if available
 api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+  async (config) => {
+    // Get the current session from Supabase
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (session?.access_token) {
+      console.log('🔑 [API] Adding Supabase access token to request');
+      config.headers.Authorization = `Bearer ${session.access_token}`;
+    } else {
+      console.log('⚠️ [API] No Supabase session found');
     }
+    
     return config;
   },
   (error) => Promise.reject(error)
