@@ -52,6 +52,7 @@ function getPrismaClient() {
 const serializeBigInt = (obj: any): any => {
   if (obj === null || obj === undefined) return obj;
   if (typeof obj === 'bigint') return obj.toString();
+  if (obj instanceof Date) return obj.toISOString();
   if (Array.isArray(obj)) return obj.map(serializeBigInt);
   if (typeof obj === 'object') {
     const result: any = {};
@@ -265,6 +266,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       if (!folder) {
         res.status(404).json({ error: 'Folder not found' });
+        return;
+      }
+
+      // Check for duplicate folder name in the same parent folder
+      const existingFolder = await prisma.folder.findFirst({
+        where: {
+          name,
+          dataRoomId: folder.dataRoomId,
+          parentId: folder.parentId,
+          NOT: { id: folder.id } // Exclude current folder
+        }
+      });
+
+      if (existingFolder) {
+        res.status(409).json({ error: 'A folder with this name already exists in this location' });
         return;
       }
 

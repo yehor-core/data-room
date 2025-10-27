@@ -132,6 +132,8 @@ export const DataRooms: React.FC = () => {
     e.preventDefault();
     if (newDataRoomName.trim()) {
       createMutation.mutate(newDataRoomName);
+    } else {
+      toast.error('Name is required');
     }
   };
 

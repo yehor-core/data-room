@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
+import { toast } from '../lib/toast';
+import { SUCCESS_MESSAGES } from '../lib/errorMessages';
 
 interface AuthContextType {
   user: User | null;
@@ -58,6 +60,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           email: session.user.email,
           user_metadata: session.user.user_metadata
         });
+        
+        // Show login success toast
+        toast.success(SUCCESS_MESSAGES.LOGIN_SUCCESS);
       }
       
       // Redirect to data rooms after successful login

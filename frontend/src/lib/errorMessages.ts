@@ -132,7 +132,7 @@ export const SUCCESS_MESSAGES = {
   FILE_DOWNLOADED: 'File downloaded successfully!',
   FILE_DUPLICATED: 'File duplicated successfully!',
   
-  LOGIN_SUCCESS: 'Welcome back!',
+  LOGIN_SUCCESS: 'Successfully logged in!',
   LOGOUT_SUCCESS: 'Logged out successfully!',
   SIGNUP_SUCCESS: 'Account created successfully!',
 } as const;

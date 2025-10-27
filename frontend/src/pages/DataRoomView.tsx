@@ -108,13 +108,14 @@ export const DataRoomView: React.FC = () => {
       return response.data.data;
     },
     onSuccess: () => {
+      toast.success(SUCCESS_MESSAGES.FOLDER_CREATED);
       setIsCreateFolderDialogOpen(false);
       setNewFolderName('');
-      // Invalidate relevant queries
+      // Invalidate ALL related queries to refresh file tree
+      queryClient.invalidateQueries({ queryKey: ['dataRoom', id] });
+      queryClient.invalidateQueries({ queryKey: ['folders', id] });
       if (folderId) {
         queryClient.invalidateQueries({ queryKey: ['folder', folderId] });
-      } else {
-        queryClient.invalidateQueries({ queryKey: ['folders', id] });
       }
     },
     onError: (error: any) => {
