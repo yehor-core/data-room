@@ -110,7 +110,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: 'https://data-room-196e.vercel.app',
+          redirectTo: process.env.REACT_APP_SITE_URL || 'http://localhost:3000',
         },
       });
       if (error) throw error;
