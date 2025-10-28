@@ -14,8 +14,8 @@ export const Layout: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <header className="bg-white border-b border-gray-200">
+    <div className="min-h-screen bg-background text-foreground flex flex-col">
+      <header className="bg-card border-b border-border">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
             <Link to="/" className="flex items-center gap-2 font-bold text-lg sm:text-xl text-primary">
@@ -46,7 +46,7 @@ export const Layout: React.FC = () => {
         <Outlet />
       </main>
 
-      <footer className="bg-white border-t border-gray-200">
+      <footer className="bg-card border-t border-border">
         <div className="container mx-auto px-4 py-6">
           <p className="text-center text-sm text-muted-foreground">
             © 2025 Data Room. Secure document management.
