@@ -23,7 +23,6 @@ import {
   UploadFileDialog,
   RenameDialog,
 } from '@/components/Dialogs';
-import EnvTest from '@/components/EnvTest';
 
 type ViewMode = 'grid' | 'list';
 
@@ -109,7 +108,6 @@ export function DataRoomRoot() {
 
   return (
     <>
-      <EnvTest />
       <DataRoomLayout
         title={dataRoomQuery.data?.data.name || 'Data Room'}
         items={items}
