@@ -31,6 +31,15 @@ export const DataRoomView: React.FC = () => {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; item: { id: string; name: string; type: 'folder' | 'file' } } | null>(null);
   
+  // Redirect if trying to access a temporary data room
+  useEffect(() => {
+    if (id?.startsWith('temp-')) {
+      console.warn('⚠️ Attempted to access temporary data room, redirecting...');
+      toast.error('This data room is still being created. Please wait and try again.');
+      navigate('/data-rooms');
+    }
+  }, [id, navigate]);
+  
   // Debounce search input (wait 300ms after last keystroke)
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -55,7 +64,7 @@ export const DataRoomView: React.FC = () => {
       const response = await api.get(`/data-rooms`, { params: { id } });
       return response.data;
     },
-    enabled: !!id && !folderId,
+    enabled: !!id && !folderId && !id?.startsWith('temp-'),
     staleTime: 2 * 60 * 1000, // 2 minutes
     gcTime: 5 * 60 * 1000, // 5 minutes cache
   });
@@ -67,7 +76,7 @@ export const DataRoomView: React.FC = () => {
       const response = await api.get(`/folders`, { params: { id: folderId } });
       return response.data;
     },
-    enabled: !!folderId,
+    enabled: !!folderId && !id?.startsWith('temp-'),
     staleTime: 2 * 60 * 1000, // 2 minutes
     gcTime: 5 * 60 * 1000, // 5 minutes cache
   });
@@ -80,7 +89,7 @@ export const DataRoomView: React.FC = () => {
       console.log('📁 Folders response:', response.data);
       return response.data;
     },
-    enabled: !!id,
+    enabled: !!id && !id?.startsWith('temp-'),
     staleTime: 2 * 60 * 1000, // 2 minutes
     gcTime: 5 * 60 * 1000, // 5 minutes cache
   });
@@ -94,7 +103,7 @@ export const DataRoomView: React.FC = () => {
       console.log('📄 Files response:', response.data);
       return response.data;
     },
-    enabled: !!id,
+    enabled: !!id && !id?.startsWith('temp-'),
     staleTime: 1 * 60 * 1000, // 1 minute - files change more frequently
     gcTime: 3 * 60 * 1000, // 3 minutes cache
   });
@@ -107,7 +116,7 @@ export const DataRoomView: React.FC = () => {
       console.log('📄 All files response:', response.data);
       return response.data;
     },
-    enabled: !!id,
+    enabled: !!id && !id?.startsWith('temp-'),
     staleTime: 1 * 60 * 1000,
     gcTime: 3 * 60 * 1000,
   });
