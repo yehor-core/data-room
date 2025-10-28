@@ -18,7 +18,8 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // Trust proxy for Vercel deployment (required for rate limiting)
-app.set('trust proxy', true);
+// Trust only the first proxy (Vercel's proxy)
+app.set('trust proxy', 1);
 
 // CORS Configuration
 const allowedOrigins = process.env.ALLOWED_ORIGINS
@@ -32,11 +33,13 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
 console.log('🔧 Environment:', process.env.NODE_ENV || 'development');
 console.log('🔧 Allowed origins:', allowedOrigins);
 
-// Rate limiting
+// Rate limiting with proper Vercel configuration
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // limit each IP to 100 requests per windowMs
   message: 'Too many requests from this IP, please try again later.',
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
 });
 
 // Middleware

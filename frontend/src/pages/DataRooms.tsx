@@ -228,15 +228,23 @@ export const DataRooms: React.FC = () => {
                     {dataRoom._count?.folders ?? 0} {dataRoom._count?.folders === 1 ? 'folder' : 'folders'}
                   </span>
                   <div className="flex gap-2">
-                    <Link to={`/data-rooms/${dataRoom.id}`}>
-                      <Button variant="outline" size="sm">
-                        Open
+                    {/* Don't allow opening data rooms with temporary IDs */}
+                    {dataRoom.id.startsWith('temp-') ? (
+                      <Button variant="outline" size="sm" disabled>
+                        Creating...
                       </Button>
-                    </Link>
+                    ) : (
+                      <Link to={`/data-rooms/${dataRoom.id}`}>
+                        <Button variant="outline" size="sm">
+                          Open
+                        </Button>
+                      </Link>
+                    )}
                     <Button
                       variant="destructive"
                       size="sm"
                       onClick={() => handleDelete(dataRoom.id)}
+                      disabled={dataRoom.id.startsWith('temp-')}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
