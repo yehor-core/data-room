@@ -22,7 +22,6 @@ import { Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { toast } from '../lib/toast';
 import { SUCCESS_MESSAGES } from '../lib/errorMessages';
-import { api } from '../lib/api';
 import { User } from '../types'; // Import your own User type
 
 /**
@@ -75,6 +74,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const fetchUser = async () => {
       console.log('[AuthContext] fetchUser: Attempting to fetch user profile...');
       try {
+        const { api } = await import('../lib/api'); // Lazy import
         const { data } = await api.get('/auth/me');
         console.log('[AuthContext] fetchUser: /api/auth/me response', data);
         if (data.success) {
