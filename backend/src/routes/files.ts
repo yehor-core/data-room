@@ -9,6 +9,39 @@ import { uploadFile, deleteFile as deleteSupabaseFile, getSignedUrl } from '../u
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
+router.get('/', asyncHandler(async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    const { dataRoomId, folderId } = req.query;
+    const userId = req.user?.id;
+
+    if (!dataRoomId && !folderId) {
+        return next(createError(400, 'Either dataRoomId or folderId is required'));
+    }
+
+    const where: {
+        userId: string | undefined;
+        dataRoomId?: string;
+        folderId?: string;
+    } = { userId };
+
+    if (folderId) {
+        where.folderId = folderId as string;
+    } else if (dataRoomId) {
+        where.dataRoomId = dataRoomId as string;
+    }
+
+    const files = await prisma.file.findMany({
+        where,
+        orderBy: {
+            createdAt: 'desc',
+        },
+    });
+
+    res.status(200).json({
+        success: true,
+        data: files,
+    });
+}));
+
 router.get('/:id/view', asyncHandler(async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     const { id } = req.params;
     const userId = req.user?.id;
@@ -34,7 +67,7 @@ router.post(
   upload.single('file'),
   asyncHandler(async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     const userId = req.user?.id;
-    const { dataRoomId, folderId } = req.body;
+    const { dataRoomId, folderId, name } = req.body;
     const file = req.file;
 
     if (!userId) {
@@ -50,11 +83,12 @@ router.post(
     }
 
     try {
-      const filePath = await uploadFile(file.buffer, file.originalname, `uploads/${userId}`);
+      const finalName = name || file.originalname;
+      const filePath = await uploadFile(file.buffer, finalName, `uploads/${userId}`);
 
       const newFile = await prisma.file.create({
         data: {
-          name: file.originalname,
+          name: finalName,
           dataRoomId,
           folderId: folderId || null,
           userId,

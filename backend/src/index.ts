@@ -10,6 +10,7 @@ import { authRoutes } from './routes/auth';
 import { dataRoomRoutes } from './routes/dataRooms';
 import { folderRoutes } from './routes/folders';
 import fileRoutes from './routes/files';
+import { authenticateToken } from './middleware/auth';
 
 const app = express();
 const PORT = config.port;
@@ -59,9 +60,9 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Routes
 app.use('/api/auth', authRoutes);
-app.use('/api/data-rooms', dataRoomRoutes);
-app.use('/api/folders', folderRoutes);
-app.use('/api/files', fileRoutes);
+app.use('/api/data-rooms', authenticateToken, dataRoomRoutes);
+app.use('/api/folders', authenticateToken, folderRoutes);
+app.use('/api/files', authenticateToken, fileRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

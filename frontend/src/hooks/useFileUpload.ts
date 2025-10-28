@@ -32,28 +32,14 @@ export const useFileUpload = (dataRoomId?: string, folderId?: string, folders?: 
       return;
     }
 
-    let targetFolderId = folderId;
-    
-    // If not in a folder, try to use the first folder
-    if (!targetFolderId) {
-      const rootFolders = folders || [];
-      if (rootFolders.length === 0) {
-        toast.warning('Please create a folder first before uploading files');
-        return;
+    uploadFileMutation.mutate(
+      { file: selectedFile, name: fileName, folderId: folderId || null },
+      {
+        onSuccess: () => {
+          close();
+        },
       }
-      targetFolderId = rootFolders[0].id;
-    }
-    
-    if (targetFolderId) {
-      uploadFileMutation.mutate(
-        { file: selectedFile, name: fileName, folderId: targetFolderId },
-        {
-          onSuccess: () => {
-            close();
-          }
-        }
-      );
-    }
+    );
   };
 
   return {

@@ -52,7 +52,7 @@ export function DataRoomRoot() {
 
   const filteredFolders = useMemo(
     () =>
-      foldersQuery.data?.data.filter((folder: any) =>
+      foldersQuery.data?.data.folders?.filter((folder: any) =>
         folder.name.toLowerCase().includes(debouncedSearch.toLowerCase())
       ) || [],
     [foldersQuery.data, debouncedSearch]
@@ -60,7 +60,7 @@ export function DataRoomRoot() {
 
   const filteredFiles = useMemo(
     () =>
-      filesQuery.data?.data.filter((file: any) =>
+      filesQuery.data?.data?.filter((file: any) =>
         file.name.toLowerCase().includes(debouncedSearch.toLowerCase())
       ) || [],
     [filesQuery.data, debouncedSearch]

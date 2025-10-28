@@ -107,7 +107,7 @@ export const useDataRoomMutations = ({ dataRoomId, folderId }: UseDataRoomMutati
   });
 
   const uploadFileMutation = useMutation({
-    mutationFn: async ({ file, name, folderId }: { file: File; name: string; folderId: string }) => {
+    mutationFn: async ({ file, name, folderId }: { file: File; name: string; folderId: string | null }) => {
       const toastId = toast.loading(LOADING_MESSAGES.UPLOADING_FILE);
       
       try {
@@ -119,7 +119,10 @@ export const useDataRoomMutations = ({ dataRoomId, folderId }: UseDataRoomMutati
         const formData = new FormData();
         formData.append('file', file);
         formData.append('name', name);
-        formData.append('folderId', folderId);
+        if (folderId) {
+          formData.append('folderId', folderId);
+        }
+        formData.append('dataRoomId', dataRoomId as string);
         
         const response = await api.post('/files/upload', formData, {
           headers: {

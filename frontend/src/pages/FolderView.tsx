@@ -41,7 +41,7 @@ export function FolderView() {
 
   const { handleFileView } = useFileViewer();
   const createFolder = useCreateFolder(id, folderId);
-  const uploadFile = useFileUpload(id, folderId, foldersQuery.data?.data);
+  const uploadFile = useFileUpload(id, folderId, folderQuery.data?.data.children);
   const renameItem = useItemRename(id, folderId);
   const { deleteFolderMutation, deleteFileMutation } = useDataRoomMutations({ dataRoomId: id, folderId });
   
@@ -53,18 +53,18 @@ export function FolderView() {
   
   const filteredFolders = useMemo(
     () =>
-      foldersQuery.data?.data.filter((folder: any) =>
+      folderQuery.data?.data.children?.filter((folder: any) =>
         folder.name.toLowerCase().includes(debouncedSearch.toLowerCase())
       ) || [],
-    [foldersQuery.data, debouncedSearch]
+    [folderQuery.data, debouncedSearch]
   );
 
   const filteredFiles = useMemo(
     () =>
-      filesQuery.data?.data.filter((file: any) =>
+      folderQuery.data?.data.files?.filter((file: any) =>
         file.name.toLowerCase().includes(debouncedSearch.toLowerCase())
       ) || [],
-    [filesQuery.data, debouncedSearch]
+    [folderQuery.data, debouncedSearch]
   );
 
   const items = useMemo(() => {
@@ -151,7 +151,7 @@ export function FolderView() {
             />
             <FilesGrid
               files={items.filter((item): item is Extract<DataRoomItem, { type: 'file' }> => item.type === 'file')}
-              folders={foldersQuery.data?.data || []}
+              folders={folderQuery.data?.data.children || []}
               isSearching={!!debouncedSearch.trim()}
               searchQuery={debouncedSearch}
               onView={handleFileClick}
