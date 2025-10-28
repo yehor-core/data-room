@@ -31,7 +31,10 @@ router.get('/', asyncHandler(async (req: AuthenticatedRequest, res: Response) =>
       },
     },
   });
-  res.status(200).json(dataRooms);
+  res.status(200).json({
+    success: true,
+    data: dataRooms,
+  });
 }));
 
 // Create a new data room
@@ -55,7 +58,10 @@ router.post('/', validateDataRoom, asyncHandler(async (req: AuthenticatedRequest
   const newDataRoom = await prisma.dataRoom.create({
     data: { name, ownerId: userId },
   });
-  res.status(201).json(newDataRoom);
+  res.status(201).json({
+    success: true,
+    data: newDataRoom,
+  });
 }));
 
 // Get a single data room by ID
@@ -76,7 +82,10 @@ router.get('/:id', asyncHandler(async (req: AuthenticatedRequest, res: Response,
   if (!dataRoom) {
     return next(createError('Data room not found', 404));
   }
-  res.status(200).json(dataRoom);
+  res.status(200).json({
+    success: true,
+    data: dataRoom,
+  });
 }));
 
 // Update a data room
@@ -102,7 +111,10 @@ router.put('/:id', validateDataRoom, asyncHandler(async (req: AuthenticatedReque
     where: { id },
     data: { name },
   });
-  res.status(200).json(updatedDataRoom);
+  res.status(200).json({
+    success: true,
+    data: updatedDataRoom,
+  });
 }));
 
 // Delete a data room
@@ -119,7 +131,7 @@ router.delete('/:id', asyncHandler(async (req: AuthenticatedRequest, res: Respon
   }
 
   await prisma.dataRoom.delete({ where: { id } });
-  res.status(204).send();
+  res.status(200).json({ success: true });
 }));
 
 export { router as dataRoomRoutes };
