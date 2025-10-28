@@ -70,27 +70,35 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    console.log('[AuthContext] useEffect triggered.');
+
     const fetchUser = async () => {
+      console.log('[AuthContext] fetchUser: Attempting to fetch user profile...');
       try {
         const { data } = await api.get('/auth/me');
+        console.log('[AuthContext] fetchUser: /api/auth/me response', data);
         if (data.success) {
           setUser(data.data);
         } else {
           setUser(null);
         }
       } catch (error) {
+        console.error('[AuthContext] fetchUser: Error fetching user profile', error);
         setUser(null);
       }
     };
 
     // Get initial session and user
+    console.log('[AuthContext] Checking initial session...');
     supabase.auth.getSession().then(async ({ data: { session } }) => {
+      console.log('[AuthContext] Initial session result:', session);
       setSession(session);
       if (session) {
         await fetchUser();
       } else {
         setUser(null);
       }
+      console.log('[AuthContext] Setting loading to false after initial check.');
       setLoading(false);
     });
 
@@ -98,6 +106,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log(`[AuthContext] onAuthStateChange event: ${event}`, session);
       setSession(session);
       
       if (session) {
@@ -105,6 +114,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       } else {
         setUser(null);
       }
+      console.log('[AuthContext] Setting loading to false after auth state change.');
       setLoading(false);
       
       if (session?.user) {
