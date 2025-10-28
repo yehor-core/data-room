@@ -59,6 +59,11 @@ router.get('/:id/contents', asyncHandler(async (req: AuthenticatedRequest, res: 
   });
 
   if (!folder) {
+    // Check if the folder exists at all, to differentiate between not found and not authorized
+    const folderExists = await prisma.folder.findUnique({ where: { id } });
+    if (folderExists) {
+      throw createError('You are not authorized to access this folder', 403);
+    }
     throw createError('Folder not found', 404);
   }
 

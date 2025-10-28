@@ -80,7 +80,7 @@ export const useDataRoomMutations = ({ dataRoomId, folderId }: UseDataRoomMutati
 
   const renameFolderMutation = useMutation({
     mutationFn: async ({ id, name }: { id: string; name: string }) => {
-      const response = await api.put(`/folders/${id}`, { name });
+      const response = await api.patch(`/folders/${id}/rename`, { name });
       return response.data.data;
     },
     onSuccess: () => {
