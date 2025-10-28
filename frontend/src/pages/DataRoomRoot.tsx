@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { DataTable } from '@/components/DataTable';
 import {
@@ -23,6 +23,7 @@ import {
   UploadFileDialog,
   RenameDialog,
 } from '@/components/Dialogs';
+import { fileTreeEvents } from '@/lib/events';
 
 type ViewMode = 'grid' | 'list';
 
@@ -61,7 +62,7 @@ export function DataRoomRoot() {
   const filteredFiles = useMemo(
     () =>
       filesQuery.data?.data?.filter((file: any) =>
-        file.name.toLowerCase().includes(debouncedSearch.toLowerCase())
+        !file.folderId && file.name.toLowerCase().includes(debouncedSearch.toLowerCase())
       ) || [],
     [filesQuery.data, debouncedSearch]
   );
@@ -88,6 +89,16 @@ export function DataRoomRoot() {
     renameItem.open({ id: item.id, name: item.name, type: item.type });
   }, [renameItem]);
 
+  useEffect(() => {
+    const unsubscribeRename = fileTreeEvents.subscribe('renameItem', handleRename);
+    const unsubscribeDelete = fileTreeEvents.subscribe('deleteItem', handleDelete);
+
+    return () => {
+      unsubscribeRename();
+      unsubscribeDelete();
+    };
+  }, [handleRename, handleDelete]);
+
   const columns = useMemo(
     () => getColumns(handleFileClick, handleRename, handleDelete),
     [handleFileClick, handleRename, handleDelete]
@@ -107,80 +118,82 @@ export function DataRoomRoot() {
   };
 
   return (
-    <>
-      <DataRoomLayout
-        title={dataRoomQuery.data?.data.name || 'Data Room'}
-        items={items}
-        viewMode={viewMode}
-        onViewModeChange={setViewMode}
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        isLoading={isLoading}
-        onCreateFolder={createFolder.open}
-        onUpload={uploadFile.open}
-        itemToDelete={itemToDelete}
-        onConfirmDelete={onConfirmDelete}
-      >
-        {items.length === 0 ? (
-          <EmptyState 
-            isSearching={!!debouncedSearch.trim()} 
-            searchQuery={debouncedSearch}
-            isInFolder={false}
-            onCreateFolder={createFolder.open}
-            onUploadFile={uploadFile.open}
-            onClearSearch={() => setSearchQuery('')}
-          />
-        ) : viewMode === 'grid' ? (
-          <>
-            <FoldersGrid
-              folders={items.filter((item): item is Extract<DataRoomItem, { type: 'folder' }> => item.type === 'folder')}
-              dataRoomId={id!}
-              onRename={handleRename}
-              onDelete={handleDelete}
-            />
-            <FilesGrid
-              files={items.filter((item): item is Extract<DataRoomItem, { type: 'file' }> => item.type === 'file')}
-              folders={foldersQuery.data?.data || []}
-              isSearching={!!debouncedSearch.trim()}
+    <div className="flex h-screen overflow-hidden">
+      <main className="flex-1 p-4 overflow-y-auto">
+        <DataRoomLayout
+          title={dataRoomQuery.data?.data.name || 'Data Room'}
+          items={items}
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          isLoading={isLoading}
+          onCreateFolder={createFolder.open}
+          onUpload={uploadFile.open}
+          itemToDelete={itemToDelete}
+          onConfirmDelete={onConfirmDelete}
+        >
+          {items.length === 0 ? (
+            <EmptyState 
+              isSearching={!!debouncedSearch.trim()} 
               searchQuery={debouncedSearch}
-              onView={handleFileClick}
-              onRename={handleRename}
-              onDelete={handleDelete}
+              isInFolder={false}
+              onCreateFolder={createFolder.open}
+              onUploadFile={uploadFile.open}
+              onClearSearch={() => setSearchQuery('')}
             />
-          </>
-        ) : (
-          <DataTable columns={columns} data={items} />
-        )}
-      </DataRoomLayout>
+          ) : viewMode === 'grid' ? (
+            <>
+              <FoldersGrid
+                folders={items.filter((item): item is Extract<DataRoomItem, { type: 'folder' }> => item.type === 'folder')}
+                dataRoomId={id!}
+                onRename={handleRename}
+                onDelete={handleDelete}
+              />
+              <FilesGrid
+                files={items.filter((item): item is Extract<DataRoomItem, { type: 'file' }> => item.type === 'file')}
+                folders={foldersQuery.data?.data || []}
+                isSearching={!!debouncedSearch.trim()}
+                searchQuery={debouncedSearch}
+                onView={handleFileClick}
+                onRename={handleRename}
+                onDelete={handleDelete}
+              />
+            </>
+          ) : (
+            <DataTable columns={columns} data={items} />
+          )}
+        </DataRoomLayout>
 
-      <CreateFolderDialog
-        isOpen={createFolder.isOpen}
-        onOpenChange={(open) => !open && createFolder.close()}
-        folderName={createFolder.folderName}
-        onFolderNameChange={createFolder.setFolderName}
-        onSubmit={createFolder.handleSubmit}
-        isPending={createFolder.isPending}
-      />
-      <UploadFileDialog
-        isOpen={uploadFile.isOpen}
-        onOpenChange={(open) => !open && uploadFile.close()}
-        selectedFile={uploadFile.selectedFile}
-        fileName={uploadFile.fileName}
-        onFileNameChange={uploadFile.setFileName}
-        onFileSelect={uploadFile.handleFileSelect}
-        onSubmit={uploadFile.handleSubmit}
-        isPending={uploadFile.isPending}
-      />
-      <RenameDialog
-        isOpen={renameItem.isOpen}
-        onOpenChange={(open) => !open && renameItem.close()}
-        itemType={renameItem.item?.type || null}
-        newName={renameItem.newName}
-        onNewNameChange={renameItem.setNewName}
-        onSubmit={renameItem.handleSubmit}
-        isPending={renameItem.isPending}
-      />
-    </>
+        <CreateFolderDialog
+          isOpen={createFolder.isOpen}
+          onOpenChange={(open) => !open && createFolder.close()}
+          folderName={createFolder.folderName}
+          onFolderNameChange={createFolder.setFolderName}
+          onSubmit={createFolder.handleSubmit}
+          isPending={createFolder.isPending}
+        />
+        <UploadFileDialog
+          isOpen={uploadFile.isOpen}
+          onOpenChange={(open) => !open && uploadFile.close()}
+          selectedFile={uploadFile.selectedFile}
+          fileName={uploadFile.fileName}
+          onFileNameChange={uploadFile.setFileName}
+          onFileSelect={uploadFile.handleFileSelect}
+          onSubmit={uploadFile.handleSubmit}
+          isPending={uploadFile.isPending}
+        />
+        <RenameDialog
+          isOpen={renameItem.isOpen}
+          onOpenChange={(open) => !open && renameItem.close()}
+          itemType={renameItem.item?.type || null}
+          newName={renameItem.newName}
+          onNewNameChange={renameItem.setNewName}
+          onSubmit={renameItem.handleSubmit}
+          isPending={renameItem.isPending}
+        />
+      </main>
+    </div>
   );
 }
 

@@ -57,13 +57,11 @@ api.interceptors.response.use(
 );
 
 export const getFileUrl = (fileId: string) => {
-  // We don't use the api instance here because we want the raw response
-  // to get the redirect URL from the location header.
-  // The backend will handle authentication via cookies or headers passed by the browser.
-  return axios.get(`${API_URL}/files/${fileId}/view`, {
-    maxRedirects: 0, // Prevent axios from following the redirect automatically
+  // We use the api instance here to ensure the auth token is included.
+  return api.get(`/files/${fileId}/view`, {
+    maxRedirects: 0,
     validateStatus: function (status) {
-      return status >= 200 && status < 400; // Accept redirects as valid responses
+      return status >= 200 && status < 400;
     },
   });
 };

@@ -5,6 +5,11 @@ import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import { config } from './config';
 
+// Fix for BigInt serialization
+(BigInt.prototype as any).toJSON = function () {
+  return this.toString();
+};
+
 import { errorHandler } from './middleware/errorHandler';
 import { authRoutes } from './routes/auth';
 import { dataRoomRoutes } from './routes/dataRooms';

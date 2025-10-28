@@ -46,17 +46,21 @@ export const uploadFile = async (
     throw new Error(`Failed to upload file: ${error.message}`);
   }
 
-  const { data: { publicUrl } } = supabase.storage
-    .from('data-room-files')
-    .getPublicUrl(filePath);
-
-  return publicUrl;
+  return filePath;
 };
 
 export const getSignedUrl = async (filePath: string): Promise<string> => {
+    let path = filePath;
+    const bucketName = 'data-room-files';
+    
+    // Check if the filePath is a full URL and extract the path if it is
+    if (path.includes(bucketName)) {
+        path = path.substring(path.indexOf(bucketName) + bucketName.length + 1);
+    }
+    
     const { data, error } = await supabase.storage
-        .from('data-room-files')
-        .createSignedUrl(filePath, 60); // 60 seconds expiry
+        .from(bucketName)
+        .createSignedUrl(path, 60); // 60 seconds expiry
 
     if (error) {
         throw new Error(`Failed to create signed URL: ${error.message}`);

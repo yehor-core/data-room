@@ -1,5 +1,5 @@
-import React from 'react';
-import { FileText } from 'lucide-react';
+import React, { useState } from 'react';
+import { FileText, Edit, Trash2, Eye } from 'lucide-react';
 import { Card, CardContent } from '../ui/Card';
 import { File as FileType, Folder as FolderType } from '../../types';
 import { formatDate, formatBytes } from '../../lib/utils';
@@ -25,19 +25,31 @@ export const FilesGrid: React.FC<FilesGridProps> = ({
   onRename,
   onDelete,
 }) => {
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; item: DataRoomItem | null }>({ x: 0, y: 0, item: null });
+
+  const handleContextMenu = (e: React.MouseEvent, item: DataRoomItem) => {
+    e.preventDefault();
+    setContextMenu({ x: e.clientX, y: e.clientY, item });
+  };
+
+  const closeContextMenu = () => {
+    setContextMenu({ x: 0, y: 0, item: null });
+  };
+
   if (files.length === 0) {
     return null;
   }
 
   return (
-    <div>
+    <div onMouseLeave={closeContextMenu}>
       <h2 className="text-xl font-semibold mb-4">Files</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {files.map((file) => (
-          <Card key={file.id} className="hover:shadow-md transition-shadow">
-            <CardContent className="p-4">
-              <div className="flex justify-between items-center">
-                <div 
+          <div key={file.id} onContextMenu={(e) => handleContextMenu(e, file)}>
+            <Card className="hover:shadow-md transition-shadow">
+              <CardContent className="p-4">
+                <div className="flex justify-between items-center">
+                  <div 
                   className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer"
                   onClick={() => onView(file)}
                 >
@@ -61,8 +73,43 @@ export const FilesGrid: React.FC<FilesGridProps> = ({
               </div>
             </CardContent>
           </Card>
+          </div>
         ))}
       </div>
+      {contextMenu.item && (
+        <div
+          className="fixed z-50 bg-popover border border-border rounded-md shadow-md p-1"
+          style={{
+            top: contextMenu.y,
+            left: contextMenu.x,
+          }}
+          onClick={closeContextMenu}
+        >
+          <div
+            onClick={() => onView(contextMenu.item!)}
+            className="flex items-center px-2 py-1.5 text-sm cursor-pointer hover:bg-accent rounded"
+          >
+            <Eye className="h-4 w-4 mr-2" />
+            <span>View</span>
+          </div>
+          <div className="h-px bg-border my-1" />
+          <div
+            onClick={() => onRename(contextMenu.item!)}
+            className="flex items-center px-2 py-1.5 text-sm cursor-pointer hover:bg-accent rounded"
+          >
+            <Edit className="h-4 w-4 mr-2" />
+            <span>Rename</span>
+          </div>
+          <div className="h-px bg-border my-1" />
+          <div
+            onClick={() => onDelete(contextMenu.item!)}
+            className="flex items-center px-2 py-1.5 text-sm cursor-pointer hover:bg-accent rounded text-destructive"
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            <span>Delete</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -1,12 +1,15 @@
 import React from 'react';
-import { Link, Outlet, useNavigate } from 'react-router-dom';
+import { Link, Outlet, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from './ui/Button';
 import { FolderOpen, LogOut, User } from 'lucide-react';
+import FileTree from './FileTree';
 
 export const Layout: React.FC = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const params = useParams();
+  const showFileTree = params.id;
 
   const handleLogout = async () => {
     await signOut();
@@ -42,9 +45,19 @@ export const Layout: React.FC = () => {
         </div>
       </header>
 
-      <main className="flex-1">
-        <Outlet />
-      </main>
+      <div className="flex-1 flex overflow-hidden">
+        {showFileTree && (
+          <aside className="w-64 bg-card border-r border-border p-4 flex flex-col">
+            <h2 className="text-lg font-semibold mb-4">Files</h2>
+            <div className="overflow-y-auto flex-1">
+              <FileTree />
+            </div>
+          </aside>
+        )}
+        <main className="flex-1 overflow-y-auto">
+          <Outlet />
+        </main>
+      </div>
 
       <footer className="bg-card border-t border-border">
         <div className="container mx-auto px-4 py-6">

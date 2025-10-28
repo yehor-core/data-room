@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { DataTable } from '@/components/DataTable';
 import {
@@ -23,6 +23,7 @@ import {
   UploadFileDialog,
   RenameDialog,
 } from '@/components/Dialogs';
+import { fileTreeEvents } from '@/lib/events';
 
 type ViewMode = 'grid' | 'list';
 
@@ -88,6 +89,16 @@ export function FolderView() {
   const handleRename = useCallback((item: DataRoomItem) => {
     renameItem.open({ id: item.id, name: item.name, type: item.type });
   }, [renameItem]);
+
+  useEffect(() => {
+    const unsubscribeRename = fileTreeEvents.subscribe('renameItem', handleRename);
+    const unsubscribeDelete = fileTreeEvents.subscribe('deleteItem', handleDelete);
+
+    return () => {
+      unsubscribeRename();
+      unsubscribeDelete();
+    };
+  }, [handleRename, handleDelete]);
 
   const handleBackClick = useCallback(() => {
     const parentId = folderQuery.data?.data.parentId;
