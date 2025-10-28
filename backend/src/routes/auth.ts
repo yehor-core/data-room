@@ -7,13 +7,16 @@ import prisma from '../lib/prisma';
 
 const router = Router();
 
-// Get current user
+// Get current user profile
 router.get('/me', authenticateToken, (req: AuthenticatedRequest, res: Response) => {
-  res.status(200).json(req.user);
+  // The user object is attached to the request by the authenticateToken middleware
+  res.status(200).json({
+    success: true,
+    data: req.user,
+  });
 });
 
-
-// Note: The Google OAuth route is commented out as it's incomplete and relies on a removed dependency.
+// The Google OAuth routes are commented out as they are handled client-side by Supabase
 /*
 router.post('/google', async (req, res, next) => {
   const { token } = req.body;

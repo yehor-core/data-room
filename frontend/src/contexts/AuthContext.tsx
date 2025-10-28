@@ -18,10 +18,12 @@
  */
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { User, Session } from '@supabase/supabase-js';
+import { Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { toast } from '../lib/toast';
 import { SUCCESS_MESSAGES } from '../lib/errorMessages';
+import { api } from '../lib/api';
+import { User } from '../types'; // Import your own User type
 
 /**
  * AUTH CONTEXT TYPE DEFINITION
@@ -30,7 +32,7 @@ import { SUCCESS_MESSAGES } from '../lib/errorMessages';
  * TypeScript uses this to ensure we don't make mistakes.
  */
 interface AuthContextType {
-  user: User | null;                    // Current logged-in user (null if not logged in)
+  user: User | null;                    // Current logged-in user from YOUR database
   session: Session | null;             // Current session data
   signInWithGoogle: () => Promise<void>; // Function to sign in with Google
   signOut: () => Promise<void>;         // Function to sign out
@@ -68,25 +70,44 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const fetchUser = async () => {
+      try {
+        const { data } = await api.get('/auth/me');
+        if (data.success) {
+          setUser(data.data);
+        } else {
+          setUser(null);
+        }
+      } catch (error) {
+        setUser(null);
+      }
+    };
+
+    // Get initial session and user
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
-      setUser(session?.user ?? null);
+      if (session) {
+        await fetchUser();
+      } else {
+        setUser(null);
+      }
       setLoading(false);
     });
 
     // Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
       setSession(session);
-      setUser(session?.user ?? null);
+      
+      if (session) {
+        await fetchUser();
+      } else {
+        setUser(null);
+      }
       setLoading(false);
       
       if (session?.user) {
-        // Show login success toast only once on actual SIGN_IN event
-        // Use sessionStorage to prevent showing toast multiple times in same session
-        // TOKEN_REFRESHED and INITIAL_SESSION events should not show toast
         const loginToastShown = sessionStorage.getItem('login_toast_shown');
         if (event === 'SIGNED_IN' && !loginToastShown) {
           toast.success(SUCCESS_MESSAGES.LOGIN_SUCCESS);
@@ -94,7 +115,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
       }
       
-      // Clear toast flag on sign out
       if (event === 'SIGNED_OUT') {
         sessionStorage.removeItem('login_toast_shown');
       }
