@@ -7,7 +7,11 @@ import createError from 'http-errors';
 import { uploadFile, deleteFile as deleteSupabaseFile, getSignedUrl } from '../utils/supabase';
 
 const router = Router();
-const upload = multer({ storage: multer.memoryStorage() });
+const MAX_FILE_SIZE = 4.5 * 1024 * 1024; // 4.5MB
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: MAX_FILE_SIZE }
+});
 
 router.get('/', asyncHandler(async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     const { dataRoomId, folderId } = req.query;
@@ -66,6 +70,12 @@ router.post(
   '/upload',
   upload.single('file'),
   asyncHandler(async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    if (req.file === undefined && (req as any).multerError) {
+      if ((req as any).multerError.code === 'LIMIT_FILE_SIZE') {
+        return next(createError(413, 'File is too large. Maximum size is 4.5MB.'));
+      }
+    }
+
     const userId = req.user?.id;
     const { dataRoomId, folderId, name } = req.body;
     const file = req.file;
@@ -117,7 +127,7 @@ router.delete('/:id', asyncHandler(async (req: AuthenticatedRequest, res: Respon
   if (!file) {
     return next(createError(404, 'File not found'));
   }
-  
+
   if (file.filePath) {
       await deleteSupabaseFile(file.filePath);
   }

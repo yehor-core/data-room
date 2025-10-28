@@ -21,6 +21,11 @@ export const useFileUpload = (dataRoomId?: string, folderId?: string, folders?: 
   };
 
   const handleFileSelect = (file: File) => {
+    const MAX_FILE_SIZE = 4.5 * 1024 * 1024; // 4.5MB in bytes
+    if (file.size > MAX_FILE_SIZE) {
+      toast.error('File is too large. Maximum size is 4.5MB.');
+      return;
+    }
     setSelectedFile(file);
     setFileName(file.name.replace('.pdf', ''));
   };
