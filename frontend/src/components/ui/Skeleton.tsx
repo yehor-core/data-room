@@ -1,20 +1,20 @@
-import React from 'react';
+import * as React from "react"
+import { cn } from "@/lib/utils"
 
-interface SkeletonProps {
-  className?: string;
+function Skeleton({
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>) {
+  return (
+    <div
+      className={cn("animate-pulse rounded-md bg-muted", className)}
+      {...props}
+    />
+  )
 }
 
-export const Skeleton: React.FC<SkeletonProps> = ({ className = '' }) => {
-  return (
-    <div 
-      className={`animate-pulse bg-gray-200 rounded ${className}`}
-      aria-label="Loading..."
-    />
-  );
-};
-
 // Predefined skeleton patterns for common use cases
-export const SkeletonText: React.FC<{ lines?: number }> = ({ lines = 3 }) => (
+const SkeletonText: React.FC<{ lines?: number }> = ({ lines = 3 }) => (
   <div className="space-y-2">
     {Array.from({ length: lines }).map((_, i) => (
       <Skeleton 
@@ -25,7 +25,7 @@ export const SkeletonText: React.FC<{ lines?: number }> = ({ lines = 3 }) => (
   </div>
 );
 
-export const SkeletonCard: React.FC = () => (
+const SkeletonCard: React.FC = () => (
   <div className="border rounded-lg p-6 space-y-4">
     <div className="flex items-center space-x-4">
       <Skeleton className="h-12 w-12 rounded-full" />
@@ -39,7 +39,7 @@ export const SkeletonCard: React.FC = () => (
   </div>
 );
 
-export const SkeletonTable: React.FC<{ rows?: number }> = ({ rows = 5 }) => (
+const SkeletonTable: React.FC<{ rows?: number }> = ({ rows = 5 }) => (
   <div className="space-y-3">
     {Array.from({ length: rows }).map((_, i) => (
       <div key={i} className="flex items-center space-x-4">
@@ -51,4 +51,6 @@ export const SkeletonTable: React.FC<{ rows?: number }> = ({ rows = 5 }) => (
     ))}
   </div>
 );
+
+export { Skeleton, SkeletonText, SkeletonCard, SkeletonTable }
 

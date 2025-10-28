@@ -2,18 +2,18 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { Plus, FolderOpen, Trash2 } from 'lucide-react';
-import { Button } from '../components/ui/Button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/Card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../components/ui/Dialog';
-import { Input } from '../components/ui/Input';
-import { Skeleton } from '../components/ui/Skeleton';
-import { formatDate } from '../lib/utils';
-import { useAuth } from '../contexts/AuthContext';
-import { supabase } from '../lib/supabase';
-import { api } from '../lib/api';
-import { DataRoom } from '../types';
-import { toast } from '../lib/toast';
-import { getErrorMessage, SUCCESS_MESSAGES } from '../lib/errorMessages';
+import { Button } from '@/components/ui/Button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/Dialog';
+import { Input } from '@/components/ui/Input';
+import { Label } from '@/components/ui/Label';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { formatDate } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
+import { api } from '@/lib/api';
+import { DataRoom } from '@/types';
+import { toast } from '@/lib/toast';
+import { getErrorMessage, SUCCESS_MESSAGES } from '@/lib/errorMessages';
 
 export const DataRooms: React.FC = () => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -277,12 +277,16 @@ export const DataRooms: React.FC = () => {
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleCreate} className="space-y-4">
-            <Input
-              placeholder="Data Room Name"
-              value={newDataRoomName}
-              onChange={(e) => setNewDataRoomName(e.target.value)}
-              autoFocus
-            />
+            <div className="space-y-2">
+              <Label htmlFor="name">Name</Label>
+              <Input
+                id="name"
+                placeholder="Data Room Name"
+                value={newDataRoomName}
+                onChange={(e) => setNewDataRoomName(e.target.value)}
+                autoFocus
+              />
+            </div>
             <div className="flex justify-end gap-2">
               <Button type="button" variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
                 Cancel

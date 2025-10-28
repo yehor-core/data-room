@@ -1,4 +1,4 @@
-import { formatBytes, formatDate } from '../../lib/utils';
+import { formatBytes, formatDate } from '@/lib/utils';
 
 describe('Format Utilities', () => {
   describe('formatBytes', () => {

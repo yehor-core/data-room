@@ -3,12 +3,12 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter } from 'react-router-dom';
 import '@testing-library/jest-dom';
-import { DataRooms } from '../../pages/DataRooms';
-import { AuthContext } from '../../contexts/AuthContext';
-import { api } from '../../lib/api';
+import { DataRooms } from '@/pages/DataRooms';
+import { AuthContext } from '@/contexts/AuthContext';
+import { api } from '@/lib/api';
 
 // Mock the API
-jest.mock('../../lib/api');
+jest.mock('@/lib/api');
 const mockedApi = api as jest.Mocked<typeof api>;
 
 // Mock user

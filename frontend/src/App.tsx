@@ -19,9 +19,9 @@
 import React, { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { AuthProvider } from './contexts/AuthContext';
-import { Layout } from './components/Layout';
-import { PrivateRoute } from './components/PrivateRoute';
+import { AuthProvider } from '@/contexts/AuthContext';
+import { Layout } from '@/components/Layout';
+import { PrivateRoute } from '@/components/PrivateRoute';
 
 /**
  * LAZY LOADING - Performance Optimization

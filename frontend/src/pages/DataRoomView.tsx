@@ -2,17 +2,18 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Plus, Folder, FileText, Trash2, Edit, Upload, Search, MoreVertical } from 'lucide-react';
-import { DataRoom, Folder as FolderType, File as FileType, ApiResponse } from '../types';
-import { Button } from '../components/ui/Button';
-import { Card, CardContent } from '../components/ui/Card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../components/ui/Dialog';
-import { Input } from '../components/ui/Input';
-import { Skeleton } from '../components/ui/Skeleton';
-import { FileTree } from '../components/FileTree';
-import { formatDate, formatBytes } from '../lib/utils';
-import { api } from '../lib/api';
-import { toast } from '../lib/toast';
-import { getErrorMessage, SUCCESS_MESSAGES, LOADING_MESSAGES } from '../lib/errorMessages';
+import { DataRoom, Folder as FolderType, File as FileType, ApiResponse } from '@/types';
+import { Button } from '@/components/ui/Button';
+import { Card, CardContent } from '@/components/ui/Card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/Dialog';
+import { Input } from '@/components/ui/Input';
+import { Label } from '@/components/ui/Label';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { FileTree } from '@/components/FileTree';
+import { formatDate, formatBytes } from '@/lib/utils';
+import { api } from '@/lib/api';
+import { toast } from '@/lib/toast';
+import { getErrorMessage, SUCCESS_MESSAGES, LOADING_MESSAGES } from '@/lib/errorMessages';
 
 
 export const DataRoomView: React.FC = () => {
@@ -834,12 +835,16 @@ export const DataRoomView: React.FC = () => {
             <DialogDescription>Enter a name for the new folder</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleCreateFolder} className="space-y-4">
-            <Input
-              placeholder="Folder Name"
-              value={newFolderName}
-              onChange={(e) => setNewFolderName(e.target.value)}
-              autoFocus
-            />
+            <div className="space-y-2">
+              <Label htmlFor="folder-name">Folder Name</Label>
+              <Input
+                id="folder-name"
+                placeholder="Folder Name"
+                value={newFolderName}
+                onChange={(e) => setNewFolderName(e.target.value)}
+                autoFocus
+              />
+            </div>
             <div className="flex justify-end gap-2">
               <Button type="button" variant="outline" onClick={() => setIsCreateFolderDialogOpen(false)}>
                 Cancel
@@ -859,8 +864,10 @@ export const DataRoomView: React.FC = () => {
             <DialogDescription>Select a PDF file to upload</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleUpload} className="space-y-4">
-            <div>
+            <div className="space-y-2">
+              <Label htmlFor="file-upload">PDF File</Label>
               <Input
+                id="file-upload"
                 type="file"
                 accept=".pdf,application/pdf"
                 onChange={(e) => {
@@ -872,11 +879,15 @@ export const DataRoomView: React.FC = () => {
                 }}
               />
             </div>
-            <Input
-              placeholder="File Name"
-              value={uploadFileName}
-              onChange={(e) => setUploadFileName(e.target.value)}
-            />
+            <div className="space-y-2">
+              <Label htmlFor="file-name">File Name</Label>
+              <Input
+                id="file-name"
+                placeholder="File Name"
+                value={uploadFileName}
+                onChange={(e) => setUploadFileName(e.target.value)}
+              />
+            </div>
             <div className="flex justify-end gap-2">
               <Button type="button" variant="outline" onClick={() => setIsUploadDialogOpen(false)}>
                 Cancel
@@ -896,12 +907,16 @@ export const DataRoomView: React.FC = () => {
             <DialogDescription>Enter a new name</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleRename} className="space-y-4">
-            <Input
-              placeholder="New Name"
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
-              autoFocus
-            />
+            <div className="space-y-2">
+              <Label htmlFor="new-name">New Name</Label>
+              <Input
+                id="new-name"
+                placeholder="New Name"
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                autoFocus
+              />
+            </div>
             <div className="flex justify-end gap-2">
               <Button type="button" variant="outline" onClick={() => setIsRenameDialogOpen(false)}>
                 Cancel
