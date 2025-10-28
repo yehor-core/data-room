@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '../ui/Card';
 import { DataRoomItem } from './columns';
 import { ItemActions } from './ItemActions';
+import { formatDate } from '../../lib/utils';
 
 interface FoldersGridProps {
   folders: DataRoomItem[];
@@ -53,7 +54,7 @@ export const FoldersGrid: React.FC<FoldersGridProps> = ({
                     <div className="min-w-0">
                       <h3 className="font-medium truncate">{folder.name}</h3>
                       <p className="text-sm text-muted-foreground">
-                        Modified {folder.updatedAt}
+                        Modified {formatDate(folder.updatedAt)}
                       </p>
                     </div>
                   </div>
