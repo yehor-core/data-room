@@ -3,6 +3,7 @@ import { Link, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from './ui/Button';
 import { FolderOpen, LogOut, User } from 'lucide-react';
+import { ModeToggle } from './ModeToggle';
 
 export const Layout: React.FC = () => {
   const { user, signOut } = useAuth();
@@ -37,6 +38,7 @@ export const Layout: React.FC = () => {
                   </Button>
                 </>
               )}
+              <ModeToggle />
             </div>
           </div>
         </div>
