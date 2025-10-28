@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { Card, CardContent } from '@/components/ui/Card';
-import { FileTree } from '@/components/FileTree';
 import { CreateFolderDialog } from '@/components/DataRoomView/CreateFolderDialog';
 import { UploadFileDialog } from '@/components/DataRoomView/UploadFileDialog';
 import { RenameDialog } from '@/components/DataRoomView/RenameDialog';
@@ -17,7 +16,6 @@ import { useDataRoomData } from '@/hooks/useDataRoomData';
 import { useDataRoomMutations } from '@/hooks/useDataRoomMutations';
 import { 
   getCurrentFolderContents, 
-  getAllFoldersAndFiles, 
   searchAllContent,
   handleFileView 
 } from '@/utils/dataRoomHelpers';
@@ -90,12 +88,6 @@ export const DataRoomView: React.FC = () => {
     folderId,
     folderQuery.data,
     foldersQuery.data
-  );
-
-  // Get all folders and files for FileTree
-  const allFoldersAndFiles = getAllFoldersAndFiles(
-    foldersQuery.data,
-    allFilesQuery.data
   );
 
   // Search across entire data room
@@ -181,7 +173,7 @@ export const DataRoomView: React.FC = () => {
   };
 
   const handleFileClick = (fileId: string) => {
-    handleFileView(fileId, allFoldersAndFiles.files);
+    handleFileView(fileId, allFilesQuery.data?.data || []);
   };
 
   const handleContextMenu = (e: React.MouseEvent, item: { id: string; name: string; type: 'folder' | 'file' }) => {
@@ -218,15 +210,6 @@ export const DataRoomView: React.FC = () => {
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen md:h-screen">
-      {/* File Tree Sidebar */}
-      <FileTree
-        folders={allFoldersAndFiles.folders}
-        files={allFoldersAndFiles.files}
-        onFolderClick={handleFolderClick}
-        onFileClick={handleFileClick}
-        currentPath={folderId}
-      />
-      
       {/* Main Content */}
       <div className="flex-1 overflow-auto">
         <div className="container mx-auto px-4 py-4 md:py-8">
