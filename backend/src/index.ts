@@ -18,11 +18,13 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // CORS Configuration
-const allowedOrigins = [
-  'https://data-room-196e.vercel.app',  // Production frontend
-  'http://localhost:3000',              // Local development
-  'http://localhost:3001'               // Alternative local port
-];
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim())
+  : [
+      'https://data-room-196e.vercel.app',  // Production frontend
+      'http://localhost:3000',              // Local development
+      'http://localhost:3001'               // Alternative local port
+    ];
 
 console.log('🔧 Environment:', process.env.NODE_ENV || 'development');
 console.log('🔧 Allowed origins:', allowedOrigins);
