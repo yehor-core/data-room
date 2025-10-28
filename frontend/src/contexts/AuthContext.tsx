@@ -76,6 +76,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       console.log('[AuthContext] fetchUser: Attempting to fetch user profile...');
       try {
         const { api } = await import('../lib/api'); // Lazy import
+        console.log('[AuthContext] fetchUser: Making request to /auth/me with base URL:', api.defaults.baseURL);
         const { data } = await api.get('/auth/me');
         console.log('[AuthContext] fetchUser: /api/auth/me response', data);
         if (data.success) {

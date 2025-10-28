@@ -2,6 +2,16 @@ import axios from 'axios';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
 
+// Debug logging for API URL
+console.log('🔧 [API] Environment check:', {
+  NODE_ENV: process.env.NODE_ENV,
+  REACT_APP_API_URL: process.env.REACT_APP_API_URL,
+  final_API_URL: API_URL,
+  all_env_vars: Object.keys(process.env).filter(key => key.startsWith('REACT_APP_')),
+  location: window.location.href,
+  hostname: window.location.hostname
+});
+
 let token: string | null = null;
 
 export const setAuthToken = (newToken: string | null) => {
