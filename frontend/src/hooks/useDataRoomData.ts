@@ -42,7 +42,6 @@ export const useDataRoomData = ({ dataRoomId, folderId }: UseDataRoomDataProps) 
     queryKey: ['folders', dataRoomId],
     queryFn: async () => {
       const response = await api.get(`/data-rooms/${dataRoomId}`);
-      console.log('📁 Folders response:', response.data);
       return response.data;
     },
     enabled: !!isValidId,
@@ -56,7 +55,6 @@ export const useDataRoomData = ({ dataRoomId, folderId }: UseDataRoomDataProps) 
     queryFn: async () => {
       const params = folderId ? { folderId } : { dataRoomId };
       const response = await api.get('/files', { params });
-      console.log('📄 Files response:', response.data);
       return response.data;
     },
     enabled: !!isValidId,
@@ -69,7 +67,6 @@ export const useDataRoomData = ({ dataRoomId, folderId }: UseDataRoomDataProps) 
     queryKey: ['allFiles', dataRoomId],
     queryFn: async () => {
       const response = await api.get('/files', { params: { dataRoomId } });
-      console.log('📄 All files response:', response.data);
       return response.data;
     },
     enabled: !!isValidId,

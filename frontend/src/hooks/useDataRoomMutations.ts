@@ -44,20 +44,10 @@ export const useDataRoomMutations = ({ dataRoomId, folderId }: UseDataRoomMutati
 
   const deleteFolderMutation = useMutation({
     mutationFn: async (folderIdToDelete: string) => {
-      console.log('🗑️ Deleting folder:', folderIdToDelete);
       try {
         const response = await api.delete(`/folders/${folderIdToDelete}`);
-        console.log('✅ Delete response:', response);
         return { id: folderIdToDelete };
       } catch (error: any) {
-        console.error('❌ Delete folder API error:', {
-          error,
-          code: error.code,
-          message: error.message,
-          status: error.response?.status,
-          statusText: error.response?.statusText,
-          data: error.response?.data
-        });
         throw error;
       }
     },
@@ -72,20 +62,10 @@ export const useDataRoomMutations = ({ dataRoomId, folderId }: UseDataRoomMutati
 
   const deleteFileMutation = useMutation({
     mutationFn: async (fileId: string) => {
-      console.log('🗑️ Deleting file:', fileId);
       try {
         const response = await api.delete(`/files/${fileId}`);
-        console.log('✅ Delete file response:', response);
         return { id: fileId };
       } catch (error: any) {
-        console.error('❌ Delete file API error:', {
-          error,
-          code: error.code,
-          message: error.message,
-          status: error.response?.status,
-          statusText: error.response?.statusText,
-          data: error.response?.data
-        });
         throw error;
       }
     },
@@ -114,9 +94,7 @@ export const useDataRoomMutations = ({ dataRoomId, folderId }: UseDataRoomMutati
 
   const renameFileMutation = useMutation({
     mutationFn: async ({ id, name }: { id: string; name: string }) => {
-      console.log('✏️ Renaming file:', { id, name });
       const response = await api.put(`/files/${id}`, { name });
-      console.log('✅ Rename file response:', response);
       return response.data.data;
     },
     onSuccess: () => {
@@ -124,7 +102,6 @@ export const useDataRoomMutations = ({ dataRoomId, folderId }: UseDataRoomMutati
       invalidateQueries();
     },
     onError: (error: any) => {
-      console.error('❌ Rename file error:', error);
       toast.error(getErrorMessage(error));
     },
   });
@@ -162,7 +139,6 @@ export const useDataRoomMutations = ({ dataRoomId, folderId }: UseDataRoomMutati
       invalidateQueries();
     },
     onError: (error: any) => {
-      console.error('File upload error:', error);
       const status = error.response?.status;
       const responseData = error.response?.data;
       

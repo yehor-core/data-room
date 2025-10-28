@@ -11,13 +11,7 @@ export { AuthenticatedRequest };
 const supabaseUrl = config.supabaseUrl;
 const supabaseServiceKey = config.supabaseServiceKey;
 
-if (!supabaseUrl || !supabaseServiceKey) {
-  console.error('⚠️ Supabase credentials not configured');
-}
-
-const supabase = supabaseUrl && supabaseServiceKey 
-  ? createClient(supabaseUrl, supabaseServiceKey)
-  : null;
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 export const authenticateToken = async (
   req: AuthenticatedRequest,

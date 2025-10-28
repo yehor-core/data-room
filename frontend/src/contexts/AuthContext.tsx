@@ -62,22 +62,14 @@ export const useAuth = () => {
   return context;
 };
 
-// Log environment variables for debugging
-console.log('🔍 Environment variables:');
-console.log('REACT_APP_SUPABASE_URL:', process.env.REACT_APP_SUPABASE_URL);
-console.log('REACT_APP_SUPABASE_ANON_KEY:', process.env.REACT_APP_SUPABASE_ANON_KEY ? 'SET' : 'NOT SET');
-
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    console.log('🔍 [AuthContext] Initializing auth state');
-    
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('🔍 [AuthContext] Initial session:', session ? 'Found' : 'Not found');
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
@@ -87,21 +79,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('🔍 [AuthContext] Auth state changed:', event, session ? 'Session exists' : 'No session');
-      
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
       
-      // Debug user information
       if (session?.user) {
-        console.log('✅ [AuthContext] User authenticated:', {
-          id: session.user.id,
-          email: session.user.email,
-          user_metadata: session.user.user_metadata,
-          event
-        });
-        
         // Show login success toast only once on actual SIGN_IN event
         // Use sessionStorage to prevent showing toast multiple times in same session
         // TOKEN_REFRESHED and INITIAL_SESSION events should not show toast

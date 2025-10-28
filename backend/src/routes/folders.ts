@@ -172,7 +172,6 @@ router.post('/', validateFolderCreation, asyncHandler(async (req: AuthenticatedR
 
   const { name, parentId, dataRoomId } = req.body;
   const userId = req.user!.id;
-  console.log('[CreateFolder] Request:', { name, parentId, dataRoomId, userId });
 
   // Verify data room exists and belongs to user
   const dataRoom = await prisma.dataRoom.findFirst({
@@ -246,7 +245,6 @@ router.patch('/:id/rename', validateFolderRename, asyncHandler(async (req: Authe
 
   const { id } = req.params;
   const { name } = req.body;
-  console.log('[RenameFolder] Request:', { id, name });
 
   // Verify folder exists and user has access
   const folder = await prisma.folder.findFirst({
@@ -305,7 +303,6 @@ router.patch('/:id/move', validateFolderMove, asyncHandler(async (req: Authentic
 
   const { id } = req.params;
   const { newParentId } = req.body;
-  console.log('[MoveFolder] Request:', { id, newParentId });
 
   // Verify folder exists and user has access
   const folder = await prisma.folder.findFirst({

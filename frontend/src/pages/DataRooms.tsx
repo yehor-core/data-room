@@ -36,11 +36,9 @@ export const DataRooms: React.FC = () => {
     queryKey: ['dataRooms'],
     queryFn: async (): Promise<DataRoom[]> => {
       if (!user) {
-        console.log('🔍 No user, skipping data rooms fetch');
         return [];
       }
 
-      console.log('🔍 Fetching data rooms via API for user:', user.id);
       const response = await api.get('/data-rooms');
       return response.data.data || [];
     },
@@ -54,7 +52,6 @@ export const DataRooms: React.FC = () => {
     mutationFn: async (name: string) => {
       if (!user) throw new Error('User not authenticated');
 
-      console.log('🔍 Creating data room via API:', { name, user_id: user.id });
       const response = await api.post('/data-rooms', { name });
       return response.data.data;
     },
@@ -77,8 +74,6 @@ export const DataRooms: React.FC = () => {
 
       queryClient.setQueryData<DataRoom[]>(['dataRooms'], (old = []) => [tempDataRoom, ...old]);
 
-      console.log('✨ Optimistically added data room to UI');
-
       // Return context with snapshot
       return { previousDataRooms };
     },
@@ -90,6 +85,7 @@ export const DataRooms: React.FC = () => {
     },
     // On error, rollback to previous state
     onError: (error: unknown, name: string, context: any) => {
+      console.error('❌ Data room creation failed:', getErrorMessage(error));
       if (context?.previousDataRooms) {
         queryClient.setQueryData(['dataRooms'], context.previousDataRooms);
       }
@@ -118,8 +114,6 @@ export const DataRooms: React.FC = () => {
       queryClient.setQueryData<DataRoom[]>(['dataRooms'], (old = []) =>
         old.filter(dataRoom => dataRoom.id !== id)
       );
-
-      console.log('✨ Optimistically removed data room from UI');
 
       // Return context with snapshot
       return { previousDataRooms };
@@ -172,8 +166,6 @@ export const DataRooms: React.FC = () => {
       },
       staleTime: 2 * 60 * 1000, // 2 minutes
     });
-
-    console.log('🔮 Prefetching data for data room:', dataRoomId);
   };
 
   return (
