@@ -19,28 +19,19 @@ backend/.env.*
 frontend/.env
 frontend/.env.*
 
-# KEEP EXAMPLE FILES (safe to commit)
-*.env.example
-env.example
-backend/env.example
-frontend/.env.example
+!frontend/.env.example
+!backend/.env.example
 
 # ============================================
 # DEPENDENCIES
 # ============================================
 node_modules/
-.pnp/
-.pnp.js
-.yarn/
-jspm_packages/
+frontend/node_modules/
+backend/node_modules/
 
 # ============================================
 # BUILD OUTPUTS
 # ============================================
-dist/
-build/
-out/
-.next/
 
 # Backend build
 backend/dist/
@@ -53,28 +44,12 @@ frontend/dist/
 # ============================================
 # DATABASE
 # ============================================
-# Local SQLite databases
-*.db
-*.sqlite
-*.sqlite3
-*.db-journal
 
 # Prisma
 backend/prisma/migrations/
 backend/prisma/dev.db
 backend/prisma/*.db
 prisma/migrations/
-
-# Do NOT ignore schema.prisma
-!backend/prisma/schema.prisma
-!prisma/schema.prisma
-
-# ============================================
-# VERCEL
-# ============================================
-.vercel
-.vercel.json
-*.vercel.json
 
 # ============================================
 # LOGS
@@ -88,87 +63,15 @@ lerna-debug.log*
 .pnpm-debug.log*
 
 # ============================================
-# TESTING & COVERAGE
-# ============================================
-coverage/
-.nyc_output/
-*.lcov
-.jest/
-test-results/
-*.test.js.snap
-
-# ============================================
 # CACHE & TEMPORARY FILES
 # ============================================
 .cache/
 .parcel-cache/
 .npm/
-.eslintcache
-.stylelintcache
-*.tsbuildinfo
-.turbo/
 
 # TypeScript cache
 *.tsbuildinfo
 .tscache/
-
-# ============================================
-# RUNTIME DATA
-# ============================================
-pids/
-*.pid
-*.seed
-*.pid.lock
-
-# ============================================
-# IDE & EDITORS
-# ============================================
-# VSCode
-.vscode/
-.vscode-test/
-*.code-workspace
-
-# WebStorm / IntelliJ
-.idea/
-*.iml
-*.ipr
-*.iws
-out/
-
-# Sublime Text
-*.sublime-project
-*.sublime-workspace
-
-# Vim
-*.swp
-*.swo
-*~
-
-# Emacs
-*~
-\#*\#
-.\#*
-
-# ============================================
-# OPERATING SYSTEM FILES
-# ============================================
-# macOS
-.DS_Store
-.AppleDouble
-.LSOverride
-._*
-
-# Windows
-Thumbs.db
-Thumbs.db:encryptable
-ehthumbs.db
-Desktop.ini
-$RECYCLE.BIN/
-
-# Linux
-*~
-.directory
-.Trash-*
 
 # ============================================
 # PACKAGE MANAGER FILES
@@ -191,41 +94,8 @@ yarn.lock.bak
 *.tgz
 
 # ============================================
-# FRAMEWORK-SPECIFIC
-# ============================================
-# Next.js
-.next/
-out/
-
-# Nuxt.js
-.nuxt/
-dist/
-
-# Gatsby
-.cache/
-
-# VuePress
-.vuepress/dist/
-
-# ============================================
-# SERVERLESS & CLOUD
-# ============================================
-.serverless/
-.fusebox/
-.dynamodb/
-
-# ============================================
 # MISCELLANEOUS
 # ============================================
-# TernJS port file
-.tern-port
-
-# macOS network storage
-.AppleDB
-.AppleDesktop
-Network Trash Folder
-Temporary Items
-.apdisk
 
 # Debug files
 npm-debug.log*
@@ -235,20 +105,6 @@ yarn-error.log*
 # ============================================
 # PROJECT-SPECIFIC
 # ============================================
-# Uploaded files (development only - production uses Supabase)
-uploads/
-temp/
-tmp/
-
-# Generated files
-generated/
-
-# Local scripts (if any)
-scripts/local/
-
-# Documentation builds
-docs/build/
-
 # Fixes documentation (temporary files)
 fixes/
 
@@ -275,16 +131,9 @@ frontend/src/reportWebVitals.ts
 secrets/
 .secrets/
 
+
 # ============================================
-# NOTES
+# OTHER
 # ============================================
-# To share your project with others:
-# 1. They should copy env.example files to .env
-# 2. They should fill in their own credentials
-# 3. Never commit real .env files!
-#
-# Safe to commit:
-# - *.env.example files (placeholder values)
-# - Source code
-# - Documentation
-# - Configuration (without secrets)
+#Vercel
+backend/.vercel

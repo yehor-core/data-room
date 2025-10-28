@@ -10,15 +10,23 @@ import { authRoutes } from './routes/auth';
 import { dataRoomRoutes } from './routes/dataRooms';
 import { folderRoutes } from './routes/folders';
 import { fileRoutes } from './routes/files';
-import { corsConfig } from './config/cors';
 
 // Load environment variables
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
-console.log('🔧 [CORS] Environment:', process.env.NODE_ENV || 'development');
-console.log('🔧 [CORS] Current allowed origins:', corsConfig.origin);
+
+// CORS Configuration
+const allowedOrigins = [
+  'https://data-room-196e.vercel.app',  // Production frontend
+  'http://localhost:3000',              // Local development
+  'http://localhost:3001'               // Alternative local port
+];
+
+console.log('🔧 Environment:', process.env.NODE_ENV || 'development');
+console.log('🔧 Allowed origins:', allowedOrigins);
+
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -29,8 +37,23 @@ const limiter = rateLimit({
 // Middleware
 app.use(helmet());
 
-// Manual CORS headers as fallback
-app.use(cors(corsConfig));
+// CORS Middleware
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or Postman)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.warn('⚠️ CORS blocked origin:', origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
+}));
 app.use(morgan('combined'));
 app.use(limiter);
 app.use(express.json({ limit: '10mb' }));
