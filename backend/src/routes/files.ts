@@ -13,6 +13,14 @@ const prisma = new PrismaClient();
 // Apply authentication to all routes
 router.use(authenticateToken);
 
+// Helper function to serialize BigInt fields to strings for JSON
+const serializeFile = (file: any) => ({
+  ...file,
+  fileSize: file.fileSize ? file.fileSize.toString() : null,
+});
+
+const serializeFiles = (files: any[]) => files.map(serializeFile);
+
 // Configure multer for file uploads
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -108,7 +116,7 @@ router.get('/', asyncHandler(async (req: AuthenticatedRequest, res: Response) =>
 
   res.json({
     success: true,
-    data: files,
+    data: serializeFiles(files),
     pagination: {
       page: Number(page),
       limit: Number(limit),
@@ -148,7 +156,7 @@ router.get('/:id', asyncHandler(async (req: AuthenticatedRequest, res: Response)
 
   res.json({
     success: true,
-    data: file,
+    data: serializeFile(file),
   });
 }));
 
@@ -244,7 +252,7 @@ router.post('/upload', upload.single('file'), handleMulterError, validateCreateF
 
     res.status(201).json({
       success: true,
-      data: file,
+      data: serializeFile(file),
       message: 'File uploaded successfully',
     });
   } catch (error) {
@@ -311,7 +319,7 @@ router.put('/:id', validateUpdateFile, asyncHandler(async (req: AuthenticatedReq
 
   res.json({
     success: true,
-    data: file,
+    data: serializeFile(file),
     message: 'File updated successfully',
   });
 }));
@@ -439,7 +447,7 @@ router.get('/search', asyncHandler(async (req: AuthenticatedRequest, res: Respon
 
   res.json({
     success: true,
-    data: files,
+    data: serializeFiles(files),
     pagination: {
       page: Number(page),
       limit: Number(limit),
