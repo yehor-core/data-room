@@ -12,8 +12,7 @@ import { ContextMenu } from '@/components/DataRoomView/ContextMenu';
 import { FoldersGrid } from '@/components/DataRoomView/FoldersGrid';
 import { FilesGrid } from '@/components/DataRoomView/FilesGrid';
 import { EmptyState } from '@/components/DataRoomView/EmptyState';
-import { useDataRoomData } from '@/hooks/useDataRoomData';
-import { useDataRoomMutations } from '@/hooks/useDataRoomMutations';
+import { useDataRoomData, useDataRoomMutations } from '@/hooks';
 import { 
   getCurrentFolderContents, 
   searchAllContent,
