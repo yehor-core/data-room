@@ -20,6 +20,7 @@ import React, { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './contexts/AuthContext';
+import { ThemeProvider } from './components/ThemeProvider';
 import { Layout } from './components/Layout';
 import { PrivateRoute } from './components/PrivateRoute';
 
@@ -86,26 +87,28 @@ function App() {
     <QueryClientProvider client={queryClient}>
       {/* Auth Provider - Gives all components access to user data */}
       <AuthProvider>
-        {/* Router - Handles navigation between pages */}
-        <Router>
-          {/* Suspense - Shows loading spinner while lazy components load */}
-          <Suspense fallback={<LoadingFallback />}>
-            <Routes>
-              {/* PUBLIC ROUTES - Anyone can access these */}
-              <Route path="/login" element={<Login />} />
-              
-              {/* PROTECTED ROUTES - Only logged-in users can access these */}
-              <Route element={<PrivateRoute><Layout /></PrivateRoute>}>
-                <Route path="/" element={<DataRooms />} />
-                <Route path="/data-rooms/:id" element={<DataRoomRoot />} />
-                <Route path="/data-rooms/:id/folders/:folderId" element={<FolderView />} />
-              </Route>
+        <ThemeProvider>
+          {/* Router - Handles navigation between pages */}
+          <Router>
+            {/* Suspense - Shows loading spinner while lazy components load */}
+            <Suspense fallback={<LoadingFallback />}>
+              <Routes>
+                {/* PUBLIC ROUTES - Anyone can access these */}
+                <Route path="/login" element={<Login />} />
+                
+                {/* PROTECTED ROUTES - Only logged-in users can access these */}
+                <Route element={<PrivateRoute><Layout /></PrivateRoute>}>
+                  <Route path="/" element={<DataRooms />} />
+                  <Route path="/data-rooms/:id" element={<DataRoomRoot />} />
+                  <Route path="/data-rooms/:id/folders/:folderId" element={<FolderView />} />
+                </Route>
 
-              {/* CATCH-ALL ROUTE - Redirects unknown URLs to home page */}
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </Suspense>
-        </Router>
+                {/* CATCH-ALL ROUTE - Redirects unknown URLs to home page */}
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </Suspense>
+          </Router>
+        </ThemeProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

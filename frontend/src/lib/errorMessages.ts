@@ -53,14 +53,32 @@ export function getErrorMessage(error: unknown): string {
     // The request was made and the server responded with a status code
     // that falls out of the range of 2xx
     if (error.response) {
-      // Check for a specific error message structure from your backend
-      if (error.response.data && error.response.data.message) {
-        return error.response.data.message;
+      // Use a switch statement for clearer status code handling
+      switch (error.response.status) {
+        case 400:
+          return error.response.data.message || ERROR_MESSAGES.INVALID_INPUT;
+        case 401:
+          return ERROR_MESSAGES.UNAUTHORIZED;
+        case 403:
+          return ERROR_MESSAGES.FORBIDDEN;
+        case 404:
+          return ERROR_MESSAGES.NOT_FOUND;
+        case 409:
+          return error.response.data.message || ERROR_MESSAGES.DUPLICATE;
+        case 413:
+          return ERROR_MESSAGES.FILE_TOO_LARGE;
+        case 500:
+          return ERROR_MESSAGES.SERVER_ERROR;
+        default:
+          // For other client/server error codes, use the backend message if available
+          if (error.response.data && error.response.data.message) {
+            return error.response.data.message;
+          }
+          return `Error: ${error.response.status} ${error.response.statusText}`;
       }
-      return `Error: ${error.response.status} ${error.response.statusText}`;
     } else if (error.request) {
       // The request was made but no response was received
-      return 'No response from server. Please check your network connection.';
+      return ERROR_MESSAGES.NETWORK;
     }
   }
   

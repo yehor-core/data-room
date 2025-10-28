@@ -139,28 +139,7 @@ export const useDataRoomMutations = ({ dataRoomId, folderId }: UseDataRoomMutati
       invalidateQueries();
     },
     onError: (error: any) => {
-      const status = error.response?.status;
-      const responseData = error.response?.data;
-      
-      let message = 'File upload failed';
-      
-      if (status === 413) {
-        message = 'File too large! Vercel Pro has a 100MB limit.';
-      } else if (status === 409) {
-        message = responseData?.message || responseData?.error || 'A file with this name already exists in this folder.';
-      } else if (status === 401) {
-        message = 'Authentication failed. Please try logging out and back in.';
-      } else if (status === 500) {
-        message = 'Server error occurred. Please try again.';
-      } else if (responseData?.message) {
-        message = responseData.message;
-      } else if (responseData?.error) {
-        message = responseData.error;
-      } else if (error.message) {
-        message = error.message;
-      }
-      
-      toast.error(message);
+      toast.error(getErrorMessage(error));
     },
   });
 
