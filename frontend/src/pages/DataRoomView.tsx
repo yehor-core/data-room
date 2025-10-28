@@ -76,7 +76,7 @@ export const DataRoomView: React.FC = () => {
   const { data: foldersData } = useQuery({
     queryKey: ['folders', id],
     queryFn: async () => {
-      const response = await api.get(`/data-rooms?id=${id}&action=folders`);
+      const response = await api.get(`/data-rooms/${id}`);
       console.log('📁 Folders response:', response.data);
       return response.data;
     },
@@ -89,7 +89,8 @@ export const DataRoomView: React.FC = () => {
   const { data: filesData } = useQuery({
     queryKey: ['files', id, folderId],
     queryFn: async () => {
-      const response = await api.get(folderId ? `/folders?id=${folderId}&action=files` : `/data-rooms?id=${id}&action=files`);
+      const params = folderId ? { folderId } : { dataRoomId: id };
+      const response = await api.get('/files', { params });
       console.log('📄 Files response:', response.data);
       return response.data;
     },
@@ -102,7 +103,7 @@ export const DataRoomView: React.FC = () => {
   const { data: allFilesData } = useQuery({
     queryKey: ['allFiles', id],
     queryFn: async () => {
-      const response = await api.get(`/data-rooms?id=${id}&action=files&all=true`);
+      const response = await api.get('/files', { params: { dataRoomId: id } });
       console.log('📄 All files response:', response.data);
       return response.data;
     },
@@ -141,7 +142,7 @@ export const DataRoomView: React.FC = () => {
     mutationFn: async (folderIdToDelete: string) => {
       console.log('🗑️ Deleting folder:', folderIdToDelete);
       try {
-        const response = await api.delete(`/folders?id=${folderIdToDelete}`);
+        const response = await api.delete(`/folders/${folderIdToDelete}`);
         console.log('✅ Delete response:', response);
         return { id: folderIdToDelete };
       } catch (error: any) {
@@ -175,7 +176,7 @@ export const DataRoomView: React.FC = () => {
     mutationFn: async (fileId: string) => {
       console.log('🗑️ Deleting file:', fileId);
       try {
-        const response = await api.delete(`/files?id=${fileId}`);
+        const response = await api.delete(`/files/${fileId}`);
         console.log('✅ Delete file response:', response);
         return { id: fileId };
       } catch (error: any) {
@@ -208,7 +209,7 @@ export const DataRoomView: React.FC = () => {
 
   const renameFolderMutation = useMutation({
     mutationFn: async ({ id, name }: { id: string; name: string }) => {
-      const response = await api.patch(`/folders?id=${id}`, { name });
+      const response = await api.put(`/folders/${id}`, { name });
       return response.data.data;
     },
     onSuccess: () => {
@@ -230,7 +231,7 @@ export const DataRoomView: React.FC = () => {
   const renameFileMutation = useMutation({
     mutationFn: async ({ id, name }: { id: string; name: string }) => {
       console.log('✏️ Renaming file:', { id, name });
-      const response = await api.patch(`/files?id=${id}`, { name });
+      const response = await api.put(`/files/${id}`, { name });
       console.log('✅ Rename file response:', response);
       return response.data.data;
     },
@@ -410,13 +411,6 @@ export const DataRoomView: React.FC = () => {
     const allFiles = Array.isArray(allFilesData?.data) 
       ? allFilesData.data 
       : (allFilesData?.data?.files || []);
-    
-    // Debug: Log File Tree data
-    console.log('🌳 File Tree data:', {
-      folderCount: allFolders.length,
-      fileCount: allFiles.length,
-      files: allFiles.map((f: any) => ({ name: f.name, folderId: f.folderId }))
-    });
     
     return {
       folders: allFolders,

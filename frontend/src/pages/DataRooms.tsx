@@ -92,7 +92,7 @@ export const DataRooms: React.FC = () => {
     mutationFn: async (id: string) => {
       if (!user) throw new Error('User not authenticated');
       
-      const response = await api.delete(`/data-rooms?id=${id}`);
+      const response = await api.delete(`/data-rooms/${id}`);
       return response.data;
     },
     // Optimistic update: Remove immediately from UI
@@ -158,7 +158,7 @@ export const DataRooms: React.FC = () => {
     queryClient.prefetchQuery({
       queryKey: ['folders', dataRoomId],
       queryFn: async () => {
-        const response = await api.get(`/data-rooms?id=${dataRoomId}&action=folders`);
+        const response = await api.get(`/data-rooms/${dataRoomId}`);
         return response.data;
       },
       staleTime: 2 * 60 * 1000, // 2 minutes
