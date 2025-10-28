@@ -60,7 +60,7 @@ interface TreeNode {
  * This is the main component that renders the file tree.
  * It's wrapped in React.memo for performance optimization.
  */
-export const FileTree: React.FC<FileTreeProps> = memo(({
+const FileTreeComponent: React.FC<FileTreeProps> = ({
   folders,
   files,
   onFolderClick,
@@ -234,4 +234,8 @@ export const FileTree: React.FC<FileTreeProps> = memo(({
       </div>
     </div>
   );
-});
+};
+
+FileTreeComponent.displayName = 'FileTree';
+
+export const FileTree = memo(FileTreeComponent);
