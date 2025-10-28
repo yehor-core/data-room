@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Plus, Folder, FileText, Trash2, Edit, Upload, Search, Copy, MoreVertical } from 'lucide-react';
+import { ArrowLeft, Plus, Folder, FileText, Trash2, Edit, Upload, Search, MoreVertical } from 'lucide-react';
 import { DataRoom, Folder as FolderType, File as FileType, ApiResponse } from '../types';
 import { Button } from '../components/ui/Button';
 import { Card, CardContent } from '../components/ui/Card';
@@ -61,7 +61,7 @@ export const DataRoomView: React.FC = () => {
   const { data: dataRoomData } = useQuery<ApiResponse<DataRoom>>({
     queryKey: ['dataRoom', id],
     queryFn: async () => {
-      const response = await api.get(`/data-rooms`, { params: { id } });
+      const response = await api.get(`/data-rooms/${id}`);
       return response.data;
     },
     enabled: !!id && !folderId && !id?.startsWith('temp-'),
@@ -73,7 +73,7 @@ export const DataRoomView: React.FC = () => {
   const { data: folderData } = useQuery({
     queryKey: ['folder', folderId],
     queryFn: async () => {
-      const response = await api.get(`/folders`, { params: { id: folderId } });
+      const response = await api.get(`/folders/${folderId}/contents`);
       return response.data;
     },
     enabled: !!folderId && !id?.startsWith('temp-'),
@@ -261,46 +261,6 @@ export const DataRoomView: React.FC = () => {
     },
   });
 
-  // Duplicate folder mutation
-  const duplicateFolderMutation = useMutation({
-    mutationFn: async (folderId: string) => {
-      const response = await api.post(`/folders?id=${folderId}&action=duplicate`);
-      return response.data.data;
-    },
-    onSuccess: () => {
-      toast.success(SUCCESS_MESSAGES.FOLDER_DUPLICATED);
-      queryClient.invalidateQueries({ queryKey: ['dataRoom', id] });
-      queryClient.invalidateQueries({ queryKey: ['folders', id] });
-      if (folderId) {
-        queryClient.invalidateQueries({ queryKey: ['folder', folderId] });
-      }
-    },
-    onError: (error: any) => {
-      toast.error(getErrorMessage(error));
-    },
-  });
-
-  // Duplicate file mutation
-  const duplicateFileMutation = useMutation({
-    mutationFn: async (fileId: string) => {
-      const response = await api.post(`/files?id=${fileId}&action=duplicate`);
-      return response.data.data;
-    },
-    onSuccess: () => {
-      toast.success(SUCCESS_MESSAGES.FILE_DUPLICATED);
-      queryClient.invalidateQueries({ queryKey: ['dataRoom', id] });
-      queryClient.invalidateQueries({ queryKey: ['folders', id] });
-      if (folderId) {
-        queryClient.invalidateQueries({ queryKey: ['folder', folderId] });
-        queryClient.invalidateQueries({ queryKey: ['files', id, folderId] });
-      }
-    },
-    onError: (error: any) => {
-      toast.error(getErrorMessage(error));
-    },
-  });
-
-
   const uploadFileMutation = useMutation({
     mutationFn: async ({ file, name, folderId }: { file: File; name: string; folderId: string }) => {
       // Show loading toast
@@ -318,7 +278,7 @@ export const DataRoomView: React.FC = () => {
         formData.append('name', name);
         formData.append('folderId', folderId);
         
-        const response = await api.post('/files?action=upload', formData, {
+        const response = await api.post('/files/upload', formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
           },
@@ -984,20 +944,6 @@ export const DataRoomView: React.FC = () => {
           >
             <Edit className="h-4 w-4" />
             Rename
-          </button>
-          <button
-            className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2"
-            onClick={() => {
-              if (contextMenu.item.type === 'folder') {
-                duplicateFolderMutation.mutate(contextMenu.item.id);
-              } else {
-                duplicateFileMutation.mutate(contextMenu.item.id);
-              }
-              setContextMenu(null);
-            }}
-          >
-            <Copy className="h-4 w-4" />
-            Duplicate
           </button>
           <button
             className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2 text-red-600"

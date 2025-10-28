@@ -148,7 +148,7 @@ export const DataRooms: React.FC = () => {
     queryClient.prefetchQuery({
       queryKey: ['dataRoom', dataRoomId],
       queryFn: async () => {
-        const response = await api.get(`/data-rooms`, { params: { id: dataRoomId } });
+        const response = await api.get(`/data-rooms/${dataRoomId}`);
         return response.data;
       },
       staleTime: 2 * 60 * 1000, // 2 minutes
