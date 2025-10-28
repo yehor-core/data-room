@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import { Skeleton, SkeletonText, SkeletonCard, SkeletonTable } from '@/components/ui/Skeleton';
+import { Skeleton, SkeletonText, SkeletonCard, SkeletonTable } from '../../components/ui/Skeleton';
 
 describe('Skeleton Component', () => {
   describe('Basic Skeleton', () => {

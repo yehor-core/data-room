@@ -19,9 +19,9 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
-import { supabase } from '@/lib/supabase';
-import { toast } from '@/lib/toast';
-import { SUCCESS_MESSAGES } from '@/lib/errorMessages';
+import { supabase } from '../lib/supabase';
+import { toast } from '../lib/toast';
+import { SUCCESS_MESSAGES } from '../lib/errorMessages';
 
 /**
  * AUTH CONTEXT TYPE DEFINITION

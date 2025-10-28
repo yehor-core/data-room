@@ -25,7 +25,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback, memo } from 'react';
 import { ChevronRight, ChevronDown, Folder, FolderOpen, FileText } from 'lucide-react';
-import { Folder as FolderType, File as FileType } from '@/types';
+import { Folder as FolderType, File as FileType } from '../types';
 
 /**
  * PROPS INTERFACE

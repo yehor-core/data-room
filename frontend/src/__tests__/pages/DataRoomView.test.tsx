@@ -3,11 +3,11 @@ import { render, screen, waitFor, fireEvent, act } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import '@testing-library/jest-dom';
-import { DataRoomView } from '@/pages/DataRoomView';
-import { api } from '@/lib/api';
+import { DataRoomView } from '../../pages/DataRoomView';
+import { api } from '../../lib/api';
 
 // Mock the API
-jest.mock('@/lib/api');
+jest.mock('../../lib/api');
 const mockedApi = api as jest.Mocked<typeof api>;
 
 // Mock react-router-dom's useParams
