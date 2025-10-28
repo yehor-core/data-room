@@ -3,18 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = process.env.REACT_APP_SUPABASE_URL!;
 const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY!;
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    persistSession: true,
-    storageKey: 'data-room-auth',
-    storage: window.localStorage,
-    autoRefreshToken: true,
-    detectSessionInUrl: true,
-    flowType: 'pkce'
-  }
-});
-
-// Test the client
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // Database types
 export interface DataRoom {
