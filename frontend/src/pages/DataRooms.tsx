@@ -234,11 +234,11 @@ export const DataRooms: React.FC = () => {
                         Creating...
                       </Button>
                     ) : (
-                      <Link to={`/data-rooms/${dataRoom.id}`}>
-                        <Button variant="outline" size="sm">
+                      <Button variant="outline" size="sm" asChild>
+                        <Link to={`/data-rooms/${dataRoom.id}`}>
                           Open
-                        </Button>
-                      </Link>
+                        </Link>
+                      </Button>
                     )}
                     <Button
                       variant="destructive"
