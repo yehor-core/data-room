@@ -5,6 +5,17 @@ import { Plus, FolderOpen, Trash2 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/Card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../components/ui/Dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '../components/ui/AlertDialog';
 import { Input } from '../components/ui/Input';
 import { Label } from '../components/ui/Label';
 import { Skeleton } from '../components/ui/Skeleton';
@@ -28,7 +39,7 @@ export const DataRooms: React.FC = () => {
         console.log('🔍 No user, skipping data rooms fetch');
         return [];
       }
-      
+
       console.log('🔍 Fetching data rooms via API for user:', user.id);
       const response = await api.get('/data-rooms');
       return response.data.data || [];
@@ -42,7 +53,7 @@ export const DataRooms: React.FC = () => {
   const createMutation = useMutation({
     mutationFn: async (name: string) => {
       if (!user) throw new Error('User not authenticated');
-      
+
       console.log('🔍 Creating data room via API:', { name, user_id: user.id });
       const response = await api.post('/data-rooms', { name });
       return response.data.data;
@@ -51,10 +62,10 @@ export const DataRooms: React.FC = () => {
     onMutate: async (name: string) => {
       // Cancel outgoing refetches
       await queryClient.cancelQueries({ queryKey: ['dataRooms'] });
-      
+
       // Snapshot previous value
       const previousDataRooms = queryClient.getQueryData<DataRoom[]>(['dataRooms']);
-      
+
       // Optimistically update with temporary data room
       const tempDataRoom: DataRoom = {
         id: `temp-${Date.now()}`, // Temporary ID
@@ -63,11 +74,11 @@ export const DataRooms: React.FC = () => {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
-      
+
       queryClient.setQueryData<DataRoom[]>(['dataRooms'], (old = []) => [tempDataRoom, ...old]);
-      
+
       console.log('✨ Optimistically added data room to UI');
-      
+
       // Return context with snapshot
       return { previousDataRooms };
     },
@@ -78,11 +89,11 @@ export const DataRooms: React.FC = () => {
       toast.success(SUCCESS_MESSAGES.DATA_ROOM_CREATED);
     },
     // On error, rollback to previous state
-    onError: (error: any, name: string, context: any) => {
+    onError: (error: unknown, name: string, context: any) => {
       if (context?.previousDataRooms) {
         queryClient.setQueryData(['dataRooms'], context.previousDataRooms);
       }
-      
+
       const errorMessage = getErrorMessage(error);
       toast.error(errorMessage);
     },
@@ -91,7 +102,7 @@ export const DataRooms: React.FC = () => {
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       if (!user) throw new Error('User not authenticated');
-      
+
       const response = await api.delete(`/data-rooms/${id}`);
       return response.data;
     },
@@ -99,17 +110,17 @@ export const DataRooms: React.FC = () => {
     onMutate: async (id: string) => {
       // Cancel outgoing refetches
       await queryClient.cancelQueries({ queryKey: ['dataRooms'] });
-      
+
       // Snapshot previous value
       const previousDataRooms = queryClient.getQueryData<DataRoom[]>(['dataRooms']);
-      
+
       // Optimistically remove from UI
       queryClient.setQueryData<DataRoom[]>(['dataRooms'], (old = []) =>
         old.filter(dataRoom => dataRoom.id !== id)
       );
-      
+
       console.log('✨ Optimistically removed data room from UI');
-      
+
       // Return context with snapshot
       return { previousDataRooms };
     },
@@ -118,11 +129,11 @@ export const DataRooms: React.FC = () => {
       toast.success(SUCCESS_MESSAGES.DATA_ROOM_DELETED);
     },
     // On error, rollback to previous state
-    onError: (error: any, id: string, context: any) => {
+    onError: (error: unknown, id: string, context: any) => {
       if (context?.previousDataRooms) {
         queryClient.setQueryData(['dataRooms'], context.previousDataRooms);
       }
-      
+
       const errorMessage = getErrorMessage(error);
       toast.error(errorMessage);
     },
@@ -138,9 +149,7 @@ export const DataRooms: React.FC = () => {
   };
 
   const handleDelete = (id: string) => {
-    if (window.confirm('Are you sure? This will delete all folders and files in this data room.')) {
-      deleteMutation.mutate(id);
-    }
+    deleteMutation.mutate(id);
   };
 
   // Prefetch data room data on hover
@@ -153,7 +162,7 @@ export const DataRooms: React.FC = () => {
       },
       staleTime: 2 * 60 * 1000, // 2 minutes
     });
-    
+
     // Also prefetch folders for this data room
     queryClient.prefetchQuery({
       queryKey: ['folders', dataRoomId],
@@ -163,7 +172,7 @@ export const DataRooms: React.FC = () => {
       },
       staleTime: 2 * 60 * 1000, // 2 minutes
     });
-    
+
     console.log('🔮 Prefetching data for data room:', dataRoomId);
   };
 
@@ -208,8 +217,8 @@ export const DataRooms: React.FC = () => {
       ) : dataRooms && dataRooms.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {dataRooms.map((dataRoom) => (
-            <Card 
-              key={dataRoom.id} 
+            <Card
+              key={dataRoom.id}
               className="hover:shadow-lg transition-shadow"
               onMouseEnter={() => handleDataRoomHover(dataRoom.id)}
             >
@@ -240,14 +249,31 @@ export const DataRooms: React.FC = () => {
                         </Link>
                       </Button>
                     )}
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => handleDelete(dataRoom.id)}
-                      disabled={dataRoom.id.startsWith('temp-')}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          disabled={dataRoom.id.startsWith('temp-')}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete this data room and all of its contents.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleDelete(dataRoom.id)}>
+                            Continue
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </div>
               </CardContent>
@@ -301,4 +327,6 @@ export const DataRooms: React.FC = () => {
     </div>
   );
 };
+
+export default DataRooms;
 

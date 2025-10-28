@@ -31,6 +31,7 @@
   "author": "Data Room Team",
   "license": "MIT",
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "concurrently": "^8.2.2",
+    "dotenv-cli": "^10.0.0"
   }
 }

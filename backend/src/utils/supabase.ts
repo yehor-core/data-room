@@ -18,7 +18,7 @@ export const supabase = createClient(supabaseUrl, supabaseServiceKey, {
 // Create Supabase client with anon key for client-side operations
 export const supabaseAnon = createClient(
   supabaseUrl,
-  process.env.SUPABASE_ANON_KEY || '',
+  process.env.SUPABASE_ANON_KEY!,
   {
     auth: {
       autoRefreshToken: true,
@@ -52,6 +52,18 @@ export const uploadFile = async (
 
   return publicUrl;
 };
+
+export const getSignedUrl = async (filePath: string): Promise<string> => {
+    const { data, error } = await supabase.storage
+        .from('data-room-files')
+        .createSignedUrl(filePath, 60); // 60 seconds expiry
+
+    if (error) {
+        throw new Error(`Failed to create signed URL: ${error.message}`);
+    }
+
+    return data.signedUrl;
+}
 
 export const deleteFile = async (filePath: string): Promise<void> => {
   const { error } = await supabase.storage

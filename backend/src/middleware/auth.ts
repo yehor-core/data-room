@@ -1,15 +1,15 @@
 import { Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../lib/prisma';
 import { AuthenticatedRequest } from '../types';
 import { createError } from './errorHandler';
 import { createClient } from '@supabase/supabase-js';
+import { config } from '../config';
 
-const prisma = new PrismaClient();
+export { AuthenticatedRequest };
 
 // Initialize Supabase client for token verification
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabaseUrl = config.supabaseUrl;
+const supabaseServiceKey = config.supabaseServiceKey;
 
 if (!supabaseUrl || !supabaseServiceKey) {
   console.error('⚠️ Supabase credentials not configured');
@@ -44,8 +44,6 @@ export const authenticateToken = async (
       throw createError('Invalid or expired token', 401);
     }
 
-    console.log('✅ [Auth] Supabase user verified:', supabaseUser.email);
-
     // Find or create user in our database
     let user = await prisma.user.findUnique({
       where: { email: supabaseUser.email! },
@@ -79,22 +77,8 @@ export const authenticateToken = async (
 
     req.user = user;
     next();
-  } catch (error) {
-    if (error instanceof jwt.JsonWebTokenError) {
-      next(createError('Invalid token', 401));
-    } else if (error instanceof jwt.TokenExpiredError) {
-      next(createError('Token expired', 401));
-    } else {
-      next(error);
-    }
+  } catch (error: any) {
+    // Catch generic auth errors from Supabase or other issues
+    next(createError(error.message || 'Authentication failed', 401));
   }
-};
-
-export const generateToken = (userId: string): string => {
-  const jwtSecret = process.env.JWT_SECRET;
-  if (!jwtSecret) {
-    throw createError('JWT secret not configured', 500);
-  }
-
-  return jwt.sign({ userId }, jwtSecret, { expiresIn: '7d' });
 };

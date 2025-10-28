@@ -1,8 +1,9 @@
 export { CreateFolderDialog } from './CreateFolderDialog';
 export { UploadFileDialog } from './UploadFileDialog';
-export { RenameDialog } from './RenameDialog';
-export { ContextMenu } from './ContextMenu';
+export * from './RenameDialog';
 export { FoldersGrid } from './FoldersGrid';
 export { FilesGrid } from './FilesGrid';
 export { EmptyState } from './EmptyState';
-
+export { DataRoomHeader } from './DataRoomHeader';
+export * from './SearchAndActions';
+export * from './DataRoomLayout';

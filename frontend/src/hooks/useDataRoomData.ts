@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { ApiResponse, DataRoom } from '@/types';
-import { api } from '@/lib/api';
+import { ApiResponse, DataRoom } from '../types';
+import { api } from '../lib/api';
 
 interface UseDataRoomDataProps {
   dataRoomId?: string;

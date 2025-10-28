@@ -1,26 +1,42 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { body, validationResult, query } from 'express-validator';
 import { PrismaClient } from '@prisma/client';
 import { authenticateToken } from '../middleware/auth';
 import { asyncHandler, createError } from '../middleware/errorHandler';
 import { AuthenticatedRequest } from '../types';
+import prisma from '../lib/prisma';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 // Apply authentication to all routes
 router.use(authenticateToken);
 
 // Validation middleware
-const validateCreateFolder = [
-  body('name').isString().trim().isLength({ min: 1, max: 100 }),
-  body('dataRoomId').isUUID(),
-  body('parentId').optional({ nullable: true }).isUUID(),
+const validateFolderCreation = [
+  body('name')
+    .trim()
+    .notEmpty().withMessage('Folder name is required.')
+    .isLength({ min: 1, max: 100 }).withMessage('Folder name must be between 1 and 100 characters.'),
+  body('parentId')
+    .optional({ nullable: true })
+    .isUUID().withMessage('Invalid parent folder ID.'),
+  body('dataRoomId')
+    .isUUID().withMessage('Invalid data room ID.'),
 ];
 
-const validateUpdateFolder = [
-  body('name').optional().isString().trim().isLength({ min: 1, max: 100 }),
+const validateFolderRename = [
+  body('name')
+    .trim()
+    .notEmpty().withMessage('New folder name is required.')
+    .isLength({ min: 1, max: 100 }).withMessage('Folder name must be between 1 and 100 characters.'),
 ];
+
+const validateFolderMove = [
+  body('newParentId')
+    .optional({ nullable: true })
+    .isUUID().withMessage('Invalid new parent folder ID.'),
+];
+
 
 // Get folder contents
 router.get('/:id/contents', asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
@@ -148,22 +164,21 @@ router.get('/:id/tree', asyncHandler(async (req: AuthenticatedRequest, res: Resp
 }));
 
 // Create a new folder
-router.post('/', validateCreateFolder, asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+router.post('/', validateFolderCreation, asyncHandler(async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    console.error('[CreateFolder] Validation errors:', errors.array());
-    console.error('[CreateFolder] Request body:', req.body);
-    throw createError(`Validation failed: ${errors.array().map(e => e.msg).join(', ')}`, 400);
+    return res.status(400).json({ errors: errors.array() });
   }
 
-  const { name, dataRoomId, parentId } = req.body;
-  console.log('[CreateFolder] Request:', { name, dataRoomId, parentId, userId: req.user?.id });
+  const { name, parentId, dataRoomId } = req.body;
+  const userId = req.user!.id;
+  console.log('[CreateFolder] Request:', { name, parentId, dataRoomId, userId });
 
   // Verify data room exists and belongs to user
   const dataRoom = await prisma.dataRoom.findFirst({
     where: {
       id: dataRoomId,
-      ownerId: req.user!.id,
+      ownerId: userId,
     },
   });
 
@@ -203,7 +218,7 @@ router.post('/', validateCreateFolder, asyncHandler(async (req: AuthenticatedReq
       name,
       parentId: parentId || null,
       dataRoomId,
-      userId: req.user!.id,
+      userId: userId,
     },
     include: {
       _count: {
@@ -215,25 +230,26 @@ router.post('/', validateCreateFolder, asyncHandler(async (req: AuthenticatedReq
     },
   });
 
-  res.status(201).json({
+  return res.status(201).json({
     success: true,
     data: folder,
     message: 'Folder created successfully',
   });
 }));
 
-// Update a folder
-router.put('/:id', validateUpdateFolder, asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+// Update folder (rename)
+router.patch('/:id/rename', validateFolderRename, asyncHandler(async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    throw createError('Validation failed', 400);
+    return res.status(400).json({ errors: errors.array() });
   }
 
   const { id } = req.params;
   const { name } = req.body;
+  console.log('[RenameFolder] Request:', { id, name });
 
   // Verify folder exists and user has access
-  const existingFolder = await prisma.folder.findFirst({
+  const folder = await prisma.folder.findFirst({
     where: {
       id,
       dataRoom: {
@@ -242,17 +258,17 @@ router.put('/:id', validateUpdateFolder, asyncHandler(async (req: AuthenticatedR
     },
   });
 
-  if (!existingFolder) {
-    throw createError('Folder not found', 404);
+  if (!folder) {
+    return next(createError('Folder not found', 404));
   }
 
   // Check if new name conflicts with existing folder in same location
-  if (name && name !== existingFolder.name) {
+  if (name && name !== folder.name) {
     const conflictingFolder = await prisma.folder.findFirst({
       where: {
         name,
-        parentId: existingFolder.parentId,
-        dataRoomId: existingFolder.dataRoomId,
+        parentId: folder.parentId,
+        dataRoomId: folder.dataRoomId,
         id: { not: id },
       },
     });
@@ -262,7 +278,7 @@ router.put('/:id', validateUpdateFolder, asyncHandler(async (req: AuthenticatedR
     }
   }
 
-  const folder = await prisma.folder.update({
+  const updatedFolder = await prisma.folder.update({
     where: { id },
     data: {
       ...(name && { name }),
@@ -277,15 +293,68 @@ router.put('/:id', validateUpdateFolder, asyncHandler(async (req: AuthenticatedR
     },
   });
 
-  res.json({
-    success: true,
-    data: folder,
-    message: 'Folder updated successfully',
-  });
+  return res.status(200).json(updatedFolder);
 }));
 
-// Delete a folder
-router.delete('/:id', asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+// Move folder
+router.patch('/:id/move', validateFolderMove, asyncHandler(async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  const { id } = req.params;
+  const { newParentId } = req.body;
+  console.log('[MoveFolder] Request:', { id, newParentId });
+
+  // Verify folder exists and user has access
+  const folder = await prisma.folder.findFirst({
+    where: {
+      id,
+      dataRoom: {
+        ownerId: req.user!.id,
+      },
+    },
+  });
+
+  if (!folder) {
+    return next(createError('Folder not found', 404));
+  }
+
+  // If newParentId is provided, verify new parent folder exists and belongs to same data room
+  if (newParentId) {
+    const newParentFolder = await prisma.folder.findFirst({
+      where: {
+        id: newParentId,
+        dataRoomId: folder.dataRoomId,
+      },
+    });
+
+    if (!newParentFolder) {
+      return next(createError('New parent folder not found', 404));
+    }
+  }
+
+  const movedFolder = await prisma.folder.update({
+    where: { id },
+    data: {
+      parentId: newParentId || null,
+    },
+    include: {
+      _count: {
+        select: {
+          children: true,
+          files: true,
+        },
+      },
+    },
+  });
+
+  return res.status(200).json(movedFolder);
+}));
+
+// Delete folder
+router.delete('/:id', asyncHandler(async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   const { id } = req.params;
 
   // Verify folder exists and user has access
@@ -299,7 +368,7 @@ router.delete('/:id', asyncHandler(async (req: AuthenticatedRequest, res: Respon
   });
 
   if (!folder) {
-    throw createError('Folder not found', 404);
+    return next(createError('Folder not found', 404));
   }
 
   // Delete folder (cascade will handle children and files)
@@ -307,7 +376,7 @@ router.delete('/:id', asyncHandler(async (req: AuthenticatedRequest, res: Respon
     where: { id },
   });
 
-  res.json({
+  return res.json({
     success: true,
     message: 'Folder deleted successfully',
   });

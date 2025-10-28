@@ -3,35 +3,25 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
-import dotenv from 'dotenv';
+import { config } from './config';
 
 import { errorHandler } from './middleware/errorHandler';
 import { authRoutes } from './routes/auth';
 import { dataRoomRoutes } from './routes/dataRooms';
 import { folderRoutes } from './routes/folders';
-import { fileRoutes } from './routes/files';
-
-// Load environment variables
-dotenv.config();
+import fileRoutes from './routes/files';
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = config.port;
 
 // Trust proxy for Vercel deployment (required for rate limiting)
 // Trust only the first proxy (Vercel's proxy)
 app.set('trust proxy', 1);
 
 // CORS Configuration
-const allowedOrigins = process.env.ALLOWED_ORIGINS
-  ? process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim())
-  : [
-      'https://data-room-196e.vercel.app',  // Production frontend
-      'http://localhost:3000',              // Local development
-      'http://localhost:3001'               // Alternative local port
-    ];
-
-console.log('🔧 Environment:', process.env.NODE_ENV || 'development');
-console.log('🔧 Allowed origins:', allowedOrigins);
+const allowedOrigins = config.allowedOrigins
+  .split(',')
+  .map(origin => origin.trim());
 
 // Rate limiting with proper Vercel configuration
 const limiter = rateLimit({
@@ -75,42 +65,24 @@ app.use('/api/files', fileRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
-  console.log('[HEALTH] Health check requested');
   res.status(200).json({ 
     status: 'OK', 
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development'
+    environment: config.nodeEnv || 'development'
   });
 });
 
 // Root health check
 app.get('/', (req, res) => {
-  console.log('[ROOT] Root endpoint hit');
-  res.status(200).json({ 
-    message: 'Backend server is running!',
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development'
-  });
+  res.send('Hello, world!');
 });
 
 // Simple test endpoint
 app.get('/api/test', (req, res) => {
-  console.log(`[TEST] Simple test endpoint hit`);
   res.status(200).json({ 
     message: 'Backend is working!',
     timestamp: new Date().toISOString()
   });
-});
-
-// Handle preflight requests explicitly for all routes
-app.options('*', (req, res) => {
-  console.log(`[CORS] Handling preflight request for ${req.originalUrl}`);
-  console.log(`[CORS] Origin: ${req.headers.origin}`);
-  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
-  res.header('Access-Control-Allow-Credentials', 'true');
-  res.status(200).end();
 });
 
 // Error handling
@@ -126,11 +98,7 @@ app.use('*', (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🔗 Health check: http://localhost:${PORT}/api/health`);
-  console.log(`🔗 Root endpoint: http://localhost:${PORT}/`);
-  console.log(`🔗 CORS test: http://localhost:${PORT}/api/cors-test`);
-  console.log(`🔗 Auth endpoint: http://localhost:${PORT}/api/auth/login`);
+  console.log(`📊 Environment: ${config.nodeEnv}`);
 });
 
 // Export removed to prevent Vercel from detecting this as a serverless function

@@ -32,9 +32,9 @@ import { PrivateRoute } from './components/PrivateRoute';
  * The .then() part extracts the named export from each module.
  */
 const Login = lazy(() => import('./pages/Login').then(module => ({ default: module.Login })));
-const Signup = lazy(() => import('./pages/Signup').then(module => ({ default: module.Signup })));
 const DataRooms = lazy(() => import('./pages/DataRooms').then(module => ({ default: module.DataRooms })));
-const DataRoomView = lazy(() => import('./pages/DataRoomView').then(module => ({ default: module.DataRoomView })));
+const DataRoomRoot = lazy(() => import('./pages/DataRoomRoot').then(module => ({ default: module.DataRoomRoot })));
+const FolderView = lazy(() => import('./pages/FolderView').then(module => ({ default: module.FolderView })));
 
 /**
  * LOADING FALLBACK COMPONENT
@@ -93,13 +93,12 @@ function App() {
             <Routes>
               {/* PUBLIC ROUTES - Anyone can access these */}
               <Route path="/login" element={<Login />} />
-              <Route path="/signup" element={<Signup />} />
               
               {/* PROTECTED ROUTES - Only logged-in users can access these */}
               <Route element={<PrivateRoute><Layout /></PrivateRoute>}>
                 <Route path="/" element={<DataRooms />} />
-                <Route path="/data-rooms/:id" element={<DataRoomView />} />
-                <Route path="/data-rooms/:id/folders/:folderId" element={<DataRoomView />} />
+                <Route path="/data-rooms/:id" element={<DataRoomRoot />} />
+                <Route path="/data-rooms/:id/folders/:folderId" element={<FolderView />} />
               </Route>
 
               {/* CATCH-ALL ROUTE - Redirects unknown URLs to home page */}

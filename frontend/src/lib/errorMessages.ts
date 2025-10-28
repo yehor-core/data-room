@@ -3,6 +3,8 @@
  * Converts technical errors into clear, actionable messages
  */
 
+import { isAxiosError } from 'axios';
+
 export interface ErrorResponse {
   code?: string;
   response?: {
@@ -46,72 +48,29 @@ export const ERROR_MESSAGES = {
 /**
  * Get user-friendly error message from error object
  */
-export const getErrorMessage = (error: ErrorResponse): string => {
-  // Handle network errors
-  if (error.code === 'ERR_NETWORK') {
-    return ERROR_MESSAGES.NETWORK;
+export function getErrorMessage(error: unknown): string {
+  if (isAxiosError(error)) {
+    // The request was made and the server responded with a status code
+    // that falls out of the range of 2xx
+    if (error.response) {
+      // Check for a specific error message structure from your backend
+      if (error.response.data && error.response.data.message) {
+        return error.response.data.message;
+      }
+      return `Error: ${error.response.status} ${error.response.statusText}`;
+    } else if (error.request) {
+      // The request was made but no response was received
+      return 'No response from server. Please check your network connection.';
+    }
   }
   
-  if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT') {
-    return ERROR_MESSAGES.TIMEOUT;
+  if (error instanceof Error) {
+    return error.message;
   }
   
-  // Get HTTP status and response data
-  const status = error.response?.status;
-  const serverMessage = error.response?.data?.error || error.response?.data?.message;
-  
-  // Map status codes to user-friendly messages
-  switch (status) {
-    case 400:
-      if (serverMessage?.toLowerCase().includes('required')) {
-        return ERROR_MESSAGES.REQUIRED_FIELD;
-      }
-      if (serverMessage?.toLowerCase().includes('invalid')) {
-        return ERROR_MESSAGES.INVALID_INPUT;
-      }
-      return serverMessage || ERROR_MESSAGES.INVALID_INPUT;
-      
-    case 401:
-      if (serverMessage?.toLowerCase().includes('credentials')) {
-        return ERROR_MESSAGES.INVALID_CREDENTIALS;
-      }
-      return ERROR_MESSAGES.UNAUTHORIZED;
-      
-    case 403:
-      return serverMessage || ERROR_MESSAGES.FORBIDDEN;
-      
-    case 404:
-      return serverMessage || ERROR_MESSAGES.NOT_FOUND;
-      
-    case 409:
-      return serverMessage || ERROR_MESSAGES.DUPLICATE;
-      
-    case 413:
-      return ERROR_MESSAGES.FILE_TOO_LARGE;
-      
-    case 500:
-      if (serverMessage?.toLowerCase().includes('database')) {
-        return ERROR_MESSAGES.DATABASE_ERROR;
-      }
-      return serverMessage || ERROR_MESSAGES.SERVER_ERROR;
-      
-    case 503:
-      return 'Service temporarily unavailable. Please try again later.';
-      
-    default:
-      // If we have a server message, use it
-      if (serverMessage) {
-        return serverMessage;
-      }
-      
-      // If we have a generic error message, use it
-      if (error.message) {
-        return error.message;
-      }
-      
-      return ERROR_MESSAGES.UNKNOWN;
-  }
-};
+  // Fallback for other types of errors
+  return 'An unexpected error occurred.';
+}
 
 /**
  * Get success message for operations

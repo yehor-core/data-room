@@ -1,7 +1,7 @@
 import React from 'react';
 import { Folder, Search, Plus, Upload } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
+import { Card, CardContent } from '../ui/Card';
+import { Button } from '../ui/Button';
 
 interface EmptyStateProps {
   isSearching: boolean;

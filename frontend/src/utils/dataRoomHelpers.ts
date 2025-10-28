@@ -1,5 +1,5 @@
-import { Folder as FolderType, File as FileType } from '@/types';
-import { toast } from '@/lib/toast';
+import { Folder as FolderType, File as FileType } from '../types';
+import { toast } from '../lib/toast';
 
 /**
  * Get current folder's contents (folders and files)
@@ -131,10 +131,10 @@ export const handleFileView = (
     return;
   }
 
-  // Map database fields to expected frontend fields
-  const blobUrl = file.filePath || file.blobUrl;
-  const fileType = file.mimeType || file.fileType;
-  const size = file.fileSize || file.size;
+  // Use file properties from our type definition
+  const blobUrl = file.url;
+  const fileType = file.type;
+  const size = file.size;
 
   console.log('📄 File details:', {
     id: file.id,
