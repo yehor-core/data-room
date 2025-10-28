@@ -23,6 +23,7 @@ import { supabase } from '../lib/supabase';
 import { toast } from '../lib/toast';
 import { SUCCESS_MESSAGES } from '../lib/errorMessages';
 import { User } from '../types'; // Import your own User type
+import { setAuthToken } from '../lib/api'; // Import the new function
 
 /**
  * AUTH CONTEXT TYPE DEFINITION
@@ -92,6 +93,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     console.log('[AuthContext] Checking initial session...');
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       console.log('[AuthContext] Initial session result:', session);
+      setAuthToken(session?.access_token ?? null); // Set token for API requests
       setSession(session);
       if (session) {
         await fetchUser();
@@ -107,6 +109,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log(`[AuthContext] onAuthStateChange event: ${event}`, session);
+      setAuthToken(session?.access_token ?? null); // Set token for API requests
       setSession(session);
       
       if (session) {
