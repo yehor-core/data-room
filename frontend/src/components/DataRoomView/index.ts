@@ -7,3 +7,4 @@ export { EmptyState } from './EmptyState';
 export { DataRoomHeader } from './DataRoomHeader';
 export * from './SearchAndActions';
 export * from './DataRoomLayout';
+export * from './columns';

@@ -47,16 +47,16 @@ export const DataRoomLayout: React.FC<DataRoomLayoutProps> = ({
   return (
     <div className="flex flex-col h-full bg-background text-foreground">
       <div className="container mx-auto px-4 py-4 md:py-6 border-b">
-        <Header title={title} onBackClick={onBackClick}>
-          <SearchAndActions
-            searchQuery={searchQuery}
-            onSearchChange={(e) => onSearchChange(e.target.value)}
-            viewMode={viewMode}
-            onViewModeChange={onViewModeChange}
-            onUpload={onUpload}
-            onCreateFolder={onCreateFolder}
-          />
-        </Header>
+        <Header title={title} onBackClick={onBackClick} />
+        <SearchAndActions
+          searchValue={searchQuery}
+          onSearchChange={onSearchChange}
+          viewMode={viewMode}
+          onViewModeChange={onViewModeChange}
+          onUploadFile={onUpload}
+          showUploadButton={true}
+          onCreateFolder={onCreateFolder}
+        />
       </div>
 
       <div className="flex-1 overflow-auto">
