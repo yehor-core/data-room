@@ -29,7 +29,7 @@ export const Layout: React.FC = () => {
                 <>
                   <div className="hidden md:flex items-center gap-2 text-sm">
                     <User className="h-4 w-4" />
-                    <span className="max-w-[150px] truncate">{user.user_metadata?.full_name || user.email}</span>
+                    <span className="max-w-[150px] truncate">{user.name || user.email}</span>
                   </div>
                   <Button variant="outline" size="sm" onClick={handleLogout}>
                     <LogOut className="h-4 w-4 sm:mr-2" />
