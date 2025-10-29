@@ -17,7 +17,7 @@ export const useDataRoomMutations = ({ dataRoomId, folderId }: UseDataRoomMutati
 
   const invalidateQueries = () => {
     queryClient.invalidateQueries({ queryKey: ['dataRoom', dataRoomId] });
-    queryClient.invalidateQueries({ queryKey: ['folders', dataRoomId] });
+    queryClient.invalidateQueries({ queryKey: ['allFolders', dataRoomId] });
     queryClient.invalidateQueries({ queryKey: ['allFiles', dataRoomId] });
     if (folderId) {
       queryClient.invalidateQueries({ queryKey: ['folder', folderId] });

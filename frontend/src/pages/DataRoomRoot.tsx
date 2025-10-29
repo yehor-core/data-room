@@ -54,7 +54,7 @@ export function DataRoomRoot() {
   const filteredFolders = useMemo(
     () =>
       foldersQuery.data?.data.folders?.filter((folder: any) =>
-        folder.name.toLowerCase().includes(debouncedSearch.toLowerCase())
+        !folder.parentId && folder.name.toLowerCase().includes(debouncedSearch.toLowerCase())
       ) || [],
     [foldersQuery.data, debouncedSearch]
   );
