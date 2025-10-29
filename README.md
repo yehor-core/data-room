@@ -39,28 +39,19 @@ For more detailed information see [ARCHITECTURE.md](ARCHITECTURE.md).
     ```
 
 3.  **Set up environment variables:**
-    You'll need to get your project's `DATABASE_URL` from your Supabase project settings (under Database -> Connection string).
+    You'll need to create `.env` files for both the frontend and backend. Copy the contents from the `.env.example` files in each directory.
 
-    Create a `.env` file in the `backend` directory:
-    ```
-    backend/.env
-    ```
+    -   **Backend:** Create a `.env` file in the `backend` directory by copying `backend/.env.example`.
+        ```bash
+        cp backend/.env.example backend/.env
+        ```
+        You'll need to get your project's `DATABASE_URL` from your Supabase project settings (under Database -> Connection string) and add it to `backend/.env`.
 
-    Add your database connection string to it:
-    ```env
-    DATABASE_URL="postgresql://..."
-    ```
-    
-    You will also need to set up environment variables for the frontend for Supabase authentication. Create a `.env` file in the `frontend` directory and add your Supabase URL and Anon Key from your Supabase project's API settings.
-    
-    ```
-    frontend/.env
-    ```
-
-    ```env
-    REACT_APP_SUPABASE_URL="YOUR_SUPABASE_URL"
-    REACT_APP_SUPABASE_ANON_KEY="YOUR_SUPABASE_ANON_KEY"
-    ```
+    -   **Frontend:** Create a `.env` file in the `frontend` directory by copying `frontend/.env.example`.
+        ```bash
+        cp frontend/.env.example frontend/.env
+        ```
+        You will also need to set up environment variables for the frontend for Supabase authentication. Add your Supabase URL and Anon Key from your Supabase project's API settings to `frontend/.env`.
 
 
 4.  **Apply database schema:**
@@ -89,11 +80,25 @@ This project is configured for easy deployment to Vercel.
     -   **Root Directory:** `frontend`
     -   **Build Command:** `npm run build`
     -   **Output Directory:** `build`
-    -   Add your Supabase environment variables (`REACT_APP_SUPABASE_URL`, `REACT_APP_SUPABASE_ANON_KEY`) in the Vercel project settings.
+    -   **Environment Variables:** Add the following environment variables in the Vercel project settings. You can use your `frontend/.env` file as a reference. For more details, see `frontend/env.example`.
+        ```env
+        REACT_APP_API_URL="<your_deployed_backend_url>/api"
+        REACT_APP_SUPABASE_URL="https://[YOUR_SUPABASE_REF].supabase.co"
+        REACT_APP_SUPABASE_ANON_KEY="[YOUR_SUPABASE_ANON_KEY]"
+        ```
+
 4.  **Backend Configuration:**
     -   **Root Directory:** `backend`
     -   Vercel will detect the `vercel.json` and configure it as a serverless function.
-    -   Add the `DATABASE_URL` environment variable in the Vercel project settings.
+    -   **Environment Variables:** Add the following environment variables in the Vercel project settings. For more details, see `backend/env.example`.
+        ```env
+        DATABASE_URL="<your_supabase_connection_string>"
+        DIRECT_URL="<your_supabase_direct_connection_string>"
+        SUPABASE_URL="https://[YOUR_SUPABASE_REF].supabase.co"
+        SUPABASE_SERVICE_ROLE_KEY="[YOUR_SUPABASE_SERVICE_ROLE_KEY]"
+        SUPABASE_ANON_KEY="[SUPABASE_ANON_KEY]"
+        ALLOWED_ORIGINS="<your_deployed_frontend_url>"
+        ```
 
 ## Database Management
 
