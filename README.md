@@ -1,24 +1,3 @@
-# Data Room
-
-A comprehensive Data Room web application for secure file and folder management.
-
-## Table of Contents
-
-- [Project Overview](#project-overview)
-- [Tech Stack](#tech-stack)
-- [Design Decisions](#design-decisions)
-- [Getting Started](#getting-started)
-  - [Prerequisites](#prerequisites)
-  - [Local Development](#local-development)
-- [Deployment](#deployment)
-  - [Vercel](#vercel)
-- [Database Management](#database-management)
-- [Available Scripts](#available-scripts)
-
-## Project Overview
-
-This project is a secure data room application designed for managing and sharing files and folders. It consists of a React frontend and a Node.js backend, built with TypeScript. It uses Supabase for the database and authentication, and Prisma as the ORM.
-
 ## Tech Stack
 
 -   **Frontend:** React, TypeScript, React Router, Tailwind CSS (based on UI components)
