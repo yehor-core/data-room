@@ -11,6 +11,12 @@ export { AuthenticatedRequest };
 const supabaseUrl = config.supabaseUrl;
 const supabaseServiceKey = config.supabaseServiceKey;
 
+// Add a check for missing environment variables
+if (!supabaseUrl || !supabaseServiceKey) {
+  console.error('❌ [Auth] Missing Supabase URL or Service Key. Check environment variables.');
+  throw new Error('Authentication service is not configured.');
+}
+
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 export const authenticateToken = async (
