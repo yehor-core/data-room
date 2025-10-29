@@ -6,11 +6,11 @@ import TreeNode from './TreeNode';
 
 const FileTree: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { foldersQuery, filesQuery } = useDataRoomData({ dataRoomId: id });
+  const { allFoldersQuery, allFilesQuery } = useDataRoomData({ dataRoomId: id });
 
   const items = useMemo(() => {
-    const folders = foldersQuery.data?.data.folders || [];
-    const files = filesQuery.data?.data || [];
+    const folders = allFoldersQuery.data?.data.folders || [];
+    const files = allFilesQuery.data?.data || [];
     
     // Filter to only show root-level items (parentId/folderId is null)
     const rootFolders = folders.filter((folder: any) => !folder.parentId);
@@ -26,9 +26,9 @@ const FileTree: React.FC = () => {
         if (a.type === 'file' && b.type === 'folder') return 1;
         return a.name.localeCompare(b.name);
     });
-  }, [foldersQuery.data, filesQuery.data]);
+  }, [allFoldersQuery.data, allFilesQuery.data]);
 
-  if (foldersQuery.isLoading || filesQuery.isLoading) {
+  if (allFoldersQuery.isLoading || allFilesQuery.isLoading) {
     return <div>Loading...</div>;
   }
 

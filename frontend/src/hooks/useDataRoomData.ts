@@ -49,12 +49,24 @@ export const useDataRoomData = ({ dataRoomId, folderId }: UseDataRoomDataProps) 
     gcTime: 10 * 60 * 1000,  // 10 minutes cache
   });
 
+  const allFoldersQuery = useQuery({
+    queryKey: ['allFolders', dataRoomId],
+    queryFn: async () => {
+      const response = await api.get('/folders', { params: { dataRoomId } });
+      return response.data;
+    },
+    enabled: !!isValidId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000,  // 10 minutes cache
+  });
+
   return {
     data: data?.data,
     isLoading,
     isError,
     error,
     allFilesQuery,
+    allFoldersQuery,
   };
 };
 
