@@ -133,3 +133,62 @@ The `backend/src` directory is organized as follows:
 -   **Backend Deployment**: Deployed as **Vercel Serverless Functions** using `@vercel/node`. Each API route becomes a serverless function.
 -   **CI/CD**: Vercel provides automated builds and deployments triggered by `git push` to the main branch.
 -   **Environment Variables**: Vercel's dashboard is used to manage environment variables for both frontend (`REACT_APP_*`) and backend (`DATABASE_URL`).
+
+---
+
+## 6. Database Schema (ERD)
+
+The following diagram illustrates the relationships between the main entities in the database.
+
+```mermaid
+erDiagram
+    User {
+        String id PK
+        String email UK
+        String name
+        DateTime createdAt
+        DateTime updatedAt
+    }
+
+    DataRoom {
+        String id PK
+        String name
+        String description
+        String ownerId FK
+        DateTime createdAt
+        DateTime updatedAt
+    }
+
+    Folder {
+        String id PK
+        String name
+        String dataRoomId FK
+        String parentId FK
+        String userId FK
+        DateTime createdAt
+        DateTime updatedAt
+    }
+
+    File {
+        String id PK
+        String name
+        String dataRoomId FK
+        String folderId FK
+        String userId FK
+        BigInt fileSize
+        String mimeType
+        String filePath
+        DateTime createdAt
+        DateTime updatedAt
+    }
+
+    User ||--o{ DataRoom : "owns"
+    User ||--o{ Folder : "owns"
+    User ||--o{ File : "owns"
+
+    DataRoom ||--o{ Folder : "contains"
+    DataRoom ||--o{ File : "contains"
+
+    Folder ||--o{ File : "contains"
+    Folder }o--o{ Folder : "is child of"
+```
