@@ -1,9 +1,8 @@
 import { Router, Response, NextFunction } from 'express';
 import multer from 'multer';
-import asyncHandler from 'express-async-handler';
+import { asyncHandler, createError } from '../middleware/errorHandler';
 import { AuthenticatedRequest } from '../middleware/auth';
 import prisma from '../lib/prisma';
-import createError from 'http-errors';
 import { uploadFile, deleteFile as deleteSupabaseFile, getSignedUrl } from '../utils/supabase';
 
 const router = Router();
@@ -18,7 +17,7 @@ router.get('/', asyncHandler(async (req: AuthenticatedRequest, res: Response, ne
     const userId = req.user?.id;
 
     if (!dataRoomId && !folderId) {
-        return next(createError(400, 'Either dataRoomId or folderId is required'));
+        return next(createError('Either dataRoomId or folderId is required', 400));
     }
 
     const where: {
@@ -55,11 +54,11 @@ router.get('/:id/view', asyncHandler(async (req: AuthenticatedRequest, res: Resp
     });
 
     if (!file) {
-        return next(createError(404, 'File not found'));
+        return next(createError('File not found', 404));
     }
 
     if (!file.filePath) {
-        return next(createError(500, 'File path not available'));
+        return next(createError('File path not available', 500));
     }
 
     const signedUrl = await getSignedUrl(file.filePath);
@@ -72,7 +71,7 @@ router.post(
   asyncHandler(async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     if (req.file === undefined && (req as any).multerError) {
       if ((req as any).multerError.code === 'LIMIT_FILE_SIZE') {
-        return next(createError(413, 'File is too large. Maximum size is 4.5MB.'));
+        return next(createError('File is too large. Maximum size is 4.5MB.', 413));
       }
     }
 
@@ -81,15 +80,15 @@ router.post(
     const file = req.file;
 
     if (!userId) {
-        return next(createError(401, 'User not authenticated'));
+        return next(createError('User not authenticated', 401));
     }
 
     if (!file) {
-      return next(createError(400, 'No file uploaded'));
+      return next(createError('No file uploaded', 400));
     }
 
     if (!dataRoomId) {
-        return next(createError(400, 'dataRoomId is required'));
+        return next(createError('dataRoomId is required', 400));
     }
 
     try {
@@ -111,7 +110,7 @@ router.post(
       res.status(201).json(newFile);
     } catch (error) {
       console.error('File upload error:', error);
-      next(createError(500, 'Failed to upload file'));
+      next(createError('Failed to upload file', 500));
     }
   })
 );
@@ -125,7 +124,7 @@ router.delete('/:id', asyncHandler(async (req: AuthenticatedRequest, res: Respon
   });
 
   if (!file) {
-    return next(createError(404, 'File not found'));
+    return next(createError('File not found', 404));
   }
 
   if (file.filePath) {

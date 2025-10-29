@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Folder, FileText, Edit, Trash2 } from 'lucide-react';
+import { Folder, Edit, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '../ui/Card';
 import { DataRoomItem } from './columns';

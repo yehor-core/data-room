@@ -42,7 +42,7 @@ export function FolderView() {
 
   const { handleFileView } = useFileViewer();
   const createFolder = useCreateFolder(id, folderId);
-  const uploadFile = useFileUpload(id, folderId, folderQuery.data?.data.children);
+  const uploadFile = useFileUpload(id, folderId, folderQuery?.data?.data.children);
   const renameItem = useItemRename(id, folderId);
   const { deleteFolderMutation, deleteFileMutation } = useDataRoomMutations({ dataRoomId: id, folderId });
   
@@ -54,18 +54,18 @@ export function FolderView() {
   
   const filteredFolders = useMemo(
     () =>
-      folderQuery.data?.data.children?.filter((folder: any) =>
+      folderQuery?.data?.data.children?.filter((folder: any) =>
         folder.name.toLowerCase().includes(debouncedSearch.toLowerCase())
       ) || [],
-    [folderQuery.data, debouncedSearch]
+    [folderQuery?.data, debouncedSearch]
   );
 
   const filteredFiles = useMemo(
     () =>
-      folderQuery.data?.data.files?.filter((file: any) =>
+      folderQuery?.data?.data.files?.filter((file: any) =>
         file.name.toLowerCase().includes(debouncedSearch.toLowerCase())
       ) || [],
-    [folderQuery.data, debouncedSearch]
+    [folderQuery?.data, debouncedSearch]
   );
 
   const items = useMemo(() => {
@@ -101,20 +101,20 @@ export function FolderView() {
   }, [handleRename, handleDelete]);
 
   const handleBackClick = useCallback(() => {
-    const parentId = folderQuery.data?.data.parentId;
+    const parentId = folderQuery?.data?.data.parentId;
     if (parentId) {
       navigate(`/data-rooms/${id}/folders/${parentId}`);
     } else {
       navigate(`/data-rooms/${id}`);
     }
-  }, [navigate, id, folderQuery.data?.data]);
+  }, [navigate, id, folderQuery?.data?.data]);
 
   const columns = useMemo(
     () => getColumns(handleFileClick, handleRename, handleDelete),
     [handleFileClick, handleRename, handleDelete]
   );
 
-  const isLoading = folderQuery.isLoading || foldersQuery.isLoading || filesQuery.isLoading;
+  const isLoading = folderQuery?.isLoading || foldersQuery.isLoading || filesQuery.isLoading;
 
   const onConfirmDelete = (confirm: boolean) => {
     if (confirm && itemToDelete) {
@@ -130,7 +130,7 @@ export function FolderView() {
   return (
     <>
       <DataRoomLayout
-        title={folderQuery.data?.data.name || 'Folder'}
+        title={folderQuery?.data?.data.name || 'Folder'}
         items={items}
         viewMode={viewMode}
         onViewModeChange={setViewMode}
@@ -162,7 +162,7 @@ export function FolderView() {
             />
             <FilesGrid
               files={items.filter((item): item is Extract<DataRoomItem, { type: 'file' }> => item.type === 'file')}
-              folders={folderQuery.data?.data.children || []}
+              folders={folderQuery?.data?.data.children || []}
               isSearching={!!debouncedSearch.trim()}
               searchQuery={debouncedSearch}
               onView={handleFileClick}

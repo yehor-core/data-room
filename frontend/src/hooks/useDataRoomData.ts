@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { ApiResponse, DataRoom, FolderWithChildren } from '../types';
+import { ApiResponse, DataRoom, FolderWithChildren, File } from '../types/index';
 import { api } from '../lib/api';
 
 interface UseDataRoomDataProps {
@@ -18,19 +18,15 @@ type DataRoomContents = DataRoom & {
 export const useDataRoomData = ({ dataRoomId, folderId }: UseDataRoomDataProps) => {
   const isValidId = dataRoomId && !dataRoomId.startsWith('temp-');
 
-  const queryKey = folderId ? ['folder', folderId] : ['dataRoom', dataRoomId];
-  
-  const queryFn = async () => {
-    const url = folderId 
-      ? `/folders/${folderId}/contents` 
-      : `/data-rooms/${dataRoomId}`;
-    const response = await api.get(url);
-    return response.data;
-  };
-
-  const { data, isLoading, isError, error } = useQuery<ApiResponse<DataRoomContents | any>>({
-    queryKey,
-    queryFn,
+  const dataQuery = useQuery<ApiResponse<DataRoomContents | any>>({
+    queryKey: folderId ? ['folder', folderId] : ['dataRoom', dataRoomId],
+    queryFn: async () => {
+      const url = folderId 
+        ? `/folders/${folderId}/contents` 
+        : `/data-rooms/${dataRoomId}`;
+      const response = await api.get(url);
+      return response.data;
+    },
     enabled: !!isValidId,
     staleTime: 2 * 60 * 1000, // 2 minutes
     gcTime: 5 * 60 * 1000,   // 5 minutes cache
@@ -38,7 +34,7 @@ export const useDataRoomData = ({ dataRoomId, folderId }: UseDataRoomDataProps) 
 
   // Fetch ALL files from entire data room (for search and file tree)
   // This is kept separate as it serves a different purpose and we don't want to load it on every view.
-  const allFilesQuery = useQuery({
+  const filesQuery = useQuery({
     queryKey: ['allFiles', dataRoomId],
     queryFn: async () => {
       const response = await api.get('/files', { params: { dataRoomId } });
@@ -49,7 +45,7 @@ export const useDataRoomData = ({ dataRoomId, folderId }: UseDataRoomDataProps) 
     gcTime: 10 * 60 * 1000,  // 10 minutes cache
   });
 
-  const allFoldersQuery = useQuery({
+  const foldersQuery = useQuery({
     queryKey: ['allFolders', dataRoomId],
     queryFn: async () => {
       const response = await api.get('/folders', { params: { dataRoomId } });
@@ -61,12 +57,14 @@ export const useDataRoomData = ({ dataRoomId, folderId }: UseDataRoomDataProps) 
   });
 
   return {
-    data: data?.data,
-    isLoading,
-    isError,
-    error,
-    allFilesQuery,
-    allFoldersQuery,
+    data: dataQuery.data?.data,
+    isLoading: dataQuery.isLoading,
+    isError: dataQuery.isError,
+    error: dataQuery.error,
+    filesQuery,
+    foldersQuery,
+    folderQuery: folderId ? dataQuery : undefined,
+    dataRoomQuery: !folderId ? dataQuery : undefined,
   };
 };
 

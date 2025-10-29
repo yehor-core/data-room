@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../lib/api';
 import { toast } from '../lib/toast';
 import { getErrorMessage, SUCCESS_MESSAGES, LOADING_MESSAGES } from '../lib/errorMessages';
-import { ApiResponse, DataRoom, Folder } from '../types';
+import { ApiResponse, DataRoom, Folder } from '../types/index';
 
 interface UseDataRoomMutationsProps {
   dataRoomId?: string;
@@ -46,7 +46,7 @@ export const useDataRoomMutations = ({ dataRoomId, folderId }: UseDataRoomMutati
   const deleteFolderMutation = useMutation({
     mutationFn: async (folderIdToDelete: string) => {
       try {
-        const response = await api.delete(`/folders/${folderIdToDelete}`);
+        await api.delete(`/folders/${folderIdToDelete}`);
         return { id: folderIdToDelete };
       } catch (error: any) {
         throw error;
@@ -64,7 +64,7 @@ export const useDataRoomMutations = ({ dataRoomId, folderId }: UseDataRoomMutati
   const deleteFileMutation = useMutation({
     mutationFn: async (fileId: string) => {
       try {
-        const response = await api.delete(`/files/${fileId}`);
+        await api.delete(`/files/${fileId}`);
         return { id: fileId };
       } catch (error: any) {
         throw error;
