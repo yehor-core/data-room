@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../lib/api';
 import { toast } from '../lib/toast';
 import { getErrorMessage, SUCCESS_MESSAGES, LOADING_MESSAGES } from '../lib/errorMessages';
+import { ApiResponse, DataRoom, Folder } from '../types';
 
 interface UseDataRoomMutationsProps {
   dataRoomId?: string;
@@ -81,28 +82,93 @@ export const useDataRoomMutations = ({ dataRoomId, folderId }: UseDataRoomMutati
   const renameFolderMutation = useMutation({
     mutationFn: async ({ id, name }: { id: string; name: string }) => {
       const response = await api.patch(`/folders/${id}/rename`, { name });
-      return response.data.data;
+      return response.data;
     },
-    onSuccess: () => {
-      toast.success(SUCCESS_MESSAGES.FOLDER_RENAMED);
+    onMutate: async ({ id, name }) => {
+      const queryKey = folderId ? ['folder', folderId] : ['dataRoom', dataRoomId];
+      await queryClient.cancelQueries({ queryKey });
+      
+      const previousData = queryClient.getQueryData<ApiResponse<DataRoom | { folder: Folder, children: Folder[] }>>(queryKey);
+      
+      if (previousData) {
+        queryClient.setQueryData<ApiResponse<DataRoom | { folder: Folder, children: Folder[] }>>(queryKey, oldData => {
+          if (!oldData || !oldData.data) return oldData;
+
+          let updatedData;
+
+          if ('folder' in oldData.data) { // Folder view
+            updatedData = {
+              ...oldData,
+              data: {
+                ...oldData.data,
+                children: oldData.data.children.map(f => f.id === id ? { ...f, name } : f)
+              }
+            };
+          } else { // DataRoom view
+            updatedData = {
+              ...oldData,
+              data: {
+                ...oldData.data,
+                folders: (oldData.data as DataRoom).folders?.map(f => f.id === id ? { ...f, name } : f)
+              }
+            };
+          }
+          return updatedData;
+        });
+      }
+      return { previousData };
+    },
+    onError: (err, variables, context) => {
+      if (context?.previousData) {
+        const queryKey = folderId ? ['folder', folderId] : ['dataRoom', dataRoomId];
+        queryClient.setQueryData(queryKey, context.previousData);
+      }
+      toast.error(getErrorMessage(err));
+    },
+    onSettled: () => {
       invalidateQueries();
-    },
-    onError: (error: any) => {
-      toast.error(getErrorMessage(error));
     },
   });
 
   const renameFileMutation = useMutation({
     mutationFn: async ({ id, name }: { id: string; name: string }) => {
       const response = await api.put(`/files/${id}`, { name });
-      return response.data.data;
+      return response.data;
     },
-    onSuccess: () => {
-      toast.success('File renamed successfully');
+    onMutate: async ({ id, name }) => {
+      const queryKey = folderId ? ['folder', folderId] : ['dataRoom', dataRoomId];
+      await queryClient.cancelQueries({ queryKey });
+
+      const previousData = queryClient.getQueryData<ApiResponse<any>>(queryKey);
+
+      if (previousData) {
+        queryClient.setQueryData<ApiResponse<any>>(queryKey, oldData => {
+          if (!oldData || !oldData.data) return oldData;
+
+          const files = 'files' in oldData.data ? oldData.data.files : oldData.data.dataRoom?.files;
+          const updatedFiles = files.map((f: any) => f.id === id ? { ...f, name } : f);
+
+          let updatedData;
+          if ('files' in oldData.data) {
+            updatedData = { ...oldData, data: { ...oldData.data, files: updatedFiles } };
+          } else {
+            updatedData = { ...oldData, data: { ...oldData.data, dataRoom: { ...oldData.data.dataRoom, files: updatedFiles } } };
+          }
+          
+          return updatedData;
+        });
+      }
+      return { previousData };
+    },
+    onError: (err, variables, context) => {
+      if (context?.previousData) {
+        const queryKey = folderId ? ['folder', folderId] : ['dataRoom', dataRoomId];
+        queryClient.setQueryData(queryKey, context.previousData);
+      }
+      toast.error(getErrorMessage(err));
+    },
+    onSettled: () => {
       invalidateQueries();
-    },
-    onError: (error: any) => {
-      toast.error(getErrorMessage(error));
     },
   });
 
