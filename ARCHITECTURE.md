@@ -136,7 +136,58 @@ The `backend/src` directory is organized as follows:
 
 ---
 
-## 6. Database Schema (ERD)
+## 6. Security
+
+Security is a critical aspect of the application. The following measures are in place:
+
+-   **HTTPS**: Enforced by Vercel deployment.
+-   **CORS (Cross-Origin Resource Sharing)**: The backend uses the `cors` middleware to restrict requests to a specific list of allowed origins (`ALLOWED_ORIGINS` env var).
+-   **HTTP Security Headers**: The `helmet` middleware is used to set various security-related HTTP headers to protect against common attacks like XSS and clickjacking.
+-   **Rate Limiting**: `express-rate-limit` is implemented to prevent brute-force attacks on API endpoints.
+-   **Input Validation**: The `express-validator` library is used on the backend to validate and sanitize incoming request data, preventing injection attacks.
+-   **Authentication**: Secure JWT-based authentication is handled by Supabase Auth. Tokens have a limited lifetime and are verified on the backend for protected routes.
+-   **Secret Management**: All sensitive keys and credentials are stored as environment variables and are not hardcoded in the source code.
+
+---
+
+## 7. Testing Strategy
+
+The project includes a testing strategy for both frontend and backend to ensure reliability.
+
+### 7.1. Frontend Testing
+
+-   **Framework**: [Jest](https://jestjs.io/) is used as the test runner.
+-   **Utilities**: [React Testing Library](https://testing-library.com/docs/react-testing-library/intro/) is used for testing React components. It encourages writing tests that resemble how users interact with the application.
+-   **Types of Tests**: The focus is on unit and integration tests for components and custom hooks.
+
+### 7.2. Backend Testing
+
+-   **Framework**: [Jest](https://jestjs.io/) is used as the test runner, with `ts-jest` for TypeScript support.
+-   **Utilities**: [Supertest](https://github.com/visionmedia/supertest) is used for testing API endpoints. It allows for making HTTP requests to the Express application without needing a running server.
+-   **Types of Tests**: The strategy includes integration tests for API routes (controllers) and unit tests for individual service functions.
+
+---
+
+## 8. Scalability & Performance
+
+-   **Frontend Performance**:
+    -   **Code Splitting**: Page components are lazy-loaded using `React.lazy` and `Suspense`, which reduces the initial bundle size and improves load times.
+    -   **Caching**: TanStack Query provides a sophisticated caching layer that minimizes unnecessary network requests.
+-   **Backend Scalability**:
+    -   **Serverless Architecture**: The backend is deployed as Vercel Serverless Functions. This architecture scales automatically with demand, as Vercel provisions resources for each incoming request.
+    -   **Database Pooling**: The use of a `DIRECT_URL` with `pgbouncer=true` in the Prisma configuration indicates that a connection pooler is used, which is essential for managing database connections efficiently in a serverless environment.
+
+---
+
+## 9. Code Quality
+
+-   **TypeScript**: Used across the entire stack (frontend and backend) to enforce type safety and reduce runtime errors.
+-   **ESLint**: An ESLint configuration is in place to enforce a consistent code style and identify potential issues early.
+-   **Monorepo**: The monorepo structure, while a high-level architectural choice, also contributes to code quality by making it easier to share types and configurations between the frontend and backend.
+
+---
+
+## 10. Database Schema (ERD)
 
 The following diagram illustrates the relationships between the main entities in the database.
 
