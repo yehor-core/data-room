@@ -9,7 +9,12 @@
 
 ## Design Decisions
 
-For more detailed information see [architecture.md](architecture.md).
+The application is a monorepo with a React frontend and a Node.js (Express) backend.
+The frontend uses TanStack Query for state management and Tailwind CSS for styling.
+The backend connects to a Supabase (PostgreSQL) database via the Prisma ORM.
+Authentication is handled by Supabase Auth, and the entire application is deployed on Vercel.
+
+For more detailed information see [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Getting Started
 
