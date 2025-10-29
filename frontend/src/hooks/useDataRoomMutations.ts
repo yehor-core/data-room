@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../lib/api';
 import { toast } from '../lib/toast';
 import { getErrorMessage, SUCCESS_MESSAGES, LOADING_MESSAGES } from '../lib/errorMessages';
-import { ApiResponse, DataRoom, Folder } from '../types/index';
+import { ApiResponse, DataRoom, Folder, File as FileType } from '../types/index';
 
 interface UseDataRoomMutationsProps {
   dataRoomId?: string;
@@ -256,13 +256,13 @@ export const useDataRoomMutations = ({ dataRoomId, folderId }: UseDataRoomMutati
       const queryKey = folderId ? ['folder', folderId] : ['dataRoom', dataRoomId];
       await queryClient.cancelQueries({ queryKey });
 
-      const previousData = queryClient.getQueryData<ApiResponse<DataRoom | { folder: Folder, files: File[] }>>(queryKey);
+      const previousData = queryClient.getQueryData<ApiResponse<DataRoom | { folder: Folder, files: FileType[] }>>(queryKey);
       
       if (previousData) {
-        queryClient.setQueryData<ApiResponse<DataRoom | { folder: Folder, files: File[] }>>(queryKey, oldData => {
+        queryClient.setQueryData<ApiResponse<DataRoom | { folder: Folder, files: FileType[] }>>(queryKey, oldData => {
           if (!oldData || !oldData.data || !dataRoomId) return oldData;
           
-          const newFile: File = {
+          const newFile: FileType = {
             id: 'temp-id',
             name,
             fileSize: file.size,
@@ -274,22 +274,19 @@ export const useDataRoomMutations = ({ dataRoomId, folderId }: UseDataRoomMutati
 
           let updatedData;
 
-          if ('files' in oldData.data && 'children' in oldData.data) { // Folder view
+          if ('folder' in oldData.data) { // Folder view
             updatedData = {
               ...oldData,
               data: {
                 ...oldData.data,
-                files: [...oldData.data.files, newFile]
+                files: [...(oldData.data.files || []), newFile]
               }
             };
           } else { // DataRoom view
-            updatedData = {
-              ...oldData,
-              data: {
-                ...oldData.data,
-                files: [...((oldData.data as DataRoom).files || []), newFile]
-              }
-            };
+            // The optimistic update for the data room view is complex and the current
+            // implementation is incorrect as DataRoom does not have a `files` property.
+            // We will rely on query invalidation to update the view.
+            updatedData = oldData;
           }
           return updatedData;
         });
