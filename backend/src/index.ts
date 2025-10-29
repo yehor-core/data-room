@@ -102,10 +102,12 @@ app.use('*', (req, res) => {
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📊 Environment: ${config.nodeEnv}`);
-});
+// Start the server only if not in a serverless environment
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`📊 Environment: ${config.nodeEnv}`);
+  });
+}
 
-// Export removed to prevent Vercel from detecting this as a serverless function
-// This file is only for local development
+export default app;
