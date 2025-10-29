@@ -212,7 +212,11 @@ export const DataRooms: React.FC = () => {
             <Card
               key={dataRoom.id}
               className="hover:shadow-lg transition-shadow"
-              onMouseEnter={() => handleDataRoomHover(dataRoom.id)}
+              onMouseEnter={() => {
+                if (!dataRoom.id.startsWith('temp-')) {
+                  handleDataRoomHover(dataRoom.id);
+                }
+              }}
             >
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
