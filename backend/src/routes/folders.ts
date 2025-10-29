@@ -38,6 +38,35 @@ const validateFolderMove = [
 ];
 
 
+// Get all folders for a data room
+router.get('/', asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+  const { dataRoomId } = req.query;
+
+  if (!dataRoomId) {
+    throw createError('Data room ID is required', 400);
+  }
+
+  const folders = await prisma.folder.findMany({
+    where: {
+      dataRoomId: dataRoomId as string,
+      dataRoom: {
+        ownerId: req.user!.id,
+      },
+    },
+    orderBy: {
+      name: 'asc'
+    }
+  });
+
+  res.json({
+    success: true,
+    data: {
+      folders
+    },
+  });
+}));
+
+
 // Get folder contents
 router.get('/:id/contents', asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
   const { id } = req.params;

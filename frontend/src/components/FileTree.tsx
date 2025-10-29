@@ -12,9 +12,13 @@ const FileTree: React.FC = () => {
     const folders = foldersQuery.data?.data.folders || [];
     const files = filesQuery.data?.data || [];
     
+    // Filter to only show root-level items (parentId/folderId is null)
+    const rootFolders = folders.filter((folder: any) => !folder.parentId);
+    const rootFiles = files.filter((file: any) => !file.folderId);
+    
     const combinedItems: DataRoomItem[] = [
-      ...folders.map((folder: any) => ({ ...folder, type: 'folder' as const, size: null })),
-      ...files.map((file: any) => ({ ...file, type: 'file' as const, size: Number(file.fileSize) || 0 })),
+      ...rootFolders.map((folder: any) => ({ ...folder, type: 'folder' as const, size: null })),
+      ...rootFiles.map((file: any) => ({ ...file, type: 'file' as const, size: Number(file.fileSize) || 0 })),
     ];
     
     return combinedItems.sort((a, b) => {

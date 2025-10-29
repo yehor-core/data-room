@@ -33,6 +33,11 @@ export interface Folder {
   files?: File[];
 }
 
+export interface FolderWithChildren extends Folder {
+  children: Folder[];
+  files: File[];
+}
+
 export interface File {
   id: string;
   name: string;

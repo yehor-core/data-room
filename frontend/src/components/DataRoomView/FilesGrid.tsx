@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { FileText, Edit, Trash2, Eye } from 'lucide-react';
 import { Card, CardContent } from '../ui/Card';
-import { File as FileType, Folder as FolderType } from '../../types';
+import { Folder as FolderType } from '../../types';
 import { formatDate, formatBytes } from '../../lib/utils';
 import { DataRoomItem } from './columns';
 import { ItemActions } from './ItemActions';

@@ -104,7 +104,7 @@ export function DataRoomRoot() {
     [handleFileClick, handleRename, handleDelete]
   );
 
-  const isLoading = dataRoomQuery.isLoading || foldersQuery.isLoading || filesQuery.isLoading;
+  const isLoading = dataRoomQuery?.isLoading || foldersQuery.isLoading || filesQuery.isLoading;
 
   const onConfirmDelete = (confirm: boolean) => {
     if (confirm && itemToDelete) {
@@ -121,7 +121,7 @@ export function DataRoomRoot() {
     <div className="flex h-screen overflow-hidden">
       <main className="flex-1 p-4 overflow-y-auto">
         <DataRoomLayout
-          title={dataRoomQuery.data?.data.name || 'Data Room'}
+          title={dataRoomQuery?.data?.data.name || 'Data Room'}
           items={items}
           viewMode={viewMode}
           onViewModeChange={setViewMode}

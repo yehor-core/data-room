@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { DataRoomItem } from '@/components/DataRoomView';
 import { ChevronRight, ChevronDown, Folder, File as FileIcon, Edit, Trash2 } from 'lucide-react';
 import { useFileViewer, useDataRoomData } from '@/hooks';
@@ -21,10 +21,11 @@ const TreeNode: React.FC<TreeNodeProps> = ({ item, level }) => {
 
   const isFolder = item.type === 'folder';
 
-  const { data: contents, isLoading } = useDataRoomData({
+  const { folderQuery } = useDataRoomData({
     dataRoomId: dataRoomId,
     folderId: isFolder && isOpen ? item.id : undefined,
-  }).folderQuery;
+  });
+  const { data: contents, isLoading } = folderQuery || {};
 
   const children = useMemo(() => {
     if (!contents?.data) return [];
