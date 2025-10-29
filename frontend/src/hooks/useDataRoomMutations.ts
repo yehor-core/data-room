@@ -42,14 +42,14 @@ export const useDataRoomMutations = ({ dataRoomId, folderId }: UseDataRoomMutati
 
       if (previousData) {
         queryClient.setQueryData<ApiResponse<DataRoom | { folder: Folder, children: Folder[] }>>(queryKey, oldData => {
-          if (!oldData || !oldData.data) return oldData;
+          if (!oldData || !oldData.data || !dataRoomId) return oldData;
           
-          const newFolder = {
+          const newFolder: Folder = {
             id: 'temp-id',
             name,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
-            dataRoomId,
+            dataRoomId: dataRoomId,
             parentId: folderId || null,
           };
 
@@ -260,22 +260,21 @@ export const useDataRoomMutations = ({ dataRoomId, folderId }: UseDataRoomMutati
       
       if (previousData) {
         queryClient.setQueryData<ApiResponse<DataRoom | { folder: Folder, files: File[] }>>(queryKey, oldData => {
-          if (!oldData || !oldData.data) return oldData;
+          if (!oldData || !oldData.data || !dataRoomId) return oldData;
           
-          const newFile = {
+          const newFile: File = {
             id: 'temp-id',
             name,
             fileSize: file.size,
             mimeType: file.type,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
-            dataRoomId,
-            folderId: folderId || null,
+            folderId: folderId!,
           };
 
           let updatedData;
 
-          if ('files' in oldData.data) { // Folder view
+          if ('files' in oldData.data && 'children' in oldData.data) { // Folder view
             updatedData = {
               ...oldData,
               data: {
@@ -288,7 +287,7 @@ export const useDataRoomMutations = ({ dataRoomId, folderId }: UseDataRoomMutati
               ...oldData,
               data: {
                 ...oldData.data,
-                files: [...(oldData.data as DataRoom).files || [], newFile]
+                files: [...((oldData.data as DataRoom).files || []), newFile]
               }
             };
           }
