@@ -6,7 +6,17 @@
     "backend": {},
     "frontend": {
       // knip has no Create React App / craco plugin, so the app, its config and the Jest files CRA runs are listed here.
-      "entry": ["src/index.tsx", "craco.config.js", "src/setupTests.ts", "src/**/*.test.{ts,tsx}"],
+      // The Playwright plugin finds the e2e specs but not the setup project's files.
+      "entry": [
+        "src/index.tsx",
+        "craco.config.js",
+        "src/setupTests.ts",
+        "src/**/*.test.{ts,tsx}",
+        "e2e/**/*.setup.ts",
+      ],
     },
   },
+  // The Supabase CLI is installed on its own (https://supabase.com/docs/guides/local-development/cli/getting-started),
+  // not from npm.
+  "ignoreBinaries": ["supabase"],
 }

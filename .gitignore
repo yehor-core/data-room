@@ -19,3 +19,9 @@ logs/
 secrets/
 .secrets/
 .vercel
+
+# Playwright e2e output and saved sessions
+test-results/
+playwright-report/
+blob-report/
+frontend/e2e/.auth/

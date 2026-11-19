@@ -30,7 +30,9 @@
     "build": "craco build",
     "test": "craco test",
     "typecheck": "tsc",
-    "test:unit": "craco test --watchAll=false --testPathIgnorePatterns \"\\\\.integration\\\\.test\\\\.tsx?$\""
+    "test:unit": "craco test --watchAll=false --testPathIgnorePatterns \"\\\\.integration\\\\.test\\\\.tsx?$\"",
+    "test:e2e": "supabase start --workdir .. && playwright test",
+    "e2e:serve": "serve --single --no-clipboard e2e/build"
   },
   "browserslist": {
     "production": [
@@ -54,13 +56,16 @@
   },
   "devDependencies": {
     "@craco/craco": "^7.1.0",
+    "@playwright/test": "^1.65.1",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.0",
     "@types/jest": "^30.0.0",
+    "@types/node": "^24.19.2",
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",
     "react-scripts": "5.0.1",
+    "serve": "^14.2.8",
     "tailwindcss-animate": "^1.0.7",
     "typescript": "^4.9.5"
   }
