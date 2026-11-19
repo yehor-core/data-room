@@ -44,7 +44,7 @@ export interface File {
   fileType?: string; // Frontend field
   mimeType?: string; // Database field
   size?: number | null; // Frontend field
-  fileSize?: number | string | null; // Database field (BigInt serialized as string)
+  fileSize?: number | null; // Database field
   folderId: string;
   blobUrl?: string; // Frontend field
   filePath?: string; // Database field
