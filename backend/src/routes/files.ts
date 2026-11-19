@@ -1,7 +1,7 @@
 import { Router, Response, NextFunction } from 'express';
 import multer from 'multer';
 import { asyncHandler, createError } from '../middleware/errorHandler';
-import { AuthenticatedRequest } from '../middleware/auth';
+import { AuthenticatedRequest } from '../types';
 import prisma from '../lib/prisma';
 import { uploadFile, deleteFile as deleteSupabaseFile, getSignedUrl } from '../utils/supabase';
 
@@ -69,19 +69,9 @@ router.post(
   '/upload',
   upload.single('file'),
   asyncHandler(async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-    if (req.file === undefined && (req as any).multerError) {
-      if ((req as any).multerError.code === 'LIMIT_FILE_SIZE') {
-        return next(createError('File is too large. Maximum size is 4.5MB.', 413));
-      }
-    }
-
-    const userId = req.user?.id;
+    const userId = req.user!.id;
     const { dataRoomId, folderId, name } = req.body;
     const file = req.file;
-
-    if (!userId) {
-        return next(createError('User not authenticated', 401));
-    }
 
     if (!file) {
       return next(createError('No file uploaded', 400));
@@ -91,27 +81,22 @@ router.post(
         return next(createError('dataRoomId is required', 400));
     }
 
-    try {
-      const finalName = name || file.originalname;
-      const filePath = await uploadFile(file.buffer, finalName, `uploads/${userId}`);
+    const finalName = name || file.originalname;
+    const filePath = await uploadFile(file.buffer, finalName, `uploads/${userId}`);
 
-      const newFile = await prisma.file.create({
-        data: {
-          name: finalName,
-          dataRoomId,
-          folderId: folderId || null,
-          userId,
-          fileSize: BigInt(file.size),
-          mimeType: file.mimetype,
-          filePath,
-        },
-      });
+    const newFile = await prisma.file.create({
+      data: {
+        name: finalName,
+        dataRoomId,
+        folderId: folderId || null,
+        userId,
+        fileSize: BigInt(file.size),
+        mimeType: file.mimetype,
+        filePath,
+      },
+    });
 
-      res.status(201).json(newFile);
-    } catch (error) {
-      console.error('File upload error:', error);
-      next(createError('Failed to upload file', 500));
-    }
+    res.status(201).json(newFile);
   })
 );
 
