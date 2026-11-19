@@ -1,20 +1,18 @@
-import React, { Suspense, lazy } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import React, { Suspense, lazy, useState } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './contexts/AuthContext';
 import { Layout } from './components/Layout';
 import { PrivateRoute } from './components/PrivateRoute';
+import { createQueryClient } from './data/queryClient';
 
 // Pages use named exports; React.lazy needs a default export.
 const Login = lazy(() => import('./pages/Login').then((module) => ({ default: module.Login })));
 const DataRooms = lazy(() =>
   import('./pages/DataRooms').then((module) => ({ default: module.DataRooms })),
 );
-const DataRoomRoot = lazy(() =>
-  import('./pages/DataRoomRoot').then((module) => ({ default: module.DataRoomRoot })),
-);
-const FolderView = lazy(() =>
-  import('./pages/FolderView').then((module) => ({ default: module.FolderView })),
+const DataRoomPage = lazy(() =>
+  import('./pages/DataRoomPage').then((module) => ({ default: module.DataRoomPage })),
 );
 
 const LoadingFallback = () => (
@@ -23,42 +21,43 @@ const LoadingFallback = () => (
   </div>
 );
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      refetchOnWindowFocus: false,
-      retry: 1,
-      staleTime: 60 * 1000,
-      gcTime: 5 * 60 * 1000,
-    },
-  },
-});
+export const AppProviders: React.FC<{ queryClient: QueryClient; children: React.ReactNode }> = ({
+  queryClient,
+  children,
+}) => (
+  <QueryClientProvider client={queryClient}>
+    <AuthProvider>{children}</AuthProvider>
+  </QueryClientProvider>
+);
+
+export const AppRoutes: React.FC = () => (
+  <Suspense fallback={<LoadingFallback />}>
+    <Routes>
+      <Route path="/login" element={<Login />} />
+      <Route
+        element={
+          <PrivateRoute>
+            <Layout />
+          </PrivateRoute>
+        }
+      >
+        <Route path="/" element={<DataRooms />} />
+        <Route path="/data-rooms/:id" element={<DataRoomPage />} />
+        <Route path="/data-rooms/:id/folders/:folderId" element={<DataRoomPage />} />
+      </Route>
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  </Suspense>
+);
 
 function App() {
+  const [queryClient] = useState(createQueryClient);
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <Router>
-          <Suspense fallback={<LoadingFallback />}>
-            <Routes>
-              <Route path="/login" element={<Login />} />
-              <Route
-                element={
-                  <PrivateRoute>
-                    <Layout />
-                  </PrivateRoute>
-                }
-              >
-                <Route path="/" element={<DataRooms />} />
-                <Route path="/data-rooms/:id" element={<DataRoomRoot />} />
-                <Route path="/data-rooms/:id/folders/:folderId" element={<FolderView />} />
-              </Route>
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </Suspense>
-        </Router>
-      </AuthProvider>
-    </QueryClientProvider>
+    <AppProviders queryClient={queryClient}>
+      <BrowserRouter>
+        <AppRoutes />
+      </BrowserRouter>
+    </AppProviders>
   );
 }
 

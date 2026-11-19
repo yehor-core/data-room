@@ -1,33 +1,33 @@
-import React from 'react';
+import React, { useId } from 'react';
 import { Folder, Search, Plus, Upload } from 'lucide-react';
 import { Card, CardContent } from '../ui/Card';
 import { Button } from '../ui/Button';
 
 interface EmptyStateProps {
-  isSearching: boolean;
   searchQuery: string;
-  isInFolder: boolean;
   onCreateFolder: () => void;
-  onUploadFile?: () => void;
+  onUploadFile: () => void;
   onClearSearch: () => void;
 }
 
 export const EmptyState: React.FC<EmptyStateProps> = ({
-  isSearching,
   searchQuery,
-  isInFolder,
   onCreateFolder,
   onUploadFile,
   onClearSearch,
 }) => {
+  const query = searchQuery.trim();
+  const headingId = useId();
   return (
-    <Card>
+    <Card role="region" aria-labelledby={headingId}>
       <CardContent className="p-12 text-center">
-        {isSearching ? (
+        {query ? (
           <>
             <Search className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-xl font-semibold mb-2">No results found</h3>
-            <p className="text-muted-foreground mb-6">No files or folders match "{searchQuery}"</p>
+            <h3 id={headingId} className="text-xl font-semibold mb-2">
+              No results found
+            </h3>
+            <p className="text-muted-foreground mb-6">No files or folders match "{query}"</p>
             <Button variant="outline" onClick={onClearSearch}>
               Clear Search
             </Button>
@@ -35,23 +35,21 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
         ) : (
           <>
             <Folder className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-xl font-semibold mb-2">No files or folders yet</h3>
+            <h3 id={headingId} className="text-xl font-semibold mb-2">
+              No files or folders yet
+            </h3>
             <p className="text-muted-foreground mb-6">
-              {isInFolder
-                ? 'Upload files or create folders to get started'
-                : 'Create folders to organize your documents'}
+              Upload files or create folders to get started
             </p>
             <div className="flex gap-4 justify-center">
               <Button onClick={onCreateFolder}>
                 <Plus className="mr-2 h-4 w-4" />
                 Create Folder
               </Button>
-              {isInFolder && onUploadFile && (
-                <Button variant="outline" onClick={onUploadFile}>
-                  <Upload className="mr-2 h-4 w-4" />
-                  Upload File
-                </Button>
-              )}
+              <Button variant="outline" onClick={onUploadFile}>
+                <Upload className="mr-2 h-4 w-4" />
+                Upload File
+              </Button>
             </div>
           </>
         )}
