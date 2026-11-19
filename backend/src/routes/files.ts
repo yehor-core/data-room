@@ -1,126 +1,56 @@
-import { Router, Response, NextFunction } from 'express';
+import { RequestHandler, Router } from 'express';
+import { check } from 'express-validator';
 import multer from 'multer';
-import { asyncHandler, createError } from '../middleware/errorHandler';
-import { AuthenticatedRequest } from '../types';
-import prisma from '../lib/prisma';
-import { uploadFile, deleteFile as deleteSupabaseFile, getSignedUrl } from '../utils/supabase';
+import { MAX_UPLOAD_BYTES } from '../access/uploads';
+import { nameRule, optionalId, requiredId, validate } from '../middleware/validate';
+import { AccessFor } from './accessFor';
+import { route } from './route';
 
-const router = Router();
-const MAX_FILE_SIZE = 4.5 * 1024 * 1024; // 4.5MB
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: MAX_FILE_SIZE }
-});
+// Busboy rejects a file once it reaches `fileSize` bytes, so one byte more lets a file of exactly the limit through.
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: MAX_UPLOAD_BYTES + 1, files: 1 } });
 
-router.get('/', asyncHandler(async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-    const { dataRoomId, folderId } = req.query;
-    const userId = req.user?.id;
+const nameDefaultsToFileName: RequestHandler = (req, _res, next) => {
+  req.body.name ||= req.file?.originalname;
+  next();
+};
 
-    if (!dataRoomId && !folderId) {
-        return next(createError('Either dataRoomId or folderId is required', 400));
-    }
+export function fileRoutes(accessFor: AccessFor) {
+  const router = Router();
 
-    const where: {
-        userId: string | undefined;
-        dataRoomId?: string;
-        folderId?: string;
-    } = { userId };
-
-    if (folderId) {
-        where.folderId = folderId as string;
-    } else if (dataRoomId) {
-        where.dataRoomId = dataRoomId as string;
-    }
-
-    const files = await prisma.file.findMany({
-        where,
-        orderBy: {
-            createdAt: 'desc',
-        },
-    });
-
-    res.status(200).json({
-        success: true,
-        data: files,
-    });
-}));
-
-router.get('/:id/view', asyncHandler(async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-    const { id } = req.params;
-    const userId = req.user?.id;
-
-    const file = await prisma.file.findFirst({
-        where: { id, userId },
-    });
-
-    if (!file) {
-        return next(createError('File not found', 404));
-    }
-
-    if (!file.filePath) {
-        return next(createError('File path not available', 500));
-    }
-
-    const signedUrl = await getSignedUrl(file.filePath);
-    res.redirect(signedUrl);
-}));
-
-router.post(
-  '/upload',
-  upload.single('file'),
-  asyncHandler(async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-    const userId = req.user!.id;
-    const { dataRoomId, folderId, name } = req.body;
-    const file = req.file;
-
-    if (!file) {
-      return next(createError('No file uploaded', 400));
-    }
-
-    if (!dataRoomId) {
-        return next(createError('dataRoomId is required', 400));
-    }
-
-    const finalName = name || file.originalname;
-    const filePath = await uploadFile(file.buffer, finalName, `uploads/${userId}`);
-
-    const newFile = await prisma.file.create({
-      data: {
-        name: finalName,
+  router.post(
+    '/upload',
+    upload.single('file'),
+    nameDefaultsToFileName,
+    validate(
+      check('file')
+        .custom((_value, { req }) => Boolean(req.file))
+        .withMessage('A file is required'),
+      requiredId('dataRoomId'),
+      optionalId('folderId'),
+      nameRule(1, 255),
+    ),
+    route((req) => {
+      const file = req.file!;
+      const { dataRoomId, folderId, name } = req.body;
+      return accessFor(req).files.upload({
         dataRoomId,
-        folderId: folderId || null,
-        userId,
-        fileSize: file.size,
+        folderId: folderId || undefined,
+        name,
         mimeType: file.mimetype,
-        filePath,
-      },
-    });
+        content: file.buffer,
+      });
+    }, 201),
+  );
 
-    res.status(201).json(newFile);
-  })
-);
+  router.patch(
+    '/:id/rename',
+    validate(nameRule(1, 255)),
+    route((req) => accessFor(req).files.rename(req.params.id, req.body.name)),
+  );
 
-router.delete('/:id', asyncHandler(async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-  const { id } = req.params;
-  const userId = req.user?.id;
+  router.get('/:id/view', route((req) => accessFor(req).files.viewLink(req.params.id)));
 
-  const file = await prisma.file.findFirst({
-    where: { id, userId },
-  });
+  router.delete('/:id', route((req) => accessFor(req).files.delete(req.params.id)));
 
-  if (!file) {
-    return next(createError('File not found', 404));
-  }
-
-  if (file.filePath) {
-      await deleteSupabaseFile(file.filePath);
-  }
-
-  await prisma.file.delete({
-    where: { id },
-  });
-
-  res.status(204).send();
-}));
-
-export default router;
+  return router;
+}

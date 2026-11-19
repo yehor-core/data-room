@@ -1,61 +1,27 @@
-import { Response, NextFunction } from 'express';
-import prisma from '../lib/prisma';
-import { AuthenticatedRequest } from '../types';
-import { createError } from './errorHandler';
-import { createClient } from '@supabase/supabase-js';
-import { config } from '../config';
+import { RequestHandler } from 'express';
+import { PrismaClient } from '@prisma/client';
+import { AppError } from '../errors';
+import { TokenVerifier } from '../ports';
+import { AuthenticatedRequest, userSelect } from '../types';
 
-const supabase = createClient(config.supabaseUrl, config.supabaseServiceKey);
+/** Verifies the bearer token and finds or creates its user. Mounted once, in front of every /api route. */
+export const authenticate =
+  ({ db, tokenVerifier }: { db: PrismaClient; tokenVerifier: TokenVerifier }): RequestHandler =>
+  (req, _res, next) => {
+    const token = /^Bearer (.+)$/.exec(req.headers.authorization ?? '')?.[1];
+    if (!token) return next(new AppError('UNAUTHENTICATED', 'Access token required'));
 
-export const authenticateToken = async (
-  req: AuthenticatedRequest,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    const authHeader = req.headers.authorization;
-    const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
-
-    if (!token) {
-      throw createError('Access token required', 401);
-    }
-
-    const { data: { user: supabaseUser }, error } = await supabase.auth.getUser(token);
-
-    if (error || !supabaseUser) {
-      throw createError('Invalid or expired token', 401);
-    }
-
-    let user = await prisma.user.findUnique({
-      where: { email: supabaseUser.email! },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-    });
-
-    if (!user) {
-      user = await prisma.user.create({
-        data: {
-          email: supabaseUser.email!,
-          name: supabaseUser.user_metadata?.full_name || supabaseUser.email!.split('@')[0],
-        },
-        select: {
-          id: true,
-          email: true,
-          name: true,
-          createdAt: true,
-          updatedAt: true,
-        },
-      });
-    }
-
-    req.user = user;
-    next();
-  } catch (error: any) {
-    next(createError(error.message || 'Authentication failed', 401));
-  }
-};
+    tokenVerifier
+      .verify(token)
+      .then(async (identity) => {
+        if (!identity) throw new AppError('UNAUTHENTICATED', 'Invalid or expired token');
+        (req as AuthenticatedRequest).user = await db.user.upsert({
+          where: { email: identity.email },
+          update: {},
+          create: { email: identity.email, name: identity.name ?? identity.email.split('@')[0] },
+          select: userSelect,
+        });
+        next();
+      })
+      .catch(next);
+  };
