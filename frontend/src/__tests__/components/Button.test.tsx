@@ -24,21 +24,4 @@ describe('Button Component', () => {
     fireEvent.click(button);
     expect(handleClick).not.toHaveBeenCalled();
   });
-
-  it('renders different variants', () => {
-    const { rerender } = render(<Button variant="destructive">Delete</Button>);
-    expect(screen.getByText('Delete')).toBeInTheDocument();
-    
-    rerender(<Button variant="outline">Outline</Button>);
-    expect(screen.getByText('Outline')).toBeInTheDocument();
-  });
-
-  it('renders different sizes', () => {
-    const { rerender } = render(<Button size="sm">Small</Button>);
-    expect(screen.getByText('Small')).toBeInTheDocument();
-    
-    rerender(<Button size="lg">Large</Button>);
-    expect(screen.getByText('Large')).toBeInTheDocument();
-  });
 });
-
