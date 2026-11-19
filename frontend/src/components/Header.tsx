@@ -14,7 +14,7 @@ export const Header: React.FC<HeaderProps> = ({ title, subtitle, onBackClick, ch
     <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
       <div className="flex-1 flex items-center">
         {onBackClick && (
-          <Button variant="ghost" onClick={onBackClick} className="mr-2 -ml-4">
+          <Button variant="ghost" onClick={onBackClick} className="mr-2 -ml-4" aria-label="Back">
             <ArrowLeft className="h-5 w-5" />
           </Button>
         )}

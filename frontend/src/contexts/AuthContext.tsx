@@ -1,14 +1,13 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Session } from '@supabase/supabase-js';
+import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { toast } from '../lib/toast';
 import { SUCCESS_MESSAGES } from '../lib/errorMessages';
 import { User } from '../types';
-import { api, setAuthToken } from '../lib/api';
+import { api, setAuthToken } from '../data/api';
 
 interface AuthContextType {
   user: User | null;
-  session: Session | null;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   loading: boolean;
@@ -26,74 +25,62 @@ export const useAuth = () => {
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  // The Supabase identity whose profile is loaded (or loading), so token refreshes don't reload it.
+  const profileOf = useRef<string | null>(null);
 
   useEffect(() => {
-    const fetchUser = async () => {
+    const loadProfile = async (identity: string) => {
+      profileOf.current = identity;
+      setLoading(true);
       try {
-        const { data } = await api.get('/auth/me');
-        if (data.success) {
-          setUser(data.data);
-        } else {
-          setUser(null);
-        }
+        const profile = await api.get<User>('/auth/me');
+        if (profileOf.current === identity) setUser(profile);
       } catch {
-        setUser(null);
+        if (profileOf.current === identity) setUser(null);
       }
+      setLoading(false);
     };
 
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      setAuthToken(session?.access_token ?? null);
-      setSession(session);
-      if (session) {
-        await fetchUser();
-      } else {
-        setUser(null);
-      }
-      setLoading(false);
-    });
-
+    // The first event is INITIAL_SESSION, so this also handles the session restored on page load.
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       setAuthToken(session?.access_token ?? null);
-      setSession(session);
 
-      if (session) {
-        await fetchUser();
-      } else {
+      if (!session) {
+        profileOf.current = null;
         setUser(null);
-      }
-      setLoading(false);
-
-      if (session?.user) {
-        const loginToastShown = sessionStorage.getItem('login_toast_shown');
-        if (event === 'SIGNED_IN' && !loginToastShown) {
-          toast.success(SUCCESS_MESSAGES.LOGIN_SUCCESS);
-          sessionStorage.setItem('login_toast_shown', 'true');
-        }
-      }
-
-      if (event === 'SIGNED_OUT') {
+        setLoading(false);
+        queryClient.clear();
         sessionStorage.removeItem('login_toast_shown');
+        return;
+      }
+
+      if (profileOf.current !== session.user.id) {
+        // Not awaited: Supabase waits for its listeners, and the profile request must not hold it up.
+        void loadProfile(session.user.id);
+      }
+
+      if (event === 'SIGNED_IN' && !sessionStorage.getItem('login_toast_shown')) {
+        toast.success(SUCCESS_MESSAGES.LOGIN_SUCCESS);
+        sessionStorage.setItem('login_toast_shown', 'true');
       }
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [queryClient]);
 
   const signInWithGoogle = async () => {
-    try {
-      setLoading(true);
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: process.env.REACT_APP_SITE_URL || 'http://localhost:3000',
-        },
-      });
-      if (error) throw error;
-    } catch (error) {
+    setLoading(true);
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: process.env.REACT_APP_SITE_URL || 'http://localhost:3000',
+      },
+    });
+    if (error) {
       setLoading(false);
       throw error;
     }
@@ -102,11 +89,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const signOut = async () => {
     setLoading(true);
     const { error } = await supabase.auth.signOut();
-    if (error) throw error;
+    if (error) {
+      setLoading(false);
+      throw error;
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, signInWithGoogle, signOut, loading }}>
+    <AuthContext.Provider value={{ user, signInWithGoogle, signOut, loading }}>
       {children}
     </AuthContext.Provider>
   );

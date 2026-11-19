@@ -31,6 +31,7 @@
     "test": "craco test",
     "typecheck": "tsc",
     "test:unit": "craco test --watchAll=false --testPathIgnorePatterns \"\\\\.integration\\\\.test\\\\.tsx?$\"",
+    "test:integration": "craco test --watchAll=false --testPathPattern \"\\\\.integration\\\\.test\\\\.tsx?$\"",
     "test:e2e": "supabase start --workdir .. && playwright test",
     "e2e:serve": "serve --single --no-clipboard e2e/build"
   },
@@ -48,10 +49,12 @@
   },
   "jest": {
     "moduleNameMapper": {
-      "^@/(.*)$": "<rootDir>/src/$1"
+      "^@/(.*)$": "<rootDir>/src/$1",
+      "^react-router-dom$": "<rootDir>/node_modules/react-router-dom/dist/index.js",
+      "^react-router/dom$": "<rootDir>/node_modules/react-router/dist/development/dom-export.js"
     },
     "transformIgnorePatterns": [
-      "node_modules/(?!(axios|react-router|react-router-dom)/)"
+      "node_modules/(?!(axios|react-router|react-router-dom|until-async)/).+\\.(js|jsx|cjs|ts|tsx)$"
     ]
   },
   "devDependencies": {
@@ -60,10 +63,12 @@
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.13",
     "@types/jest": "^30.0.0",
     "@types/node": "^24.19.2",
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",
+    "msw": "^2.15.0",
     "react-scripts": "5.0.1",
     "serve": "^14.2.8",
     "tailwindcss-animate": "^1.0.7",

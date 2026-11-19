@@ -8,15 +8,14 @@ import { useAuth } from '../contexts/AuthContext';
 export const Login: React.FC = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signInWithGoogle, user, session } = useAuth();
+  const { signInWithGoogle, user } = useAuth();
   const navigate = useNavigate();
 
-  // Redirect to home if user is already logged in
   useEffect(() => {
-    if (user && session) {
+    if (user) {
       navigate('/', { replace: true });
     }
-  }, [user, session, navigate]);
+  }, [user, navigate]);
 
   const handleGoogleLogin = async () => {
     try {
