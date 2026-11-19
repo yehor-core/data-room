@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/Card';
-import { Alert, AlertDescription } from '../components/ui/Alert';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -49,9 +48,12 @@ export const Login: React.FC = () => {
         <CardContent>
           <div className="space-y-4">
             {error && (
-              <Alert variant="destructive">
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
+              <p
+                role="alert"
+                className="rounded-lg border border-destructive/50 p-4 text-sm text-destructive dark:border-destructive"
+              >
+                {error}
+              </p>
             )}
 
             <Button 

@@ -1,9 +1,6 @@
-"use client"
-
 import { ColumnDef, CellContext, HeaderContext } from "@tanstack/react-table"
 import { ArrowUpDown, Folder, File as FileIcon } from "lucide-react"
 import { Button } from "@/components/ui/Button"
-import { Checkbox } from "@/components/ui/Checkbox"
 import { File, Folder as IFolder } from "@/types"
 import { formatBytes, formatDate } from "@/lib/utils"
 import { ItemActions } from './ItemActions';
@@ -12,28 +9,6 @@ import { ItemActions } from './ItemActions';
 export type DataRoomItem = (IFolder & { type: 'folder', size: null }) | (File & { type: 'file', size: number });
 
 const columns: ColumnDef<DataRoomItem>[] = [
-  {
-    id: "select",
-    header: ({ table }: HeaderContext<DataRoomItem, unknown>) => (
-      <Checkbox
-        checked={
-          table.getIsAllPageRowsSelected() ||
-          (table.getIsSomePageRowsSelected() && "indeterminate")
-        }
-        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-        aria-label="Select all"
-      />
-    ),
-    cell: ({ row }: CellContext<DataRoomItem, unknown>) => (
-      <Checkbox
-        checked={row.getIsSelected()}
-        onCheckedChange={(value) => row.toggleSelected(!!value)}
-        aria-label="Select row"
-      />
-    ),
-    enableSorting: false,
-    enableHiding: false,
-  },
   {
     accessorKey: "name",
     header: ({ column }: HeaderContext<DataRoomItem, unknown>) => {
