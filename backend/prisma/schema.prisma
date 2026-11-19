@@ -65,7 +65,7 @@ model File {
   dataRoomId String   @map("data_room_id")
   folderId   String?  @map("folder_id")
   userId     String   @map("user_id")
-  fileSize   BigInt?  @map("file_size")
+  fileSize   Int?     @map("file_size")
   mimeType   String?  @map("mime_type")
   filePath   String?  @map("file_path")
   createdAt  DateTime @default(now()) @map("created_at")

@@ -101,7 +101,7 @@ router.post(
           dataRoomId,
           folderId: folderId || null,
           userId,
-          fileSize: BigInt(file.size),
+          fileSize: file.size,
           mimeType: file.mimetype,
           filePath,
         },

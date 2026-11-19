@@ -35,7 +35,7 @@ describe('migrations', () => {
     expect(statements).toEqual([]);
   });
 
-  describe('on a database deployed before unique names', () => {
+  describe('on a database deployed at the baseline', () => {
     const seed = async (url: string, statements: string[]) => {
       const prisma = new PrismaClient({ datasourceUrl: url });
       try {
@@ -88,6 +88,25 @@ describe('migrations', () => {
       await runPrisma(['migrate', 'resolve', '--rolled-back', '20261119120000_unique_names'], url);
 
       await expect(migrateDeploy(url)).resolves.toBeDefined();
+    });
+
+    it('keep the sizes of existing files', async () => {
+      const url = await createEmptyDatabase(serverUrl(), 'migrations_with_files');
+      await migrateDeployUpTo(url, '0_init');
+      await seed(url, [
+        `INSERT INTO users (id, email, updated_at) VALUES ('u1', 'u1@example.com', now())`,
+        `INSERT INTO data_rooms (id, name, user_id, updated_at) VALUES ('r1', 'Deal', 'u1', now())`,
+        `INSERT INTO files (id, name, data_room_id, user_id, file_size, updated_at) VALUES ('d1', 'nda.pdf', 'r1', 'u1', 4194304, now())`,
+      ]);
+
+      await migrateDeploy(url);
+
+      const prisma = new PrismaClient({ datasourceUrl: url });
+      try {
+        await expect(prisma.file.findUnique({ where: { id: 'd1' } })).resolves.toMatchObject({ fileSize: 4194304 });
+      } finally {
+        await prisma.$disconnect();
+      }
     });
   });
 });
@@ -191,5 +210,14 @@ describe('migrated schema', () => {
       await expect(createFile(await createDataRoom(), 'nda.pdf')).resolves.toMatchObject({ name: 'nda.pdf' });
       await expect(createFile(room, 'Legal')).resolves.toMatchObject({ name: 'Legal' });
     });
+  });
+
+  it('stores file sizes as plain numbers that serialize to JSON', async () => {
+    const room = await createDataRoom();
+    const file = await prisma.file.create({
+      data: { name: 'nda.pdf', dataRoomId: room.id, userId: room.ownerId, fileSize: 4 * 1024 * 1024 },
+    });
+
+    expect(JSON.parse(JSON.stringify(file)).fileSize).toBe(4194304);
   });
 });
