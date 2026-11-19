@@ -15,7 +15,6 @@ import { SearchAndActions } from '@/components/DataRoomView/SearchAndActions';
 
 interface DataRoomLayoutProps {
   title: string;
-  items: DataRoomItem[];
   viewMode: 'grid' | 'list';
   onViewModeChange: (mode: 'grid' | 'list') => void;
   searchQuery: string;
@@ -31,7 +30,6 @@ interface DataRoomLayoutProps {
 
 export const DataRoomLayout: React.FC<DataRoomLayoutProps> = ({
   title,
-  items,
   viewMode,
   onViewModeChange,
   searchQuery,
@@ -54,7 +52,6 @@ export const DataRoomLayout: React.FC<DataRoomLayoutProps> = ({
           viewMode={viewMode}
           onViewModeChange={onViewModeChange}
           onUploadFile={onUpload}
-          showUploadButton={true}
           onCreateFolder={onCreateFolder}
         />
       </div>

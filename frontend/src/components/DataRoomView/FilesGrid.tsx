@@ -1,16 +1,12 @@
 import React, { useState } from 'react';
 import { FileText, Edit, Trash2, Eye } from 'lucide-react';
 import { Card, CardContent } from '../ui/Card';
-import { Folder as FolderType } from '../../types';
 import { formatDate, formatBytes } from '../../lib/utils';
 import { DataRoomItem } from './columns';
 import { ItemActions } from './ItemActions';
 
 interface FilesGridProps {
   files: DataRoomItem[];
-  folders: FolderType[];
-  isSearching: boolean;
-  searchQuery: string;
   onView: (item: DataRoomItem) => void;
   onRename: (item: DataRoomItem) => void;
   onDelete: (item: DataRoomItem) => void;
@@ -18,9 +14,6 @@ interface FilesGridProps {
 
 export const FilesGrid: React.FC<FilesGridProps> = ({
   files,
-  folders,
-  isSearching,
-  searchQuery,
   onView,
   onRename,
   onDelete,
@@ -58,14 +51,10 @@ export const FilesGrid: React.FC<FilesGridProps> = ({
                     <h3 className="font-medium truncate">{file.name}</h3>
                     <p className="text-sm text-muted-foreground">
                       {file.size ? formatBytes(file.size) : 'Unknown size'} · {formatDate(file.createdAt)}
-                      {isSearching && searchQuery.trim() && file.type === 'file' && folders.find(f => f.id === file.folderId) && (
-                        <span className="ml-2 text-blue-600">in {folders.find(f => f.id === file.folderId)?.name}</span>
-                      )}
                     </p>
                   </div>
                 </div>
                 <ItemActions
-                  item={file}
                   onView={() => onView(file)}
                   onRename={() => onRename(file)}
                   onDelete={() => onDelete(file)}

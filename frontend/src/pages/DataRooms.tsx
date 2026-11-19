@@ -323,6 +323,3 @@ export const DataRooms: React.FC = () => {
     </div>
   );
 };
-
-export default DataRooms;
-

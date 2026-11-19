@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { ApiResponse, DataRoom, FolderWithChildren, File } from '../types/index';
+import { ApiResponse, DataRoom, FolderWithChildren, File } from '../types';
 import { api } from '../lib/api';
 
 interface UseDataRoomDataProps {

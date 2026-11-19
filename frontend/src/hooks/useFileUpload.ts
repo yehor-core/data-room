@@ -7,7 +7,7 @@ import { useDataRoomMutations } from './useDataRoomMutations';
  * Hook to manage file upload workflow
  * Handles dialog state, file selection, and upload submission
  */
-export const useFileUpload = (dataRoomId?: string, folderId?: string, folders?: any[]) => {
+export const useFileUpload = (dataRoomId?: string, folderId?: string) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [fileName, setFileName] = useState('');

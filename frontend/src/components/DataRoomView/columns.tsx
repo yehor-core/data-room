@@ -8,20 +8,22 @@ import { ItemActions } from './ItemActions';
 // Merged type for table and grid views
 export type DataRoomItem = (IFolder & { type: 'folder', size: null }) | (File & { type: 'file', size: number });
 
+const sortableHeader =
+  (label: string) =>
+  ({ column }: HeaderContext<DataRoomItem, unknown>) => (
+    <Button
+      variant="ghost"
+      onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+    >
+      {label}
+      <ArrowUpDown className="ml-2 h-4 w-4" />
+    </Button>
+  )
+
 const columns: ColumnDef<DataRoomItem>[] = [
   {
     accessorKey: "name",
-    header: ({ column }: HeaderContext<DataRoomItem, unknown>) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Name
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      )
-    },
+    header: sortableHeader("Name"),
     cell: ({ row }: CellContext<DataRoomItem, unknown>) => {
       const item = row.original;
       const isFolder = item.type === 'folder';
@@ -37,34 +39,14 @@ const columns: ColumnDef<DataRoomItem>[] = [
   },
   {
     accessorKey: "updatedAt",
-    header: ({ column }: HeaderContext<DataRoomItem, unknown>) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Date Modified
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      )
-    },
+    header: sortableHeader("Date Modified"),
     cell: ({ row }: CellContext<DataRoomItem, unknown>) => {
       return <div>{formatDate(row.original.updatedAt)}</div>;
     },
   },
   {
     accessorKey: "size",
-    header: ({ column }: HeaderContext<DataRoomItem, unknown>) => {
-        return (
-          <Button
-            variant="ghost"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          >
-            File Size
-            <ArrowUpDown className="ml-2 h-4 w-4" />
-          </Button>
-        )
-      },
+    header: sortableHeader("File Size"),
     cell: ({ row }: CellContext<DataRoomItem, unknown>) => {
       const item = row.original;
       if (item.type === 'folder') {
@@ -87,7 +69,6 @@ export const getColumns = (
       return (
         <div className="text-right">
           <ItemActions
-            item={item}
             onView={item.type === 'file' ? () => onView(item) : undefined}
             onRename={() => onRename(item)}
             onDelete={() => onDelete(item)}

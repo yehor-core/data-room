@@ -65,6 +65,3 @@ export const getFileUrl = (fileId: string) => {
     },
   });
 };
-
-export default api;
-
