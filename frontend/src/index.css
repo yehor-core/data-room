@@ -2,8 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-@custom-variant dark (&:is(.dark *));
-
 @layer base {
   :root {
     --background: 0.21 0.02 260;
