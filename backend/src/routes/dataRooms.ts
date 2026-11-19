@@ -1,5 +1,5 @@
-import { Router, Request, Response, NextFunction } from 'express';
-import { body, validationResult, query } from 'express-validator';
+import { Router, Response, NextFunction } from 'express';
+import { body, validationResult } from 'express-validator';
 import { authenticateToken } from '../middleware/auth';
 import { asyncHandler, createError } from '../middleware/errorHandler';
 import { AuthenticatedRequest } from '../types';
@@ -10,7 +10,6 @@ const router = Router();
 // Apply authentication to all routes
 router.use(authenticateToken);
 
-// Validation middleware for creating/updating a data room
 const validateDataRoom = [
   body('name')
     .trim()
@@ -20,7 +19,6 @@ const validateDataRoom = [
     .withMessage('Name must be between 3 and 100 characters.'),
 ];
 
-// Get all data rooms for the authenticated user
 router.get('/', asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
   const dataRooms = await prisma.dataRoom.findMany({
     where: { ownerId: req.user!.id },
@@ -37,7 +35,6 @@ router.get('/', asyncHandler(async (req: AuthenticatedRequest, res: Response) =>
   });
 }));
 
-// Create a new data room
 router.post('/', validateDataRoom, asyncHandler(async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -64,7 +61,6 @@ router.post('/', validateDataRoom, asyncHandler(async (req: AuthenticatedRequest
   });
 }));
 
-// Get a single data room by ID
 router.get('/:id', asyncHandler(async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   const { id } = req.params;
   const dataRoom = await prisma.dataRoom.findFirst({
@@ -88,7 +84,6 @@ router.get('/:id', asyncHandler(async (req: AuthenticatedRequest, res: Response,
   });
 }));
 
-// Update a data room
 router.put('/:id', validateDataRoom, asyncHandler(async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -117,7 +112,6 @@ router.put('/:id', validateDataRoom, asyncHandler(async (req: AuthenticatedReque
   });
 }));
 
-// Delete a data room
 router.delete('/:id', asyncHandler(async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   const { id } = req.params;
   const userId = req.user!.id;

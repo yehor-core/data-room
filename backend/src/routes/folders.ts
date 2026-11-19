@@ -1,6 +1,5 @@
-import { Router, Request, Response, NextFunction } from 'express';
-import { body, validationResult, query } from 'express-validator';
-import { PrismaClient } from '@prisma/client';
+import { Router, Response, NextFunction } from 'express';
+import { body, validationResult } from 'express-validator';
 import { authenticateToken } from '../middleware/auth';
 import { asyncHandler, createError } from '../middleware/errorHandler';
 import { AuthenticatedRequest } from '../types';
@@ -11,7 +10,6 @@ const router = Router();
 // Apply authentication to all routes
 router.use(authenticateToken);
 
-// Validation middleware
 const validateFolderCreation = [
   body('name')
     .trim()
@@ -37,8 +35,6 @@ const validateFolderMove = [
     .isUUID().withMessage('Invalid new parent folder ID.'),
 ];
 
-
-// Get all folders for a data room
 router.get('/', asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
   const { dataRoomId } = req.query;
 
@@ -66,13 +62,10 @@ router.get('/', asyncHandler(async (req: AuthenticatedRequest, res: Response) =>
   });
 }));
 
-
-// Get folder contents
 router.get('/:id/contents', asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
   const { id } = req.params;
   const { includeFiles = 'true' } = req.query;
 
-  // Verify folder exists and user has access
   const folder = await prisma.folder.findFirst({
     where: {
       id,
@@ -96,7 +89,6 @@ router.get('/:id/contents', asyncHandler(async (req: AuthenticatedRequest, res: 
     throw createError('Folder not found', 404);
   }
 
-  // Get folder contents
   const [children, files] = await Promise.all([
     prisma.folder.findMany({
       where: { parentId: id },
@@ -134,11 +126,9 @@ router.get('/:id/contents', asyncHandler(async (req: AuthenticatedRequest, res: 
   });
 }));
 
-// Get folder tree (for navigation)
 router.get('/:id/tree', asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
   const { id } = req.params;
 
-  // Verify folder exists and user has access
   const folder = await prisma.folder.findFirst({
     where: {
       id,
@@ -197,8 +187,7 @@ router.get('/:id/tree', asyncHandler(async (req: AuthenticatedRequest, res: Resp
   });
 }));
 
-// Create a new folder
-router.post('/', validateFolderCreation, asyncHandler(async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+router.post('/', validateFolderCreation, asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ errors: errors.array() });
@@ -207,7 +196,6 @@ router.post('/', validateFolderCreation, asyncHandler(async (req: AuthenticatedR
   const { name, parentId, dataRoomId } = req.body;
   const userId = req.user!.id;
 
-  // Verify data room exists and belongs to user
   const dataRoom = await prisma.dataRoom.findFirst({
     where: {
       id: dataRoomId,
@@ -270,7 +258,6 @@ router.post('/', validateFolderCreation, asyncHandler(async (req: AuthenticatedR
   });
 }));
 
-// Update folder (rename)
 router.patch('/:id/rename', validateFolderRename, asyncHandler(async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -280,7 +267,6 @@ router.patch('/:id/rename', validateFolderRename, asyncHandler(async (req: Authe
   const { id } = req.params;
   const { name } = req.body;
 
-  // Verify folder exists and user has access
   const folder = await prisma.folder.findFirst({
     where: {
       id,
@@ -328,7 +314,6 @@ router.patch('/:id/rename', validateFolderRename, asyncHandler(async (req: Authe
   return res.status(200).json(updatedFolder);
 }));
 
-// Move folder
 router.patch('/:id/move', validateFolderMove, asyncHandler(async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -338,7 +323,6 @@ router.patch('/:id/move', validateFolderMove, asyncHandler(async (req: Authentic
   const { id } = req.params;
   const { newParentId } = req.body;
 
-  // Verify folder exists and user has access
   const folder = await prisma.folder.findFirst({
     where: {
       id,
@@ -384,11 +368,9 @@ router.patch('/:id/move', validateFolderMove, asyncHandler(async (req: Authentic
   return res.status(200).json(movedFolder);
 }));
 
-// Delete folder
 router.delete('/:id', asyncHandler(async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   const { id } = req.params;
 
-  // Verify folder exists and user has access
   const folder = await prisma.folder.findFirst({
     where: {
       id,

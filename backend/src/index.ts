@@ -20,16 +20,13 @@ import { authenticateToken } from './middleware/auth';
 const app = express();
 const PORT = config.port;
 
-// Trust proxy for Vercel deployment (required for rate limiting)
-// Trust only the first proxy (Vercel's proxy)
+// Trust only Vercel's proxy so rate limiting sees the client IP
 app.set('trust proxy', 1);
 
-// CORS Configuration
 const allowedOrigins = config.allowedOrigins
   .split(',')
   .map(origin => origin.trim());
 
-// Rate limiting with proper Vercel configuration
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // limit each IP to 100 requests per windowMs
@@ -38,10 +35,8 @@ const limiter = rateLimit({
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
 });
 
-// Middleware
 app.use(helmet());
 
-// CORS Middleware
 app.use(cors({
   origin: (origin, callback) => {
     // Allow requests with no origin (like mobile apps or Postman)
@@ -50,7 +45,7 @@ app.use(cors({
     if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      console.warn('⚠️ CORS blocked origin:', origin);
+      console.warn('CORS blocked origin:', origin);
       callback(new Error('Not allowed by CORS'));
     }
   },
@@ -61,15 +56,12 @@ app.use(cors({
 app.use(morgan('combined'));
 app.use(limiter);
 app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/data-rooms', authenticateToken, dataRoomRoutes);
 app.use('/api/folders', authenticateToken, folderRoutes);
 app.use('/api/files', authenticateToken, fileRoutes);
 
-// Health check
 app.get('/api/health', (req, res) => {
   res.status(200).json({ 
     status: 'OK', 
@@ -78,12 +70,10 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Root health check
 app.get('/', (req, res) => {
   res.send('Hello, world!');
 });
 
-// Simple test endpoint
 app.get('/api/test', (req, res) => {
   res.status(200).json({ 
     message: 'Backend is working!',
@@ -91,10 +81,8 @@ app.get('/api/test', (req, res) => {
   });
 });
 
-// Error handling
 app.use(errorHandler);
 
-// 404 handler
 app.use('*', (req, res) => {
   res.status(404).json({ 
     error: 'Route not found',
@@ -105,8 +93,7 @@ app.use('*', (req, res) => {
 // Start the server only if not in a serverless environment
 if (process.env.NODE_ENV !== 'production') {
   app.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT}`);
-    console.log(`📊 Environment: ${config.nodeEnv}`);
+    console.log(`Server running on port ${PORT} (${config.nodeEnv})`);
   });
 }
 
