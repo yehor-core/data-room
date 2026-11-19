@@ -94,12 +94,8 @@ export const useDataRoomMutations = ({ dataRoomId, folderId }: UseDataRoomMutati
 
   const deleteFolderMutation = useMutation({
     mutationFn: async (folderIdToDelete: string) => {
-      try {
-        await api.delete(`/folders/${folderIdToDelete}`);
-        return { id: folderIdToDelete };
-      } catch (error: any) {
-        throw error;
-      }
+      await api.delete(`/folders/${folderIdToDelete}`);
+      return { id: folderIdToDelete };
     },
     onSuccess: () => {
       toast.success(SUCCESS_MESSAGES.FOLDER_DELETED);
@@ -112,12 +108,8 @@ export const useDataRoomMutations = ({ dataRoomId, folderId }: UseDataRoomMutati
 
   const deleteFileMutation = useMutation({
     mutationFn: async (fileId: string) => {
-      try {
-        await api.delete(`/files/${fileId}`);
-        return { id: fileId };
-      } catch (error: any) {
-        throw error;
-      }
+      await api.delete(`/files/${fileId}`);
+      return { id: fileId };
     },
     onSuccess: () => {
       toast.success(SUCCESS_MESSAGES.FILE_DELETED);

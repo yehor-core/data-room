@@ -35,37 +35,25 @@ export const DataRooms: React.FC = () => {
   const { data: dataRooms, isLoading } = useQuery<DataRoom[]>({
     queryKey: ['dataRooms'],
     queryFn: async (): Promise<DataRoom[]> => {
-      if (!user) {
-        return [];
-      }
-
       const response = await api.get('/data-rooms');
       return response.data.data || [];
     },
-    enabled: !!user, // Only run when user is available
-    staleTime: 5 * 60 * 1000, // 5 minutes - data rooms don't change often
-    gcTime: 10 * 60 * 1000, // 10 minutes cache time (replaces cacheTime)
-    refetchOnWindowFocus: false, // Don't refetch when window regains focus
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 
   const createMutation = useMutation({
     mutationFn: async (name: string) => {
-      if (!user) throw new Error('User not authenticated');
-
       const response = await api.post('/data-rooms', { name });
       return response.data.data;
     },
-    // Optimistic update: Add immediately to UI
     onMutate: async (name: string) => {
-      // Cancel outgoing refetches
       await queryClient.cancelQueries({ queryKey: ['dataRooms'] });
-
-      // Snapshot previous value
       const previousDataRooms = queryClient.getQueryData<DataRoom[]>(['dataRooms']);
 
-      // Optimistically update with temporary data room
       const tempDataRoom: DataRoom = {
-        id: `temp-${Date.now()}`, // Temporary ID
+        id: `temp-${Date.now()}`,
         name,
         ownerId: user?.id || '',
         createdAt: new Date().toISOString(),
@@ -73,8 +61,6 @@ export const DataRooms: React.FC = () => {
       };
 
       queryClient.setQueryData<DataRoom[]>(['dataRooms'], (old = []) => [tempDataRoom, ...old]);
-
-      // Return context with snapshot
       return { previousDataRooms };
     },
     onSuccess: () => {
@@ -83,53 +69,36 @@ export const DataRooms: React.FC = () => {
       setNewDataRoomName('');
       toast.success(SUCCESS_MESSAGES.DATA_ROOM_CREATED);
     },
-    // On error, rollback to previous state
     onError: (error: unknown, name: string, context: any) => {
-      console.error('❌ Data room creation failed:', getErrorMessage(error));
       if (context?.previousDataRooms) {
         queryClient.setQueryData(['dataRooms'], context.previousDataRooms);
       }
-
-      const errorMessage = getErrorMessage(error);
-      toast.error(errorMessage);
+      toast.error(getErrorMessage(error));
     },
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      if (!user) throw new Error('User not authenticated');
-
       const response = await api.delete(`/data-rooms/${id}`);
       return response.data;
     },
-    // Optimistic update: Remove immediately from UI
     onMutate: async (id: string) => {
-      // Cancel outgoing refetches
       await queryClient.cancelQueries({ queryKey: ['dataRooms'] });
-
-      // Snapshot previous value
       const previousDataRooms = queryClient.getQueryData<DataRoom[]>(['dataRooms']);
-
-      // Optimistically remove from UI
       queryClient.setQueryData<DataRoom[]>(['dataRooms'], (old = []) =>
         old.filter(dataRoom => dataRoom.id !== id)
       );
-
-      // Return context with snapshot
       return { previousDataRooms };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['dataRooms'] });
       toast.success(SUCCESS_MESSAGES.DATA_ROOM_DELETED);
     },
-    // On error, rollback to previous state
     onError: (error: unknown, id: string, context: any) => {
       if (context?.previousDataRooms) {
         queryClient.setQueryData(['dataRooms'], context.previousDataRooms);
       }
-
-      const errorMessage = getErrorMessage(error);
-      toast.error(errorMessage);
+      toast.error(getErrorMessage(error));
     },
   });
 
@@ -146,7 +115,6 @@ export const DataRooms: React.FC = () => {
     deleteMutation.mutate(id);
   };
 
-  // Prefetch data room data on hover
   const handleDataRoomHover = (dataRoomId: string) => {
     queryClient.prefetchQuery({
       queryKey: ['dataRoom', dataRoomId],
@@ -154,17 +122,7 @@ export const DataRooms: React.FC = () => {
         const response = await api.get(`/data-rooms/${dataRoomId}`);
         return response.data;
       },
-      staleTime: 2 * 60 * 1000, // 2 minutes
-    });
-
-    // Also prefetch folders for this data room
-    queryClient.prefetchQuery({
-      queryKey: ['folders', dataRoomId],
-      queryFn: async () => {
-        const response = await api.get(`/data-rooms/${dataRoomId}`);
-        return response.data;
-      },
-      staleTime: 2 * 60 * 1000, // 2 minutes
+      staleTime: 2 * 60 * 1000,
     });
   };
 
@@ -233,7 +191,6 @@ export const DataRooms: React.FC = () => {
                     {dataRoom._count?.folders ?? 0} {dataRoom._count?.folders === 1 ? 'folder' : 'folders'}
                   </span>
                   <div className="flex gap-2">
-                    {/* Don't allow opening data rooms with temporary IDs */}
                     {dataRoom.id.startsWith('temp-') ? (
                       <Button variant="outline" size="sm" disabled>
                         Creating...
