@@ -15,7 +15,6 @@
     "test:frontend": "cd frontend && npm test",
     "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install",
     "db:generate": "cd backend && npx prisma generate",
-    "db:push": "cd backend && npx prisma db push",
     "db:migrate": "cd backend && npx prisma migrate dev",
     "db:studio": "cd backend && npx prisma studio",
     "db:test": "cd backend && npm run db:test"
