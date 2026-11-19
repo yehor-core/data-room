@@ -1,0 +1,14 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "..",
+    "noEmit": true,
+    "types": ["node", "jest"],
+    "paths": {
+      "@/*": ["src/*"],
+      "embedded-postgres": ["node_modules/embedded-postgres/dist/index.d.ts"]
+    }
+  },
+  "include": ["../src/**/*", "./**/*"],
+  "exclude": []
+}

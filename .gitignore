@@ -46,10 +46,8 @@ frontend/dist/
 # ============================================
 
 # Prisma
-backend/prisma/migrations/
 backend/prisma/dev.db
 backend/prisma/*.db
-prisma/migrations/
 
 # ============================================
 # LOGS
