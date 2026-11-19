@@ -58,10 +58,10 @@ For more detailed information see [ARCHITECTURE.md](ARCHITECTURE.md).
       You will also need to set up environment variables for the frontend for Supabase authentication. Add your Supabase URL and Anon Key from your Supabase project's API settings to `frontend/.env`.
 
 4.  **Apply database schema:**
-    This command will push the schema defined in `backend/prisma/schema.prisma` to your Supabase database.
+    This command applies the migrations in `backend/prisma/migrations` to your Supabase database.
 
     ```bash
-    npm run db:push
+    cd backend && npm run db:migrate
     ```
 
 5.  **Start the development servers:**
@@ -100,7 +100,6 @@ This project is configured for easy deployment to Vercel.
       DIRECT_URL="<your_supabase_direct_connection_string>"
       SUPABASE_URL="https://[YOUR_SUPABASE_REF].supabase.co"
       SUPABASE_SERVICE_ROLE_KEY="[YOUR_SUPABASE_SERVICE_ROLE_KEY]"
-      SUPABASE_ANON_KEY="[SUPABASE_ANON_KEY]"
       ALLOWED_ORIGINS="<your_deployed_frontend_url>"
       ```
 
@@ -111,10 +110,6 @@ Prisma is used for database management.
 - **Generate Prisma Client:** After any changes to the `schema.prisma` file, you need to regenerate the Prisma Client.
   ```bash
   npm run db:generate
-  ```
-- **Push schema changes:** To apply schema changes to the database without creating a migration.
-  ```bash
-  npm run db:push
   ```
 - **Create migrations:** To create a new migration file for schema changes.
   ```bash
@@ -132,6 +127,5 @@ Prisma is used for database management.
 - `npm run test`: Runs tests for both frontend and backend.
 - `npm run install:all`: Installs all dependencies.
 - `npm run db:generate`: Generates Prisma Client.
-- `npm run db:push`: Pushes schema to the database.
 - `npm run db:migrate`: Creates a new database migration.
 - `npm run db:studio`: Opens Prisma Studio.

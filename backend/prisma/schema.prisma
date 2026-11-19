@@ -74,6 +74,5 @@ model File {
   @@unique([dataRoomId, folderId, name])
   @@index([folderId])
   @@index([userId])
-  @@index([createdAt])
   @@map("files")
 }

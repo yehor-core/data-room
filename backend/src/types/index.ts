@@ -1,13 +1,16 @@
 import { Request } from 'express';
+import { Prisma } from '@prisma/client';
 
-interface UserWithoutPassword {
-  id: string;
-  email: string;
-  name: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-}
+export const userSelect = {
+  id: true,
+  email: true,
+  name: true,
+  createdAt: true,
+  updatedAt: true,
+} satisfies Prisma.UserSelect;
+
+type User = Prisma.UserGetPayload<{ select: typeof userSelect }>;
 
 export interface AuthenticatedRequest extends Request {
-  user?: UserWithoutPassword;
+  user: User;
 }
