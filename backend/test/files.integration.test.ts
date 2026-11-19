@@ -266,7 +266,7 @@ describe('files', () => {
         .expect(400);
 
       expect(res.body.error.details).toEqual([
-        { field: 'dataRoomId', message: expect.any(String) },
+        { field: 'dataRoomId', message: 'dataRoomId is required' },
       ]);
     });
 

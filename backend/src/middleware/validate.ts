@@ -33,4 +33,9 @@ export const optionalId = (field: string, location = body) =>
   location(field).optional({ values: 'falsy' }).isString().withMessage(`${field} must be a string`);
 
 export const requiredId = (field: string) =>
-  body(field).isString().notEmpty().withMessage(`${field} is required`);
+  body(field)
+    .isString()
+    .withMessage(`${field} is required`)
+    .bail()
+    .notEmpty()
+    .withMessage(`${field} is required`);
