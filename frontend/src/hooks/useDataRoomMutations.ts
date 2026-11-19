@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../lib/api';
 import { toast } from '../lib/toast';
-import { getErrorMessage, SUCCESS_MESSAGES, LOADING_MESSAGES } from '../lib/errorMessages';
+import { getErrorMessage, SUCCESS_MESSAGES } from '../lib/errorMessages';
 import { ApiResponse, DataRoom, Folder, File as FileType } from '../types/index';
 
 interface UseDataRoomMutationsProps {
@@ -223,14 +223,9 @@ export const useDataRoomMutations = ({ dataRoomId, folderId }: UseDataRoomMutati
 
   const uploadFileMutation = useMutation({
     mutationFn: async ({ file, name, folderId }: { file: File; name: string; folderId: string | null }) => {
-      const toastId = toast.loading(LOADING_MESSAGES.UPLOADING_FILE);
-      
-      try {
-        const maxSize = 100 * 1024 * 1024; // 100MB in bytes
-        if (file.size && file.size > maxSize) {
-          throw new Error(`File size exceeds 100MB limit. Your file is ${(file.size / 1024 / 1024).toFixed(2)}MB. Please compress the file or upload a smaller file.`);
-        }
+      const toastId = toast.loading('Uploading file...');
 
+      try {
         const formData = new FormData();
         formData.append('file', file);
         formData.append('name', name);

@@ -43,7 +43,6 @@ export const UploadFileDialog: React.FC<UploadFileDialogProps> = ({
                 const file = e.target.files?.[0];
                 if (file) {
                   onFileSelect(file);
-                  onFileNameChange(file.name.replace('.pdf', ''));
                 }
               }}
             />

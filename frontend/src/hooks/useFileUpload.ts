@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { toast } from '../lib/toast';
+import { FILE_TOO_LARGE_MESSAGE, MAX_UPLOAD_BYTES } from '../lib/errorMessages';
 import { useDataRoomMutations } from './useDataRoomMutations';
 
 /**
@@ -21,9 +22,8 @@ export const useFileUpload = (dataRoomId?: string, folderId?: string, folders?: 
   };
 
   const handleFileSelect = (file: File) => {
-    const MAX_FILE_SIZE = 4.5 * 1024 * 1024; // 4.5MB in bytes
-    if (file.size > MAX_FILE_SIZE) {
-      toast.error('File is too large. Maximum size is 4.5MB.');
+    if (file.size > MAX_UPLOAD_BYTES) {
+      toast.error(FILE_TOO_LARGE_MESSAGE);
       return;
     }
     setSelectedFile(file);
