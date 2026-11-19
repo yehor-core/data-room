@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import { Response, NextFunction } from 'express';
 import { AuthenticatedRequest } from '../../types';
 
 // Define mocks at the top level
@@ -26,14 +26,16 @@ jest.doMock('../../lib/prisma', () => ({
 
 jest.doMock('../errorHandler', () => ({
   createError: jest.fn((message, status) => {
-    const error = new Error(message);
-    (error as any).status = status;
-    return error;
+    return Object.assign(new Error(message), { status });
   }),
 }));
 
 describe('Auth Middleware - authenticateToken', () => {
-  let authenticateToken: (req: AuthenticatedRequest, res: Response, next: NextFunction) => Promise<void>;
+  let authenticateToken: (
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction,
+  ) => Promise<void>;
   let createError: jest.Mock;
   let mockReq: Partial<AuthenticatedRequest>;
   let mockRes: Partial<Response>;
@@ -51,7 +53,7 @@ describe('Auth Middleware - authenticateToken', () => {
     authenticateToken = authModule.authenticateToken;
     const errorHandlerModule = await import('../errorHandler');
     createError = errorHandlerModule.createError as jest.Mock;
-    
+
     mockReq = {
       headers: {},
     };
@@ -94,7 +96,11 @@ describe('Auth Middleware - authenticateToken', () => {
   });
 
   it('should create a new user, attach to request, and call next if token is valid but user does not exist', async () => {
-    const supabaseUser = { id: 'supabase-123', email: 'new@example.com', user_metadata: { full_name: 'New User' } };
+    const supabaseUser = {
+      id: 'supabase-123',
+      email: 'new@example.com',
+      user_metadata: { full_name: 'New User' },
+    };
     const createdUser = { id: '2', email: 'new@example.com', name: 'New User' };
     mockReq.headers = { authorization: 'Bearer validtoken_newuser' };
 
@@ -107,15 +113,15 @@ describe('Auth Middleware - authenticateToken', () => {
 
     await authenticateToken(mockReq as AuthenticatedRequest, mockRes as Response, nextFn);
 
-    expect(mockPrismaUser.create).toHaveBeenCalledWith(expect.objectContaining({
-      data: {
-        email: supabaseUser.email,
-        name: supabaseUser.user_metadata.full_name,
-      }
-    }));
+    expect(mockPrismaUser.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: {
+          email: supabaseUser.email,
+          name: supabaseUser.user_metadata.full_name,
+        },
+      }),
+    );
     expect(mockReq.user).toEqual(createdUser);
     expect(nextFn).toHaveBeenCalledWith();
   });
 });
-
-

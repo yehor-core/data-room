@@ -12,13 +12,12 @@ interface FilesGridProps {
   onDelete: (item: DataRoomItem) => void;
 }
 
-export const FilesGrid: React.FC<FilesGridProps> = ({
-  files,
-  onView,
-  onRename,
-  onDelete,
-}) => {
-  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; item: DataRoomItem | null }>({ x: 0, y: 0, item: null });
+export const FilesGrid: React.FC<FilesGridProps> = ({ files, onView, onRename, onDelete }) => {
+  const [contextMenu, setContextMenu] = useState<{
+    x: number;
+    y: number;
+    item: DataRoomItem | null;
+  }>({ x: 0, y: 0, item: null });
 
   const handleContextMenu = (e: React.MouseEvent, item: DataRoomItem) => {
     e.preventDefault();
@@ -42,26 +41,27 @@ export const FilesGrid: React.FC<FilesGridProps> = ({
             <Card className="hover:shadow-md transition-shadow">
               <CardContent className="p-4">
                 <div className="flex justify-between items-center">
-                  <div 
-                  className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer"
-                  onClick={() => onView(file)}
-                >
-                  <FileText className="h-8 w-8 text-gray-500 flex-shrink-0" />
-                  <div className="min-w-0">
-                    <h3 className="font-medium truncate">{file.name}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {file.size ? formatBytes(file.size) : 'Unknown size'} · {formatDate(file.createdAt)}
-                    </p>
+                  <div
+                    className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer"
+                    onClick={() => onView(file)}
+                  >
+                    <FileText className="h-8 w-8 text-gray-500 flex-shrink-0" />
+                    <div className="min-w-0">
+                      <h3 className="font-medium truncate">{file.name}</h3>
+                      <p className="text-sm text-muted-foreground">
+                        {file.size ? formatBytes(file.size) : 'Unknown size'} ·{' '}
+                        {formatDate(file.createdAt)}
+                      </p>
+                    </div>
                   </div>
+                  <ItemActions
+                    onView={() => onView(file)}
+                    onRename={() => onRename(file)}
+                    onDelete={() => onDelete(file)}
+                  />
                 </div>
-                <ItemActions
-                  onView={() => onView(file)}
-                  onRename={() => onRename(file)}
-                  onDelete={() => onDelete(file)}
-                />
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
           </div>
         ))}
       </div>
@@ -102,4 +102,3 @@ export const FilesGrid: React.FC<FilesGridProps> = ({
     </div>
   );
 };
-

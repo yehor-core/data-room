@@ -1,3 +1,4 @@
+import { isAxiosError } from 'axios';
 import { useCallback } from 'react';
 import { getFileUrl } from '@/lib/api';
 import { toast } from '@/lib/toast';
@@ -11,9 +12,8 @@ export const useFileViewer = () => {
       } else {
         toast.error('Could not get file view URL.');
       }
-    } catch (error: any) {
-      console.error('Error fetching file view URL:', error);
-      if (error.response?.status === 401) {
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.status === 401) {
         toast.error('You are not authorized to view this file.');
       } else {
         toast.error('Failed to open file. Please try again.');

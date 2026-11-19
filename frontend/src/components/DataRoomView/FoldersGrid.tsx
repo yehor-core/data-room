@@ -20,7 +20,11 @@ export const FoldersGrid: React.FC<FoldersGridProps> = ({
   onDelete,
 }) => {
   const navigate = useNavigate();
-  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; item: DataRoomItem | null }>({ x: 0, y: 0, item: null });
+  const [contextMenu, setContextMenu] = useState<{
+    x: number;
+    y: number;
+    item: DataRoomItem | null;
+  }>({ x: 0, y: 0, item: null });
 
   const handleContextMenu = (e: React.MouseEvent, item: DataRoomItem) => {
     e.preventDefault();
@@ -41,12 +45,10 @@ export const FoldersGrid: React.FC<FoldersGridProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {folders.map((folder) => (
           <div key={folder.id} onContextMenu={(e) => handleContextMenu(e, folder)}>
-            <Card
-              className="hover:shadow-md transition-shadow"
-            >
+            <Card className="hover:shadow-md transition-shadow">
               <CardContent className="p-4">
                 <div className="flex justify-between items-center">
-                  <div 
+                  <div
                     className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer"
                     onClick={() => navigate(`/data-rooms/${dataRoomId}/folders/${folder.id}`)}
                   >
@@ -97,4 +99,3 @@ export const FoldersGrid: React.FC<FoldersGridProps> = ({
     </div>
   );
 };
-

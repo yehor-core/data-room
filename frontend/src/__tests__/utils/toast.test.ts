@@ -14,8 +14,8 @@ describe('toast', () => {
   ] as const)('shows a %s message with its icon and hides it after 3 seconds', (type, icon) => {
     toast[type]('Saved');
 
-    const message = screen.getByText('Saved');
-    expect(message.previousSibling).toHaveTextContent(icon);
+    expect(screen.getByText('Saved')).toBeInTheDocument();
+    expect(screen.getByText(icon)).toBeInTheDocument();
 
     jest.advanceTimersByTime(3300);
     expect(screen.queryByText('Saved')).not.toBeInTheDocument();
@@ -23,7 +23,8 @@ describe('toast', () => {
 
   it('keeps a loading message until it is dismissed', () => {
     const id = toast.loading('Uploading file...');
-    expect(screen.getByText('Uploading file...').previousSibling).toHaveTextContent('⟳');
+    expect(screen.getByText('Uploading file...')).toBeInTheDocument();
+    expect(screen.getByText('⟳')).toBeInTheDocument();
 
     jest.advanceTimersByTime(10000);
     expect(screen.getByText('Uploading file...')).toBeInTheDocument();

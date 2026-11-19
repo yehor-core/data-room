@@ -24,15 +24,13 @@ export const Login: React.FC = () => {
       setLoading(true);
       await signInWithGoogle();
     } catch (err: unknown) {
-      console.error('❌ Google login error:', err);
-      
       let message = 'Unknown error';
       if (err instanceof Error) {
         message = err.message;
       } else if (typeof err === 'string') {
         message = err;
       }
-      
+
       setError('Failed to sign in with Google: ' + message);
       setLoading(false);
     }
@@ -56,7 +54,7 @@ export const Login: React.FC = () => {
               </p>
             )}
 
-            <Button 
+            <Button
               type="button"
               variant="outline"
               className="w-full"

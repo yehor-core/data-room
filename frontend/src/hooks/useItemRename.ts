@@ -15,14 +15,17 @@ export const useItemRename = (dataRoomId?: string, folderId?: string) => {
   const [isOpen, setIsOpen] = useState(false);
   const [item, setItem] = useState<RenameItem | null>(null);
   const [newName, setNewName] = useState('');
-  const { renameFolderMutation, renameFileMutation } = useDataRoomMutations({ dataRoomId, folderId });
+  const { renameFolderMutation, renameFileMutation } = useDataRoomMutations({
+    dataRoomId,
+    folderId,
+  });
 
   const open = useCallback((itemToRename: RenameItem) => {
     setItem(itemToRename);
     setNewName(itemToRename.name);
     setIsOpen(true);
   }, []);
-  
+
   const close = () => {
     setIsOpen(false);
     setItem(null);
@@ -34,15 +37,9 @@ export const useItemRename = (dataRoomId?: string, folderId?: string) => {
     if (!item || !newName.trim()) return;
 
     if (item.type === 'folder') {
-      renameFolderMutation.mutate(
-        { id: item.id, name: newName },
-        { onSuccess: close }
-      );
+      renameFolderMutation.mutate({ id: item.id, name: newName }, { onSuccess: close });
     } else {
-      renameFileMutation.mutate(
-        { id: item.id, name: newName },
-        { onSuccess: close }
-      );
+      renameFileMutation.mutate({ id: item.id, name: newName }, { onSuccess: close });
     }
   };
 
@@ -57,4 +54,3 @@ export const useItemRename = (dataRoomId?: string, folderId?: string) => {
     isPending: renameFolderMutation.isPending || renameFileMutation.isPending,
   };
 };
-

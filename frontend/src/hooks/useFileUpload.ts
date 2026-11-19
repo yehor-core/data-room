@@ -14,7 +14,7 @@ export const useFileUpload = (dataRoomId?: string, folderId?: string) => {
   const { uploadFileMutation } = useDataRoomMutations({ dataRoomId, folderId });
 
   const open = () => setIsOpen(true);
-  
+
   const close = () => {
     setIsOpen(false);
     setSelectedFile(null);
@@ -43,7 +43,7 @@ export const useFileUpload = (dataRoomId?: string, folderId?: string) => {
         onSuccess: () => {
           close();
         },
-      }
+      },
     );
   };
 
@@ -59,4 +59,3 @@ export const useFileUpload = (dataRoomId?: string, folderId?: string) => {
     isPending: uploadFileMutation.isPending,
   };
 };
-

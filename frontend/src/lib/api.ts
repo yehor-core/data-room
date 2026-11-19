@@ -26,16 +26,6 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (process.env.NODE_ENV === 'development') {
-      console.error('[API] Request failed:', {
-        url: error.config?.url,
-        method: error.config?.method,
-        status: error.response?.status,
-        data: error.response?.data,
-        message: error.message,
-      });
-    }
-
     if (error.code === 'ERR_NETWORK') {
       toast.error('Unable to connect to the server. Please check your internet connection.');
     } else if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT') {
@@ -43,7 +33,7 @@ api.interceptors.response.use(
     }
 
     return Promise.reject(error);
-  }
+  },
 );
 
 export const getFileUrl = (fileId: string) => {

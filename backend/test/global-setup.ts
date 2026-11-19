@@ -1,7 +1,6 @@
 import { startTestDatabase, TestDatabaseServer } from './postgres';
 
 declare global {
-  // eslint-disable-next-line no-var
   var testDatabase: TestDatabaseServer | undefined;
 }
 

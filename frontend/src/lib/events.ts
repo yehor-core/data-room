@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- the event bus is removed in T5 (B53) */
 type EventHandler = (data?: any) => void;
 
 class EventEmitter {
@@ -11,14 +12,14 @@ class EventEmitter {
 
     // Return an unsubscribe function
     return () => {
-      this.events[event] = this.events[event].filter(h => h !== handler);
+      this.events[event] = this.events[event].filter((h) => h !== handler);
     };
   }
 
   publish(event: string, data?: any): void {
     const handlers = this.events[event];
     if (handlers) {
-      handlers.forEach(handler => handler(data));
+      handlers.forEach((handler) => handler(data));
     }
   }
 }

@@ -33,9 +33,9 @@ export const SearchAndActions: React.FC<SearchAndActionsProps> = ({
         />
       </div>
       <div className="flex items-center gap-2">
-        <ToggleGroup 
-          type="single" 
-          value={viewMode} 
+        <ToggleGroup
+          type="single"
+          value={viewMode}
           onValueChange={(value: 'grid' | 'list') => {
             if (value) onViewModeChange(value);
           }}
@@ -61,4 +61,3 @@ export const SearchAndActions: React.FC<SearchAndActionsProps> = ({
     </div>
   );
 };
-

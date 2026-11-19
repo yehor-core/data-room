@@ -8,39 +8,25 @@ if (!supabaseUrl || !supabaseServiceKey) {
 }
 
 // Create Supabase client with service role key for server-side operations
-export const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+const supabase = createClient(supabaseUrl, supabaseServiceKey, {
   auth: {
     autoRefreshToken: false,
     persistSession: false,
   },
 });
 
-// Create Supabase client with anon key for client-side operations
-export const supabaseAnon = createClient(
-  supabaseUrl,
-  process.env.SUPABASE_ANON_KEY!,
-  {
-    auth: {
-      autoRefreshToken: true,
-      persistSession: true,
-    },
-  }
-);
-
 export const uploadFile = async (
   file: Buffer,
   fileName: string,
-  folder: string = 'uploads'
+  folder: string = 'uploads',
 ): Promise<string> => {
   const fileExt = fileName.split('.').pop();
   const filePath = `${folder}/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
 
-  const { error } = await supabase.storage
-    .from('data-room-files')
-    .upload(filePath, file, {
-      contentType: 'application/pdf',
-      upsert: false,
-    });
+  const { error } = await supabase.storage.from('data-room-files').upload(filePath, file, {
+    contentType: 'application/pdf',
+    upsert: false,
+  });
 
   if (error) {
     throw new Error(`Failed to upload file: ${error.message}`);
@@ -50,29 +36,25 @@ export const uploadFile = async (
 };
 
 export const getSignedUrl = async (filePath: string): Promise<string> => {
-    let path = filePath;
-    const bucketName = 'data-room-files';
-    
-    // Check if the filePath is a full URL and extract the path if it is
-    if (path.includes(bucketName)) {
-        path = path.substring(path.indexOf(bucketName) + bucketName.length + 1);
-    }
-    
-    const { data, error } = await supabase.storage
-        .from(bucketName)
-        .createSignedUrl(path, 60); // 60 seconds expiry
+  let path = filePath;
+  const bucketName = 'data-room-files';
 
-    if (error) {
-        throw new Error(`Failed to create signed URL: ${error.message}`);
-    }
+  // Check if the filePath is a full URL and extract the path if it is
+  if (path.includes(bucketName)) {
+    path = path.substring(path.indexOf(bucketName) + bucketName.length + 1);
+  }
 
-    return data.signedUrl;
-}
+  const { data, error } = await supabase.storage.from(bucketName).createSignedUrl(path, 60); // 60 seconds expiry
+
+  if (error) {
+    throw new Error(`Failed to create signed URL: ${error.message}`);
+  }
+
+  return data.signedUrl;
+};
 
 export const deleteFile = async (filePath: string): Promise<void> => {
-  const { error } = await supabase.storage
-    .from('data-room-files')
-    .remove([filePath]);
+  const { error } = await supabase.storage.from('data-room-files').remove([filePath]);
 
   if (error) {
     throw new Error(`Failed to delete file: ${error.message}`);

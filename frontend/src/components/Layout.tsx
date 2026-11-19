@@ -16,7 +16,10 @@ export const Layout: React.FC = () => {
       <header className="bg-card border-b border-border">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
-            <Link to="/" className="flex items-center gap-2 font-bold text-lg sm:text-xl text-primary">
+            <Link
+              to="/"
+              className="flex items-center gap-2 font-bold text-lg sm:text-xl text-primary"
+            >
               <FolderOpen className="h-5 w-5 sm:h-6 sm:w-6" />
               <span className="hidden sm:inline">Data Room</span>
               <span className="sm:hidden">DR</span>
@@ -97,4 +100,3 @@ export const Layout: React.FC = () => {
     </div>
   );
 };
-
