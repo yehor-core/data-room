@@ -1,0 +1,12 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  // Three separate install roots (no npm workspaces): each one is listed here as a knip workspace.
+  "workspaces": {
+    ".": {},
+    "backend": {},
+    "frontend": {
+      // knip has no Create React App / craco plugin, so the app, its config and the Jest files CRA runs are listed here.
+      "entry": ["src/index.tsx", "craco.config.js", "src/setupTests.ts", "src/**/*.test.{ts,tsx}"]
+    }
+  }
+}
