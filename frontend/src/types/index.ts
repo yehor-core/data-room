@@ -1,7 +1,9 @@
+// Response shapes of the backend API. Dates are ISO strings, sizes are bytes.
+
 export interface User {
   id: string;
   email: string;
-  name?: string | null;
+  name: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -9,56 +11,43 @@ export interface User {
 export interface DataRoom {
   id: string;
   name: string;
-  description?: string | null;
   ownerId: string;
   createdAt: string;
   updatedAt: string;
-  _count?: {
-    folders?: number;
-    files?: number;
-  };
-  folders?: Folder[];
+  _count: { folders: number; files: number };
 }
 
 export interface Folder {
   id: string;
   name: string;
-  parentId: string | null;
   dataRoomId: string;
+  parentId: string | null;
   createdAt: string;
   updatedAt: string;
-  _count?: {
-    children: number;
-    files: number;
-  };
-  children?: Folder[];
-  files?: File[];
-}
-
-export interface FolderWithChildren extends Folder {
-  children: Folder[];
-  files: File[];
+  _count: { children: number; files: number };
 }
 
 export interface File {
   id: string;
   name: string;
-  mimeType?: string;
-  fileSize?: number | null;
-  folderId: string;
-  filePath?: string;
+  dataRoomId: string;
+  folderId: string | null;
+  fileSize: number | null;
+  mimeType: string | null;
   createdAt: string;
   updatedAt: string;
-  folder?: {
-    id: string;
-    name: string;
-    dataRoomId: string;
-  };
 }
 
-export interface ApiResponse<T = unknown> {
-  success: boolean;
-  data?: T;
-  error?: string;
-  message?: string;
+export interface BreadcrumbItem {
+  id: string;
+  name: string;
+}
+
+/** One level of a data room: its root (`folder` is null) or one Folder. */
+export interface Contents {
+  dataRoom: { id: string; name: string };
+  folder: { id: string; name: string; parentId: string | null } | null;
+  breadcrumb: BreadcrumbItem[];
+  folders: Folder[];
+  files: File[];
 }

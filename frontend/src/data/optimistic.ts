@@ -1,0 +1,73 @@
+import { useCallback } from 'react';
+import { useMutation, useQueryClient, type QueryKey } from '@tanstack/react-query';
+import { toast } from '@/lib/toast';
+import { getErrorMessage } from '@/lib/errorMessages';
+
+type Patch<TData> = (data: TData) => TData;
+
+interface OptimisticMutation<TData, TVars, TResult> {
+  /** Every cached query under this key holds TData; all of them are patched, restored and invalidated. */
+  scope: QueryKey;
+  mutationFn: (vars: TVars) => Promise<TResult>;
+  /** Applied before the request; undone if it fails. */
+  optimistic?: (vars: TVars) => Patch<TData>;
+  /** Applied when the server confirms, before the refetch completes. */
+  confirmed?: (result: TResult, vars: TVars) => Patch<TData>;
+  successMessage: (vars: TVars) => string;
+  /** Called when the server confirms, e.g. to drop caches of something deleted. */
+  onConfirmed?: (vars: TVars) => void;
+  /** Another cache that shows derived data (e.g. counts) and is refetched when the change settles. */
+  alsoInvalidate?: QueryKey;
+}
+
+/**
+ * Cancel, snapshot, patch, roll back on error with one toast, invalidate when settled: written once here.
+ * Returns a function that resolves to true when the server accepted the change. It never rejects.
+ */
+export function useOptimisticMutation<TData, TVars, TResult>({
+  scope,
+  mutationFn,
+  optimistic,
+  confirmed,
+  successMessage,
+  onConfirmed,
+  alsoInvalidate,
+}: OptimisticMutation<TData, TVars, TResult>) {
+  const queryClient = useQueryClient();
+  const patchAll = (patch: Patch<TData>) =>
+    queryClient.setQueriesData<TData>({ queryKey: scope }, (data) => data && patch(data));
+
+  const { mutateAsync } = useMutation({
+    mutationFn,
+    onMutate: async (vars: TVars) => {
+      await queryClient.cancelQueries({ queryKey: scope });
+      const snapshot = queryClient.getQueriesData<TData>({ queryKey: scope });
+      if (optimistic) patchAll(optimistic(vars));
+      return { snapshot };
+    },
+    onSuccess: (result, vars) => {
+      if (confirmed) patchAll(confirmed(result, vars));
+      onConfirmed?.(vars);
+      toast.success(successMessage(vars));
+    },
+    onError: (error, _vars, context) => {
+      context?.snapshot.forEach(([queryKey, data]) => queryClient.setQueryData(queryKey, data));
+      toast.error(getErrorMessage(error));
+    },
+    onSettled: () =>
+      Promise.all(
+        [scope, alsoInvalidate].map(
+          (queryKey) => queryKey && queryClient.invalidateQueries({ queryKey }),
+        ),
+      ),
+  });
+
+  return useCallback(
+    (vars: TVars) =>
+      mutateAsync(vars).then(
+        () => true,
+        () => false,
+      ),
+    [mutateAsync],
+  );
+}

@@ -3,12 +3,12 @@ import { Link, Outlet, useParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from './ui/Button';
 import { FolderOpen, LogOut, User, ChevronRight, X } from 'lucide-react';
-import FileTree from './FileTree';
+import { FileTree } from './FileTree';
+import { DataRoomActionsProvider } from './DataRoomActions';
 
 export const Layout: React.FC = () => {
   const { user, signOut } = useAuth();
-  const params = useParams();
-  const showFileTree = params.id;
+  const { id: dataRoomId, folderId } = useParams<{ id?: string; folderId?: string }>();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   return (
@@ -40,8 +40,8 @@ export const Layout: React.FC = () => {
       </header>
 
       <div className="flex-1 flex overflow-hidden relative">
-        {showFileTree && (
-          <>
+        {dataRoomId ? (
+          <DataRoomActionsProvider dataRoomId={dataRoomId} folderId={folderId ?? null}>
             {/* Mobile Toggle Button - Full height on left edge */}
             <button
               onClick={() => setIsSidebarOpen(true)}
@@ -80,14 +80,18 @@ export const Layout: React.FC = () => {
                 </button>
               </div>
               <div className="overflow-y-auto flex-1">
-                <FileTree />
+                <FileTree dataRoomId={dataRoomId} />
               </div>
             </aside>
-          </>
+            <main className="flex-1 overflow-y-auto md:ml-0 ml-8">
+              <Outlet />
+            </main>
+          </DataRoomActionsProvider>
+        ) : (
+          <main className="flex-1 overflow-y-auto">
+            <Outlet />
+          </main>
         )}
-        <main className={`flex-1 overflow-y-auto ${showFileTree ? 'md:ml-0 ml-8' : ''}`}>
-          <Outlet />
-        </main>
       </div>
 
       <footer className="bg-card border-t border-border">

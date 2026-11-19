@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase';
 import { toast } from '../lib/toast';
 import { SUCCESS_MESSAGES } from '../lib/errorMessages';
 import { User } from '../types';
-import { api, setAuthToken } from '../lib/api';
+import { api, setAuthToken } from '../data/api';
 
 interface AuthContextType {
   user: User | null;
@@ -32,12 +32,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const { data } = await api.get('/auth/me');
-        if (data.success) {
-          setUser(data.data);
-        } else {
-          setUser(null);
-        }
+        setUser(await api.get<User>('/auth/me'));
       } catch {
         setUser(null);
       }
