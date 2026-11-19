@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- untyped Item data; T5 replaces it with the typed client data module */
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../lib/api';
 import { toast } from '../lib/toast';
@@ -101,7 +102,7 @@ export const useDataRoomMutations = ({ dataRoomId, folderId }: UseDataRoomMutati
       toast.success(SUCCESS_MESSAGES.FOLDER_DELETED);
       invalidateQueries();
     },
-    onError: (error: any) => {
+    onError: (error) => {
       toast.error(getErrorMessage(error));
     },
   });
@@ -115,7 +116,7 @@ export const useDataRoomMutations = ({ dataRoomId, folderId }: UseDataRoomMutati
       toast.success(SUCCESS_MESSAGES.FILE_DELETED);
       invalidateQueries();
     },
-    onError: (error: any) => {
+    onError: (error) => {
       toast.error(getErrorMessage(error));
     },
   });

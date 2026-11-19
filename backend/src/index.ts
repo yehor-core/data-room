@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import { config } from './config';
+import { logger } from './lib/logger';
 import { errorHandler } from './middleware/errorHandler';
 import { authRoutes } from './routes/auth';
 import { dataRoomRoutes } from './routes/dataRooms';
@@ -39,7 +40,7 @@ app.use(cors({
     if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      console.warn('CORS blocked origin:', origin);
+      logger.warn('CORS blocked origin:', origin);
       callback(new Error('Not allowed by CORS'));
     }
   },
@@ -87,7 +88,7 @@ app.use('*', (req, res) => {
 // Start the server only if not in a serverless environment
 if (process.env.NODE_ENV !== 'production') {
   app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT} (${config.nodeEnv})`);
+    logger.info(`Server running on port ${PORT} (${config.nodeEnv})`);
   });
 }
 

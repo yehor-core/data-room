@@ -38,8 +38,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         } else {
           setUser(null);
         }
-      } catch (error) {
-        console.error('[AuthContext] fetchUser: Error fetching user profile', error);
+      } catch {
         setUser(null);
       }
     };
@@ -95,7 +94,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       });
       if (error) throw error;
     } catch (error) {
-      console.error('Error signing in with Google:', error);
       setLoading(false);
       throw error;
     }

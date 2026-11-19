@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- untyped Item data; T5 replaces it with the typed client data module */
 import { useQuery } from '@tanstack/react-query';
 import { ApiResponse, DataRoom, FolderWithChildren, File } from '../types';
 import { api } from '../lib/api';

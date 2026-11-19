@@ -55,7 +55,8 @@ export const authenticateToken = async (
 
     req.user = user;
     next();
-  } catch (error: any) {
-    next(createError(error.message || 'Authentication failed', 401));
+  } catch (error) {
+    const message = error instanceof Error && error.message ? error.message : 'Authentication failed';
+    next(createError(message, 401));
   }
 };

@@ -69,7 +69,7 @@ export const DataRooms: React.FC = () => {
       setNewDataRoomName('');
       toast.success(SUCCESS_MESSAGES.DATA_ROOM_CREATED);
     },
-    onError: (error: unknown, name: string, context: any) => {
+    onError: (error: unknown, name: string, context) => {
       if (context?.previousDataRooms) {
         queryClient.setQueryData(['dataRooms'], context.previousDataRooms);
       }
@@ -94,7 +94,7 @@ export const DataRooms: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['dataRooms'] });
       toast.success(SUCCESS_MESSAGES.DATA_ROOM_DELETED);
     },
-    onError: (error: unknown, id: string, context: any) => {
+    onError: (error: unknown, id: string, context) => {
       if (context?.previousDataRooms) {
         queryClient.setQueryData(['dataRooms'], context.previousDataRooms);
       }

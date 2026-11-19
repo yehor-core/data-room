@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- the event bus is removed in T5 (B53) */
 type EventHandler = (data?: any) => void;
 
 class EventEmitter {

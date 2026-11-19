@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import { Response, NextFunction } from 'express';
 import { AuthenticatedRequest } from '../../types';
 
 // Define mocks at the top level
@@ -26,9 +26,7 @@ jest.doMock('../../lib/prisma', () => ({
 
 jest.doMock('../errorHandler', () => ({
   createError: jest.fn((message, status) => {
-    const error = new Error(message);
-    (error as any).status = status;
-    return error;
+    return Object.assign(new Error(message), { status });
   }),
 }));
 

@@ -148,7 +148,9 @@ router.get('/:id/tree', asyncHandler(async (req: AuthenticatedRequest, res: Resp
   }
 
   // Build breadcrumb path
-  const buildBreadcrumb = async (folderId: string): Promise<any[]> => {
+  const buildBreadcrumb = async (
+    folderId: string,
+  ): Promise<{ id: string; name: string; parentId: string | null }[]> => {
     const currentFolder = await prisma.folder.findUnique({
       where: { id: folderId },
       select: {

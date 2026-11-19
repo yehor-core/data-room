@@ -38,8 +38,8 @@ describe('Format Utilities', () => {
 
     it.each([
       ['an empty string', ''],
-      ['null', null as any],
-      ['undefined', undefined as any],
+      ['null', null as unknown as string],
+      ['undefined', undefined as unknown as string],
     ])('reports %s as an unknown date', (_, date) => {
       expect(formatDate(date)).toBe('Unknown date');
     });

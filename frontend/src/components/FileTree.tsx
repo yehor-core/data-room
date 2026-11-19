@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- untyped Item data; T5 replaces it with the typed client data module */
 import React, { useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { useDataRoomData } from '@/hooks';

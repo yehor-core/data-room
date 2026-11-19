@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- untyped Item data; T5 replaces it with the typed client data module */
 import React, { useState, useMemo } from 'react';
 import { DataRoomItem } from '@/components/DataRoomView';
 import { ChevronRight, ChevronDown, Folder, File as FileIcon, Edit, Trash2 } from 'lucide-react';

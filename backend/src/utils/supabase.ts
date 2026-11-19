@@ -8,24 +8,12 @@ if (!supabaseUrl || !supabaseServiceKey) {
 }
 
 // Create Supabase client with service role key for server-side operations
-export const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+const supabase = createClient(supabaseUrl, supabaseServiceKey, {
   auth: {
     autoRefreshToken: false,
     persistSession: false,
   },
 });
-
-// Create Supabase client with anon key for client-side operations
-export const supabaseAnon = createClient(
-  supabaseUrl,
-  process.env.SUPABASE_ANON_KEY!,
-  {
-    auth: {
-      autoRefreshToken: true,
-      persistSession: true,
-    },
-  }
-);
 
 export const uploadFile = async (
   file: Buffer,

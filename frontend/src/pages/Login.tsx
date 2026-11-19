@@ -24,8 +24,6 @@ export const Login: React.FC = () => {
       setLoading(true);
       await signInWithGoogle();
     } catch (err: unknown) {
-      console.error('❌ Google login error:', err);
-      
       let message = 'Unknown error';
       if (err instanceof Error) {
         message = err.message;
