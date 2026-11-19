@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useDataRoomMutations } from './useDataRoomMutations';
 
 interface RenameItem {
@@ -17,11 +17,11 @@ export const useItemRename = (dataRoomId?: string, folderId?: string) => {
   const [newName, setNewName] = useState('');
   const { renameFolderMutation, renameFileMutation } = useDataRoomMutations({ dataRoomId, folderId });
 
-  const open = (itemToRename: RenameItem) => {
+  const open = useCallback((itemToRename: RenameItem) => {
     setItem(itemToRename);
     setNewName(itemToRename.name);
     setIsOpen(true);
-  };
+  }, []);
   
   const close = () => {
     setIsOpen(false);

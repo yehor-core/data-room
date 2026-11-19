@@ -59,7 +59,6 @@ export const FoldersGrid: React.FC<FoldersGridProps> = ({
                     </div>
                   </div>
                   <ItemActions
-                    item={folder}
                     onRename={() => onRename(folder)}
                     onDelete={() => onDelete(folder)}
                   />

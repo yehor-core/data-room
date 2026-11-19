@@ -8,16 +8,14 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/DropdownMenu';
 import { Button } from '@/components/ui/Button';
-import { DataRoomItem } from './columns';
 
 interface ItemActionsProps {
-  item: DataRoomItem;
   onView?: () => void;
   onRename: () => void;
   onDelete: () => void;
 }
 
-export const ItemActions: React.FC<ItemActionsProps> = ({ item, onView, onRename, onDelete }) => {
+export const ItemActions: React.FC<ItemActionsProps> = ({ onView, onRename, onDelete }) => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>

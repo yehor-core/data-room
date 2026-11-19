@@ -32,33 +32,23 @@ describe('Format Utilities', () => {
   });
 
   describe('formatDate', () => {
-    it('formats date strings', () => {
-      const date = '2024-01-15T10:30:00Z';
-      const formatted = formatDate(date);
-      expect(formatted).toBeTruthy();
-      expect(typeof formatted).toBe('string');
+    it.each([
+      ['an ISO string', '2024-01-15T10:30:00'],
+      ['a Date', new Date(2024, 0, 15, 10, 30)],
+    ])('formats %s as a short US date and time', (_, date) => {
+      expect(formatDate(date)).toBe('Jan 15, 2024, 10:30 AM');
     });
 
-    it('formats Date objects', () => {
-      const date = new Date('2024-01-15T10:30:00Z');
-      const formatted = formatDate(date);
-      expect(formatted).toBeTruthy();
-      expect(typeof formatted).toBe('string');
-    });
-
-    it('handles invalid date strings', () => {
+    it('reports an unparseable date as invalid', () => {
       expect(formatDate('invalid-date')).toBe('Invalid date');
-      expect(formatDate('')).toBe('Unknown date');
-      expect(formatDate(null as any)).toBe('Unknown date');
-      expect(formatDate(undefined as any)).toBe('Unknown date');
     });
 
-    it('handles timestamp strings', () => {
-      const timestamp = '1705312200000'; // 2024-01-15T10:30:00Z
-      const formatted = formatDate(timestamp);
-      expect(formatted).toBeTruthy();
-      expect(typeof formatted).toBe('string');
+    it.each([
+      ['an empty string', ''],
+      ['null', null as any],
+      ['undefined', undefined as any],
+    ])('reports %s as an unknown date', (_, date) => {
+      expect(formatDate(date)).toBe('Unknown date');
     });
   });
 });
-

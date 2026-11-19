@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, Outlet, useNavigate, useParams } from 'react-router-dom';
+import { Link, Outlet, useParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from './ui/Button';
 import { FolderOpen, LogOut, User, ChevronRight, X } from 'lucide-react';
@@ -7,15 +7,9 @@ import FileTree from './FileTree';
 
 export const Layout: React.FC = () => {
   const { user, signOut } = useAuth();
-  const navigate = useNavigate();
   const params = useParams();
   const showFileTree = params.id;
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
-  const handleLogout = async () => {
-    await signOut();
-    navigate('/login');
-  };
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
@@ -29,18 +23,14 @@ export const Layout: React.FC = () => {
             </Link>
 
             <div className="flex items-center gap-2 sm:gap-4">
-              {user && (
-                <>
-                  <div className="hidden md:flex items-center gap-2 text-sm">
-                    <User className="h-4 w-4" />
-                    <span className="max-w-[150px] truncate">{user.name || user.email}</span>
-                  </div>
-                  <Button variant="outline" size="sm" onClick={handleLogout}>
-                    <LogOut className="h-4 w-4 sm:mr-2" />
-                    <span className="hidden sm:inline">Logout</span>
-                  </Button>
-                </>
-              )}
+              <div className="hidden md:flex items-center gap-2 text-sm">
+                <User className="h-4 w-4" />
+                <span className="max-w-[150px] truncate">{user?.name || user?.email}</span>
+              </div>
+              <Button variant="outline" size="sm" onClick={signOut}>
+                <LogOut className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Logout</span>
+              </Button>
             </div>
           </div>
         </div>

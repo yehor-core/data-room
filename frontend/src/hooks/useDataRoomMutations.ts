@@ -1,8 +1,8 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../lib/api';
 import { toast } from '../lib/toast';
-import { getErrorMessage, SUCCESS_MESSAGES, LOADING_MESSAGES } from '../lib/errorMessages';
-import { ApiResponse, DataRoom, Folder, File as FileType } from '../types/index';
+import { getErrorMessage, SUCCESS_MESSAGES } from '../lib/errorMessages';
+import { ApiResponse, DataRoom, Folder, File as FileType } from '../types';
 
 interface UseDataRoomMutationsProps {
   dataRoomId?: string;
@@ -94,12 +94,8 @@ export const useDataRoomMutations = ({ dataRoomId, folderId }: UseDataRoomMutati
 
   const deleteFolderMutation = useMutation({
     mutationFn: async (folderIdToDelete: string) => {
-      try {
-        await api.delete(`/folders/${folderIdToDelete}`);
-        return { id: folderIdToDelete };
-      } catch (error: any) {
-        throw error;
-      }
+      await api.delete(`/folders/${folderIdToDelete}`);
+      return { id: folderIdToDelete };
     },
     onSuccess: () => {
       toast.success(SUCCESS_MESSAGES.FOLDER_DELETED);
@@ -112,12 +108,8 @@ export const useDataRoomMutations = ({ dataRoomId, folderId }: UseDataRoomMutati
 
   const deleteFileMutation = useMutation({
     mutationFn: async (fileId: string) => {
-      try {
-        await api.delete(`/files/${fileId}`);
-        return { id: fileId };
-      } catch (error: any) {
-        throw error;
-      }
+      await api.delete(`/files/${fileId}`);
+      return { id: fileId };
     },
     onSuccess: () => {
       toast.success(SUCCESS_MESSAGES.FILE_DELETED);
@@ -223,14 +215,9 @@ export const useDataRoomMutations = ({ dataRoomId, folderId }: UseDataRoomMutati
 
   const uploadFileMutation = useMutation({
     mutationFn: async ({ file, name, folderId }: { file: File; name: string; folderId: string | null }) => {
-      const toastId = toast.loading(LOADING_MESSAGES.UPLOADING_FILE);
-      
-      try {
-        const maxSize = 100 * 1024 * 1024; // 100MB in bytes
-        if (file.size && file.size > maxSize) {
-          throw new Error(`File size exceeds 100MB limit. Your file is ${(file.size / 1024 / 1024).toFixed(2)}MB. Please compress the file or upload a smaller file.`);
-        }
+      const toastId = toast.loading('Uploading file...');
 
+      try {
         const formData = new FormData();
         formData.append('file', file);
         formData.append('name', name);
