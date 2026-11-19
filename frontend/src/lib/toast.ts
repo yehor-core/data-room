@@ -1,14 +1,10 @@
-/**
- * Simple toast notification utility
- * Can be replaced with react-hot-toast later
- */
+type ToastType = 'success' | 'error' | 'loading';
 
-type ToastType = 'success' | 'error' | 'info' | 'warning' | 'loading';
-
-interface ToastOptions {
-  duration?: number;
-  id?: string;
-}
+const STYLE: Record<ToastType, { icon: string; color: string }> = {
+  success: { icon: '✓', color: '#10b981' },
+  error: { icon: '✕', color: '#ef4444' },
+  loading: { icon: '⟳', color: '#6b7280' },
+};
 
 class ToastManager {
   private container: HTMLElement | null = null;
@@ -33,46 +29,11 @@ class ToastManager {
     return this.container;
   }
 
-  private getIcon(type: ToastType): string {
-    switch (type) {
-      case 'success':
-        return '✓';
-      case 'error':
-        return '✕';
-      case 'warning':
-        return '⚠';
-      case 'info':
-        return 'ℹ';
-      case 'loading':
-        return '⟳';
-      default:
-        return '';
-    }
-  }
-
-  private getColor(type: ToastType): string {
-    switch (type) {
-      case 'success':
-        return '#10b981';
-      case 'error':
-        return '#ef4444';
-      case 'warning':
-        return '#f59e0b';
-      case 'info':
-        return '#3b82f6';
-      case 'loading':
-        return '#6b7280';
-      default:
-        return '#3b82f6';
-    }
-  }
-
-  show(message: string, type: ToastType = 'info', options: ToastOptions = {}) {
+  private show(message: string, type: ToastType) {
     const container = this.ensureContainer();
-    const id = options.id || `toast-${Date.now()}`;
-    const duration = options.duration ?? (type === 'loading' ? 0 : 3000);
+    const id = `toast-${Date.now()}`;
+    const { icon: iconText, color } = STYLE[type];
 
-    // Remove existing toast with same ID
     if (this.toasts.has(id)) {
       this.remove(id);
     }
@@ -92,17 +53,17 @@ class ToastManager {
       max-width: 500px;
       pointer-events: auto;
       animation: slideIn 0.3s ease-out;
-      border-left: 4px solid ${this.getColor(type)};
+      border-left: 4px solid ${color};
     `;
 
     const icon = document.createElement('span');
     icon.style.cssText = `
       font-size: 20px;
-      color: ${this.getColor(type)};
+      color: ${color};
       font-weight: bold;
       ${type === 'loading' ? 'animation: spin 1s linear infinite;' : ''}
     `;
-    icon.textContent = this.getIcon(type);
+    icon.textContent = iconText;
 
     const text = document.createElement('span');
     text.style.cssText = 'flex: 1; font-size: 14px;';
@@ -132,23 +93,21 @@ class ToastManager {
     container.appendChild(toast);
     this.toasts.set(id, toast);
 
-    // Auto-dismiss (except loading toasts)
-    if (duration > 0) {
-      setTimeout(() => this.remove(id), duration);
+    if (type !== 'loading') {
+      setTimeout(() => this.remove(id), 3000);
     }
 
     return id;
   }
 
-  remove(id: string) {
+  private remove(id: string) {
     const toast = this.toasts.get(id);
     if (toast) {
       toast.style.animation = 'slideOut 0.3s ease-out';
       setTimeout(() => {
         toast.remove();
         this.toasts.delete(id);
-        
-        // Remove container if no toasts
+
         if (this.toasts.size === 0 && this.container) {
           this.container.remove();
           this.container = null;
@@ -157,55 +116,23 @@ class ToastManager {
     }
   }
 
-  success(message: string, options?: ToastOptions) {
-    return this.show(message, 'success', options);
+  success(message: string) {
+    return this.show(message, 'success');
   }
 
-  error(message: string, options?: ToastOptions) {
-    return this.show(message, 'error', options);
+  error(message: string) {
+    return this.show(message, 'error');
   }
 
-  info(message: string, options?: ToastOptions) {
-    return this.show(message, 'info', options);
-  }
-
-  warning(message: string, options?: ToastOptions) {
-    return this.show(message, 'warning', options);
-  }
-
-  loading(message: string, options?: ToastOptions) {
-    return this.show(message, 'loading', options);
+  loading(message: string) {
+    return this.show(message, 'loading');
   }
 
   dismiss(id: string) {
     this.remove(id);
   }
-
-  promise<T>(
-    promise: Promise<T>,
-    messages: {
-      loading: string;
-      success: string;
-      error: string;
-    }
-  ): Promise<T> {
-    const id = this.loading(messages.loading);
-
-    return promise
-      .then((result) => {
-        this.dismiss(id);
-        this.success(messages.success);
-        return result;
-      })
-      .catch((error) => {
-        this.dismiss(id);
-        this.error(messages.error);
-        throw error;
-      });
-  }
 }
 
-// Add CSS animations
 const style = document.createElement('style');
 style.textContent = `
   @keyframes slideIn {
@@ -241,6 +168,5 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
-// Export singleton instance
 export const toast = new ToastManager();
 

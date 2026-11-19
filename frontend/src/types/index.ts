@@ -1,7 +1,7 @@
 export interface User {
   id: string;
   email: string;
-  name: string | null;
+  name?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -9,11 +9,13 @@ export interface User {
 export interface DataRoom {
   id: string;
   name: string;
+  description?: string | null;
   ownerId: string;
   createdAt: string;
   updatedAt: string;
   _count?: {
-    folders: number;
+    folders?: number;
+    files?: number;
   };
   folders?: Folder[];
 }
@@ -41,13 +43,10 @@ export interface FolderWithChildren extends Folder {
 export interface File {
   id: string;
   name: string;
-  fileType?: string; // Frontend field
-  mimeType?: string; // Database field
-  size?: number | null; // Frontend field
-  fileSize?: number | null; // Database field
+  mimeType?: string;
+  fileSize?: number | null;
   folderId: string;
-  blobUrl?: string; // Frontend field
-  filePath?: string; // Database field
+  filePath?: string;
   createdAt: string;
   updatedAt: string;
   folder?: {
@@ -63,22 +62,3 @@ export interface ApiResponse<T = any> {
   error?: string;
   message?: string;
 }
-
-export interface PaginatedResponse<T> extends ApiResponse<T[]> {
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
-}
-
-export interface AuthResponse {
-  success: boolean;
-  data: {
-    user: User;
-    token: string;
-  };
-  message: string;
-}
-

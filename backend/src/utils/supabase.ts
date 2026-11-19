@@ -35,7 +35,7 @@ export const uploadFile = async (
   const fileExt = fileName.split('.').pop();
   const filePath = `${folder}/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
 
-  const { data, error } = await supabase.storage
+  const { error } = await supabase.storage
     .from('data-room-files')
     .upload(filePath, file, {
       contentType: 'application/pdf',
@@ -77,12 +77,4 @@ export const deleteFile = async (filePath: string): Promise<void> => {
   if (error) {
     throw new Error(`Failed to delete file: ${error.message}`);
   }
-};
-
-export const getFileUrl = (filePath: string): string => {
-  const { data: { publicUrl } } = supabase.storage
-    .from('data-room-files')
-    .getPublicUrl(filePath);
-  
-  return publicUrl;
 };

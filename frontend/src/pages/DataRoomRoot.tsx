@@ -7,22 +7,20 @@ import {
   FilesGrid,
   DataRoomItem,
   getColumns,
+  EmptyState,
+  CreateFolderDialog,
+  UploadFileDialog,
+  RenameDialog,
 } from '@/components/DataRoomView';
-import { 
-  useDataRoomData, 
-  useDebounce, 
+import {
+  useDataRoomData,
+  useDebounce,
   useFileViewer,
   useCreateFolder,
   useFileUpload,
   useItemRename,
+  useDataRoomMutations,
 } from '@/hooks';
-import { useDataRoomMutations } from '@/hooks/useDataRoomMutations';
-import { EmptyState } from '@/components/DataRoomView/EmptyState';
-import {
-  CreateFolderDialog,
-  UploadFileDialog,
-  RenameDialog,
-} from '@/components/Dialogs';
 import { fileTreeEvents } from '@/lib/events';
 
 type ViewMode = 'grid' | 'list';
@@ -41,15 +39,11 @@ export function DataRoomRoot() {
 
   const { handleFileView } = useFileViewer();
   const createFolder = useCreateFolder(id);
-  const uploadFile = useFileUpload(id, undefined, foldersQuery.data?.data);
+  const uploadFile = useFileUpload(id);
   const renameItem = useItemRename(id);
   const { deleteFolderMutation, deleteFileMutation } = useDataRoomMutations({ dataRoomId: id });
   
   const [itemToDelete, setItemToDelete] = useState<DataRoomItem | null>(null);
-
-  const handleDelete = useCallback((item: DataRoomItem) => {
-    setItemToDelete(item);
-  }, []);
 
   const filteredFolders = useMemo(
     () =>
@@ -79,30 +73,23 @@ export function DataRoomRoot() {
     });
   }, [filteredFolders, filteredFiles]);
 
-  const handleFileClick = useCallback((item: DataRoomItem) => {
-    if (item.type === 'file') {
-      handleFileView(item.id);
-    }
-  }, [handleFileView]);
+  const handleFileClick = (item: DataRoomItem) => handleFileView(item.id);
 
-  const handleRename = useCallback((item: DataRoomItem) => {
-    renameItem.open({ id: item.id, name: item.name, type: item.type });
-  }, [renameItem]);
+  const { open: openRename } = renameItem;
+  const handleRename = useCallback(
+    (item: DataRoomItem) => openRename({ id: item.id, name: item.name, type: item.type }),
+    [openRename]
+  );
 
   useEffect(() => {
     const unsubscribeRename = fileTreeEvents.subscribe('renameItem', handleRename);
-    const unsubscribeDelete = fileTreeEvents.subscribe('deleteItem', handleDelete);
+    const unsubscribeDelete = fileTreeEvents.subscribe('deleteItem', setItemToDelete);
 
     return () => {
       unsubscribeRename();
       unsubscribeDelete();
     };
-  }, [handleRename, handleDelete]);
-
-  const columns = useMemo(
-    () => getColumns(handleFileClick, handleRename, handleDelete),
-    [handleFileClick, handleRename, handleDelete]
-  );
+  }, [handleRename]);
 
   const isLoading = dataRoomQuery?.isLoading || foldersQuery.isLoading || filesQuery.isLoading;
 
@@ -122,7 +109,6 @@ export function DataRoomRoot() {
       <main className="flex-1 p-4 overflow-y-auto">
         <DataRoomLayout
           title={dataRoomQuery?.data?.data.name || 'Data Room'}
-          items={items}
           viewMode={viewMode}
           onViewModeChange={setViewMode}
           searchQuery={searchQuery}
@@ -148,20 +134,17 @@ export function DataRoomRoot() {
                 folders={items.filter((item): item is Extract<DataRoomItem, { type: 'folder' }> => item.type === 'folder')}
                 dataRoomId={id!}
                 onRename={handleRename}
-                onDelete={handleDelete}
+                onDelete={setItemToDelete}
               />
               <FilesGrid
                 files={items.filter((item): item is Extract<DataRoomItem, { type: 'file' }> => item.type === 'file')}
-                folders={foldersQuery.data?.data || []}
-                isSearching={!!debouncedSearch.trim()}
-                searchQuery={debouncedSearch}
                 onView={handleFileClick}
                 onRename={handleRename}
-                onDelete={handleDelete}
+                onDelete={setItemToDelete}
               />
             </>
           ) : (
-            <DataTable columns={columns} data={items} />
+            <DataTable columns={getColumns(handleFileClick, handleRename, setItemToDelete)} data={items} />
           )}
         </DataRoomLayout>
 

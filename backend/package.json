@@ -7,9 +7,9 @@
     "dev": "nodemon src/index.ts",
     "build": "prisma generate && tsc",
     "start": "node dist/index.js",
-    "test": "dotenv -e .env.test -- jest",
-    "test:watch": "dotenv -e .env.test -- jest --watch",
-    "test:coverage": "dotenv -e .env.test -- jest --coverage",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
     "test:integration": "jest -c jest.integration.config.js --runInBand",
     "db:test": "ts-node -P test/tsconfig.json test/db-server.ts",
     "db:generate": "prisma generate",
@@ -17,7 +17,6 @@
     "db:migrate": "prisma migrate deploy",
     "db:migrate:dev": "prisma migrate dev",
     "db:studio": "prisma studio",
-    "db:seed": "ts-node prisma/seed.ts",
     "postinstall": "prisma generate"
   },
   "dependencies": {

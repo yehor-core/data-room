@@ -17,42 +17,16 @@ export function formatBytes(bytes: number, decimals = 2) {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 }
 
+const dateFormatter = new Intl.DateTimeFormat('en-US', {
+  year: 'numeric',
+  month: 'short',
+  day: 'numeric',
+  hour: '2-digit',
+  minute: '2-digit',
+});
+
 export function formatDate(date: string | Date) {
   if (!date) return 'Unknown date';
-  
-  // Handle different date formats that might come from the API
-  let d: Date;
-  
-  if (typeof date === 'string') {
-    // Try to parse the date string
-    d = new Date(date);
-    
-    // If the date is invalid, try to handle common formats
-    if (isNaN(d.getTime())) {
-      // If it's a timestamp string, try parsing as number
-      const timestamp = parseInt(date);
-      if (!isNaN(timestamp)) {
-        d = new Date(timestamp);
-      } else {
-        // If all else fails, return a fallback
-        return 'Invalid date';
-      }
-    }
-  } else {
-    d = new Date(date);
-  }
-  
-  // Check if the date is still invalid
-  if (isNaN(d.getTime())) {
-    return 'Invalid date';
-  }
-  
-  return new Intl.DateTimeFormat('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(d);
+  const d = new Date(date);
+  return isNaN(d.getTime()) ? 'Invalid date' : dateFormatter.format(d);
 }
-

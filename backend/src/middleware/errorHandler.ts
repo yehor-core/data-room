@@ -2,7 +2,6 @@ import { Request, Response, NextFunction } from 'express';
 
 export interface AppError extends Error {
   statusCode?: number;
-  isOperational?: boolean;
 }
 
 export const errorHandler = (
@@ -11,9 +10,9 @@ export const errorHandler = (
   res: Response,
   next: NextFunction
 ) => {
-  let { statusCode = 500, message } = error;
+  const { statusCode = 500 } = error;
+  let { message } = error;
 
-  // Log error for debugging
   console.error('Error:', {
     message: error.message,
     stack: error.stack,
@@ -21,21 +20,6 @@ export const errorHandler = (
     method: req.method,
     timestamp: new Date().toISOString(),
   });
-
-  // Handle specific error types
-  if (error.name === 'ValidationError') {
-    statusCode = 400;
-    message = 'Validation Error';
-  } else if (error.name === 'CastError') {
-    statusCode = 400;
-    message = 'Invalid ID format';
-  } else if (error.name === 'JsonWebTokenError') {
-    statusCode = 401;
-    message = 'Invalid token';
-  } else if (error.name === 'TokenExpiredError') {
-    statusCode = 401;
-    message = 'Token expired';
-  }
 
   // Don't leak error details in production
   if (process.env.NODE_ENV === 'production' && statusCode === 500) {
@@ -52,7 +36,6 @@ export const errorHandler = (
 export const createError = (message: string, statusCode: number = 500): AppError => {
   const error: AppError = new Error(message);
   error.statusCode = statusCode;
-  error.isOperational = true;
   return error;
 };
 

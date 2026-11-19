@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo } from 'react';
 import { DataRoomItem } from '@/components/DataRoomView';
 import { ChevronRight, ChevronDown, Folder, File as FileIcon, Edit, Trash2 } from 'lucide-react';
 import { useFileViewer, useDataRoomData } from '@/hooks';
@@ -17,7 +17,6 @@ const TreeNode: React.FC<TreeNodeProps> = ({ item, level }) => {
   const { handleFileView } = useFileViewer();
   const { id: dataRoomId } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const triggerRef = useRef<HTMLDivElement>(null);
 
   const isFolder = item.type === 'folder';
 
@@ -44,12 +43,6 @@ const TreeNode: React.FC<TreeNodeProps> = ({ item, level }) => {
     });
   }, [contents]);
 
-  const handleFileClick = () => {
-    if (item.type === 'file') {
-      handleFileView(item.id);
-    }
-  };
-
   const handleFolderNavigation = () => {
     navigate(`/data-rooms/${dataRoomId}/folders/${item.id}`);
   };
@@ -63,7 +56,6 @@ const TreeNode: React.FC<TreeNodeProps> = ({ item, level }) => {
   return (
     <div>
       <div
-        ref={triggerRef}
         className="flex items-center p-1 cursor-pointer hover:bg-muted rounded relative"
         style={{ paddingLeft: `${level * 20}px` }}
         onContextMenu={handleContextMenu}
@@ -74,13 +66,13 @@ const TreeNode: React.FC<TreeNodeProps> = ({ item, level }) => {
           )}
         </div>
         <div 
-          onClick={isFolder ? handleFolderNavigation : handleFileClick}
+          onClick={isFolder ? handleFolderNavigation : () => handleFileView(item.id)}
           className="flex items-center flex-grow"
         >
           {isFolder ? (
             <Folder className="h-4 w-4 mr-2" />
           ) : (
-            <FileIcon className="h-4 w-4 mr-2" style={{ marginLeft: isFolder ? 0 : '1.25rem' }} />
+            <FileIcon className="h-4 w-4 mr-2" style={{ marginLeft: '1.25rem' }} />
           )}
           <span>{item.name}</span>
         </div>
@@ -103,7 +95,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({ item, level }) => {
                 <div
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleFileClick();
+                    handleFileView(item.id);
                     setShowContextMenu(false);
                   }}
                   className="flex items-center px-2 py-1.5 text-sm cursor-pointer hover:bg-accent rounded"
