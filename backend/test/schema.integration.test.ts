@@ -26,8 +26,17 @@ describe('migrations', () => {
     const shadow = await createEmptyDatabase(serverUrl(), 'migrations_shadow');
 
     const { stdout } = await runPrisma(
-      ['migrate', 'diff', '--from-migrations', 'prisma/migrations', '--to-schema-datamodel', schemaPath,
-        '--shadow-database-url', shadow, '--script'],
+      [
+        'migrate',
+        'diff',
+        '--from-migrations',
+        'prisma/migrations',
+        '--to-schema-datamodel',
+        schemaPath,
+        '--shadow-database-url',
+        shadow,
+        '--script',
+      ],
       shadow,
     );
 
@@ -68,7 +77,9 @@ describe('migrations', () => {
 
       expect(failure).toContain(`data room name "Deal" is used 2 times by user u1`);
       expect(failure).toContain(`folder name "Legal" is used 2 times in data room r1 at the root`);
-      expect(failure).toContain(`folder name "Contracts" is used 2 times in data room r1 in folder f1`);
+      expect(failure).toContain(
+        `folder name "Contracts" is used 2 times in data room r1 in folder f1`,
+      );
       expect(failure).toContain(`file name "nda.pdf" is used 2 times in data room r1 at the root`);
       expect(failure).toContain(`file name "nda.pdf" is used 2 times in data room r1 in folder f3`);
       expect(failure).not.toContain('in folder f2');
@@ -103,7 +114,9 @@ describe('migrations', () => {
 
       const prisma = new PrismaClient({ datasourceUrl: url });
       try {
-        await expect(prisma.file.findUnique({ where: { id: 'd1' } })).resolves.toMatchObject({ fileSize: 4194304 });
+        await expect(prisma.file.findUnique({ where: { id: 'd1' } })).resolves.toMatchObject({
+          fileSize: 4194304,
+        });
       } finally {
         await prisma.$disconnect();
       }
@@ -127,16 +140,18 @@ describe('migrated schema', () => {
       const owner = await createUser();
       await prisma.dataRoom.create({ data: { name: 'Deal', ownerId: owner.id } });
 
-      await expect(prisma.dataRoom.create({ data: { name: 'Deal', ownerId: owner.id } })).rejects.toMatchObject(
-        uniqueViolation,
-      );
+      await expect(
+        prisma.dataRoom.create({ data: { name: 'Deal', ownerId: owner.id } }),
+      ).rejects.toMatchObject(uniqueViolation);
     });
 
     it('can repeat across owners', async () => {
       const [first, second] = [await createUser(), await createUser()];
       await prisma.dataRoom.create({ data: { name: 'Deal', ownerId: first.id } });
 
-      await expect(prisma.dataRoom.create({ data: { name: 'Deal', ownerId: second.id } })).resolves.toMatchObject({
+      await expect(
+        prisma.dataRoom.create({ data: { name: 'Deal', ownerId: second.id } }),
+      ).resolves.toMatchObject({
         name: 'Deal',
       });
     });
@@ -148,7 +163,11 @@ describe('migrated schema', () => {
   };
 
   describe('folder names', () => {
-    const createFolder = (room: { id: string; ownerId: string }, name: string, parentId: string | null = null) =>
+    const createFolder = (
+      room: { id: string; ownerId: string },
+      name: string,
+      parentId: string | null = null,
+    ) =>
       prisma.folder.create({ data: { name, dataRoomId: room.id, userId: room.ownerId, parentId } });
 
     it('are unique among root folders of a data room', async () => {
@@ -163,7 +182,9 @@ describe('migrated schema', () => {
       const parent = await createFolder(room, 'Legal');
       await createFolder(room, 'Contracts', parent.id);
 
-      await expect(createFolder(room, 'Contracts', parent.id)).rejects.toMatchObject(uniqueViolation);
+      await expect(createFolder(room, 'Contracts', parent.id)).rejects.toMatchObject(
+        uniqueViolation,
+      );
     });
 
     it('can repeat under different parents and in different data rooms', async () => {
@@ -172,14 +193,24 @@ describe('migrated schema', () => {
       const finance = await createFolder(room, 'Finance');
       await createFolder(room, 'Contracts');
 
-      await expect(createFolder(room, 'Contracts', legal.id)).resolves.toMatchObject({ name: 'Contracts' });
-      await expect(createFolder(room, 'Contracts', finance.id)).resolves.toMatchObject({ name: 'Contracts' });
-      await expect(createFolder(await createDataRoom(), 'Contracts')).resolves.toMatchObject({ name: 'Contracts' });
+      await expect(createFolder(room, 'Contracts', legal.id)).resolves.toMatchObject({
+        name: 'Contracts',
+      });
+      await expect(createFolder(room, 'Contracts', finance.id)).resolves.toMatchObject({
+        name: 'Contracts',
+      });
+      await expect(createFolder(await createDataRoom(), 'Contracts')).resolves.toMatchObject({
+        name: 'Contracts',
+      });
     });
   });
 
   describe('file names', () => {
-    const createFile = (room: { id: string; ownerId: string }, name: string, folderId: string | null = null) =>
+    const createFile = (
+      room: { id: string; ownerId: string },
+      name: string,
+      folderId: string | null = null,
+    ) =>
       prisma.file.create({ data: { name, dataRoomId: room.id, userId: room.ownerId, folderId } });
     const createFolder = (room: { id: string; ownerId: string }, name: string) =>
       prisma.folder.create({ data: { name, dataRoomId: room.id, userId: room.ownerId } });
@@ -205,9 +236,15 @@ describe('migrated schema', () => {
       const finance = await createFolder(room, 'Finance');
       await createFile(room, 'nda.pdf');
 
-      await expect(createFile(room, 'nda.pdf', legal.id)).resolves.toMatchObject({ name: 'nda.pdf' });
-      await expect(createFile(room, 'nda.pdf', finance.id)).resolves.toMatchObject({ name: 'nda.pdf' });
-      await expect(createFile(await createDataRoom(), 'nda.pdf')).resolves.toMatchObject({ name: 'nda.pdf' });
+      await expect(createFile(room, 'nda.pdf', legal.id)).resolves.toMatchObject({
+        name: 'nda.pdf',
+      });
+      await expect(createFile(room, 'nda.pdf', finance.id)).resolves.toMatchObject({
+        name: 'nda.pdf',
+      });
+      await expect(createFile(await createDataRoom(), 'nda.pdf')).resolves.toMatchObject({
+        name: 'nda.pdf',
+      });
       await expect(createFile(room, 'Legal')).resolves.toMatchObject({ name: 'Legal' });
     });
   });
@@ -215,7 +252,12 @@ describe('migrated schema', () => {
   it('stores file sizes as plain numbers that serialize to JSON', async () => {
     const room = await createDataRoom();
     const file = await prisma.file.create({
-      data: { name: 'nda.pdf', dataRoomId: room.id, userId: room.ownerId, fileSize: 4 * 1024 * 1024 },
+      data: {
+        name: 'nda.pdf',
+        dataRoomId: room.id,
+        userId: room.ownerId,
+        fileSize: 4 * 1024 * 1024,
+      },
     });
 
     expect(JSON.parse(JSON.stringify(file)).fileSize).toBe(4194304);

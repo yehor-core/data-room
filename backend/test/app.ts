@@ -18,7 +18,13 @@ export function createTestApp() {
   const storage = new InMemoryStorage();
   const tokenVerifier = new FakeTokenVerifier();
   const { logger, lines: logs } = capturingLogger();
-  const app = createApp({ db, storage, tokenVerifier, logger, config: { allowedOrigins: [allowedOrigin] } });
+  const app = createApp({
+    db,
+    storage,
+    tokenVerifier,
+    logger,
+    config: { allowedOrigins: [allowedOrigin] },
+  });
 
   const as = (token: string) => ({
     get: (url: string) => request(app).get(url).auth(token, { type: 'bearer' }),
@@ -47,7 +53,12 @@ export async function createDataRoom(user: TestUser, name = 'Deal room') {
   return res.body.data as { id: string; name: string };
 }
 
-export async function createFolder(user: TestUser, dataRoomId: string, name: string, parentId?: string) {
+export async function createFolder(
+  user: TestUser,
+  dataRoomId: string,
+  name: string,
+  parentId?: string,
+) {
   const res = await user.post('/api/folders').send({ name, dataRoomId, parentId }).expect(201);
   return res.body.data as { id: string; name: string; parentId: string | null };
 }
@@ -72,11 +83,20 @@ export async function uploadFile(
   content = pdf(),
 ) {
   const res = await upload(user, fields, { content }).expect(201);
-  return res.body.data as { id: string; name: string; folderId: string | null; fileSize: number; mimeType: string };
+  return res.body.data as {
+    id: string;
+    name: string;
+    folderId: string | null;
+    fileSize: number;
+    mimeType: string;
+  };
 }
 
 export async function contents(user: TestUser, dataRoomId: string, folderId?: string) {
-  const res = await user.get(`/api/data-rooms/${dataRoomId}/contents`).query(folderId ? { folderId } : {}).expect(200);
+  const res = await user
+    .get(`/api/data-rooms/${dataRoomId}/contents`)
+    .query(folderId ? { folderId } : {})
+    .expect(200);
   return res.body.data as {
     dataRoom: { id: string; name: string };
     folder: { id: string; name: string; parentId: string | null } | null;

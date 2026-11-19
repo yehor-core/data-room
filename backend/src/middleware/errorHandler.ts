@@ -33,7 +33,9 @@ export function toErrorResponse(error: unknown): ErrorResponse {
   if (error instanceof multer.MulterError) {
     return error.code === 'LIMIT_FILE_SIZE'
       ? respond('PAYLOAD_TOO_LARGE', FILE_TOO_LARGE_MESSAGE)
-      : respond('VALIDATION_FAILED', error.message, [{ field: error.field ?? 'file', message: error.message }]);
+      : respond('VALIDATION_FAILED', error.message, [
+          { field: error.field ?? 'file', message: error.message },
+        ]);
   }
   if (isBodyParserError(error)) {
     return error.status === 413
@@ -51,4 +53,5 @@ export const errorHandler =
     res.status(status).json(body);
   };
 
-export const notFound: RequestHandler = (_req, _res, next) => next(new AppError('NOT_FOUND', 'Route not found'));
+export const notFound: RequestHandler = (_req, _res, next) =>
+  next(new AppError('NOT_FOUND', 'Route not found'));

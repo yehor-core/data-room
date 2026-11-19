@@ -25,7 +25,9 @@ describe('loadConfig', () => {
   it('names every missing variable in one error', () => {
     const { DATABASE_URL: _db, ALLOWED_ORIGINS: _origins, ...rest } = env;
 
-    expect(() => loadConfig(rest)).toThrow('Missing required environment variables: DATABASE_URL, ALLOWED_ORIGINS');
+    expect(() => loadConfig(rest)).toThrow(
+      'Missing required environment variables: DATABASE_URL, ALLOWED_ORIGINS',
+    );
   });
 
   it('does not require the Supabase anon key', () => {

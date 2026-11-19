@@ -21,7 +21,10 @@ export function folderRoutes(accessFor: AccessFor) {
     route((req) => accessFor(req).folders.rename(req.params.id, req.body.name)),
   );
 
-  router.delete('/:id', route((req) => accessFor(req).folders.delete(req.params.id)));
+  router.delete(
+    '/:id',
+    route((req) => accessFor(req).folders.delete(req.params.id)),
+  );
 
   return router;
 }

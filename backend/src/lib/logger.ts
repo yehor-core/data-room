@@ -4,7 +4,7 @@ export interface Logger {
   error(message: string, error?: unknown): void;
 }
 
-export const consoleLogger: Logger = {
+export const logger: Logger = {
   info: (message) => console.log(message),
   error: (message, error) => console.error(message, error),
 };

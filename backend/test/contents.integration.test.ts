@@ -23,7 +23,10 @@ describe('contents of a data room level', () => {
     expect(data.folders[1]).toEqual(
       expect.objectContaining({ id: legal.id, parentId: null, _count: { children: 1, files: 1 } }),
     );
-    expect(data.files.map((f: { name: string }) => f.name)).toEqual(['cap table.pdf', 'teaser.pdf']);
+    expect(data.files.map((f: { name: string }) => f.name)).toEqual([
+      'cap table.pdf',
+      'teaser.pdf',
+    ]);
     expect(data.files[1]).toEqual(
       expect.objectContaining({
         id: expect.any(String),
@@ -80,7 +83,10 @@ describe('contents of a data room level', () => {
     const other = await createDataRoom(owner, 'Room two');
     const legal = await createFolder(owner, other.id, 'Legal');
 
-    const res = await owner.get(`/api/data-rooms/${room.id}/contents`).query({ folderId: legal.id }).expect(404);
+    const res = await owner
+      .get(`/api/data-rooms/${room.id}/contents`)
+      .query({ folderId: legal.id })
+      .expect(404);
 
     expect(res.body.error).toEqual({ code: 'NOT_FOUND', message: 'Folder not found' });
   });
@@ -90,7 +96,9 @@ describe('contents of a data room level', () => {
     const owner = newUser();
     const room = await createDataRoom(owner);
 
-    const res = await owner.get(`/api/data-rooms/${room.id}/contents?folderId=a&folderId=b`).expect(400);
+    const res = await owner
+      .get(`/api/data-rooms/${room.id}/contents?folderId=a&folderId=b`)
+      .expect(400);
 
     expect(res.body.error.details).toEqual([{ field: 'folderId', message: expect.any(String) }]);
   });

@@ -12,7 +12,9 @@ export const validate = (...chains: ValidationChain[]): RequestHandler[] => [
       field: error.type === 'field' ? error.path : error.type,
       message: String(error.msg),
     }));
-    next(new AppError('VALIDATION_FAILED', details.map((detail) => detail.message).join(' '), details));
+    next(
+      new AppError('VALIDATION_FAILED', details.map((detail) => detail.message).join(' '), details),
+    );
   },
 ];
 
@@ -30,4 +32,5 @@ export const nameRule = (min: number, max: number) =>
 export const optionalId = (field: string, location = body) =>
   location(field).optional({ values: 'falsy' }).isString().withMessage(`${field} must be a string`);
 
-export const requiredId = (field: string) => body(field).isString().notEmpty().withMessage(`${field} is required`);
+export const requiredId = (field: string) =>
+  body(field).isString().notEmpty().withMessage(`${field} is required`);

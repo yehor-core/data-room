@@ -54,4 +54,3 @@ export const RenameDialog: React.FC<RenameDialogProps> = ({
     </Dialog>
   );
 };
-

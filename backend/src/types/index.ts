@@ -9,7 +9,7 @@ export const userSelect = {
   updatedAt: true,
 } satisfies Prisma.UserSelect;
 
-export type User = Prisma.UserGetPayload<{ select: typeof userSelect }>;
+type User = Prisma.UserGetPayload<{ select: typeof userSelect }>;
 
 export interface AuthenticatedRequest extends Request {
   user: User;

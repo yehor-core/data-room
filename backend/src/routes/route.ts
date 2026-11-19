@@ -9,6 +9,10 @@ export const route =
   (handler: (req: AuthenticatedRequest) => Promise<unknown>, status = 200): RequestHandler =>
   (req: Request, res, next) => {
     handler(req as AuthenticatedRequest)
-      .then((data) => (data === undefined ? res.status(204).end() : res.status(status).json({ success: true, data })))
+      .then((data) =>
+        data === undefined
+          ? res.status(204).end()
+          : res.status(status).json({ success: true, data }),
+      )
       .catch(next);
   };

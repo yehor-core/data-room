@@ -33,7 +33,10 @@ describe('the app', () => {
 
     const res = await newUser().get('/api/nothing-here').expect(404);
 
-    expect(res.body).toEqual({ success: false, error: { code: 'NOT_FOUND', message: 'Route not found' } });
+    expect(res.body).toEqual({
+      success: false,
+      error: { code: 'NOT_FOUND', message: 'Route not found' },
+    });
   });
 
   it('answers an unexpected failure with an INTERNAL error that reveals nothing', async () => {
@@ -45,7 +48,10 @@ describe('the app', () => {
 
     const res = await owner.get(`/api/files/${file.id}/view`).expect(500);
 
-    expect(res.body).toEqual({ success: false, error: { code: 'INTERNAL', message: 'Internal server error' } });
+    expect(res.body).toEqual({
+      success: false,
+      error: { code: 'INTERNAL', message: 'Internal server error' },
+    });
   });
 
   describe('removed endpoints', () => {
@@ -68,10 +74,16 @@ describe('the app', () => {
       const folder = await createFolder(owner, room.id, 'Legal');
       const url = path.replace(':room', room.id).replace(':folder', folder.id);
 
-      const res = await owner[method.toLowerCase() as 'get'](url).send({ name: 'Renamed', newParentId: null });
+      const res = await owner[method.toLowerCase() as 'get'](url).send({
+        name: 'Renamed',
+        newParentId: null,
+      });
 
       expect(res.status).toBe(404);
-      expect(res.body).toEqual({ success: false, error: { code: 'NOT_FOUND', message: 'Route not found' } });
+      expect(res.body).toEqual({
+        success: false,
+        error: { code: 'NOT_FOUND', message: 'Route not found' },
+      });
     });
   });
 
@@ -80,10 +92,17 @@ describe('the app', () => {
     const owner = newUser('Ada Lovelace');
     const room = await createDataRoom(owner);
     const folder = await createFolder(owner, room.id, 'Legal');
-    const file = await uploadFile(owner, { dataRoomId: room.id, folderId: folder.id, name: 'nda.pdf' });
+    const file = await uploadFile(owner, {
+      dataRoomId: room.id,
+      folderId: folder.id,
+      name: 'nda.pdf',
+    });
     await owner.get(`/api/files/${file.id}/view`).expect(200);
     await owner.post('/api/data-rooms').send({ name: room.name }).expect(409);
-    await anonymous().get('/api/auth/me').auth(`${owner.token}-tampered`, { type: 'bearer' }).expect(401);
+    await anonymous()
+      .get('/api/auth/me')
+      .auth(`${owner.token}-tampered`, { type: 'bearer' })
+      .expect(401);
     storage.failRemove = true;
     await owner.delete(`/api/folders/${folder.id}`).expect(204);
     storage.objects.clear();

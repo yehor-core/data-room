@@ -7,7 +7,10 @@ import { AccessFor } from './accessFor';
 import { route } from './route';
 
 // Busboy rejects a file once it reaches `fileSize` bytes, so one byte more lets a file of exactly the limit through.
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: MAX_UPLOAD_BYTES + 1, files: 1 } });
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: MAX_UPLOAD_BYTES + 1, files: 1 },
+});
 
 const nameDefaultsToFileName: RequestHandler = (req, _res, next) => {
   req.body.name ||= req.file?.originalname;
@@ -48,9 +51,15 @@ export function fileRoutes(accessFor: AccessFor) {
     route((req) => accessFor(req).files.rename(req.params.id, req.body.name)),
   );
 
-  router.get('/:id/view', route((req) => accessFor(req).files.viewLink(req.params.id)));
+  router.get(
+    '/:id/view',
+    route((req) => accessFor(req).files.viewLink(req.params.id)),
+  );
 
-  router.delete('/:id', route((req) => accessFor(req).files.delete(req.params.id)));
+  router.delete(
+    '/:id',
+    route((req) => accessFor(req).files.delete(req.params.id)),
+  );
 
   return router;
 }

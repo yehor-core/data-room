@@ -49,7 +49,10 @@ export function createApp({ db, storage, tokenVerifier, logger, config }: AppDep
   });
 
   app.use('/api', authenticate({ db, tokenVerifier }));
-  app.get('/api/auth/me', route(async (req) => req.user));
+  app.get(
+    '/api/auth/me',
+    route(async (req) => req.user),
+  );
   app.use('/api/data-rooms', dataRoomRoutes(accessFor));
   app.use('/api/folders', folderRoutes(accessFor));
   app.use('/api/files', fileRoutes(accessFor));

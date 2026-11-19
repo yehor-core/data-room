@@ -2,6 +2,9 @@
   "name": "data-room-frontend",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": "24.x"
+  },
   "dependencies": {
     "@radix-ui/react-alert-dialog": "^1.1.15",
     "@radix-ui/react-dialog": "^1.0.5",
@@ -25,13 +28,9 @@
     "dev": "craco start",
     "start": "craco start",
     "build": "craco build",
-    "test": "craco test"
-  },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ]
+    "test": "craco test",
+    "typecheck": "tsc",
+    "test:unit": "craco test --watchAll=false --testPathIgnorePatterns \"\\\\.integration\\\\.test\\\\.tsx?$\""
   },
   "browserslist": {
     "production": [
@@ -62,6 +61,7 @@
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",
     "react-scripts": "5.0.1",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "typescript": "^4.9.5"
   }
 }

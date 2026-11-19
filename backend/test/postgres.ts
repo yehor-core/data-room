@@ -30,7 +30,9 @@ const freePort = () =>
  * Imported only from Jest globalSetup and the db:test script: embedded-postgres is
  * ESM-only, which Jest's module runtime inside test files can't load.
  */
-export async function startTestDatabase(options: { port?: number } = {}): Promise<TestDatabaseServer> {
+export async function startTestDatabase(
+  options: { port?: number } = {},
+): Promise<TestDatabaseServer> {
   const external = process.env.TEST_DATABASE_URL;
   if (external) {
     await migrateDeploy(external);

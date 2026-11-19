@@ -12,7 +12,11 @@ export function buildBreadcrumb(folders: FolderNode[], folderId: string) {
   const byId = new Map(folders.map((folder) => [folder.id, folder]));
   const chain: { id: string; name: string }[] = [];
   const seen = new Set<string>();
-  for (let folder = byId.get(folderId); folder && !seen.has(folder.id); folder = byId.get(folder.parentId ?? '')) {
+  for (
+    let folder = byId.get(folderId);
+    folder && !seen.has(folder.id);
+    folder = byId.get(folder.parentId ?? '')
+  ) {
     seen.add(folder.id);
     chain.unshift({ id: folder.id, name: folder.name });
   }

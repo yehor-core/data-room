@@ -15,7 +15,10 @@ describe('authentication', () => {
   it('rejects a token the verifier does not accept', async () => {
     const { anonymous } = createTestApp();
 
-    const res = await anonymous().get('/api/auth/me').auth('forged', { type: 'bearer' }).expect(401);
+    const res = await anonymous()
+      .get('/api/auth/me')
+      .auth('forged', { type: 'bearer' })
+      .expect(401);
 
     expect(res.body.error.code).toBe('UNAUTHENTICATED');
   });

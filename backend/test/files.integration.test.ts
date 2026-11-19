@@ -1,10 +1,19 @@
-import { contents, createDataRoom, createFolder, createTestApp, pdf, upload, uploadFile } from './app';
+import {
+  contents,
+  createDataRoom,
+  createFolder,
+  createTestApp,
+  pdf,
+  upload,
+  uploadFile,
+} from './app';
 
 const missing = '00000000-0000-4000-8000-000000000000';
 const MB = 1024 * 1024;
 
 /** A PDF of exactly `bytes` bytes. */
-const pdfOfSize = (bytes: number) => Buffer.concat([pdf(), Buffer.alloc(bytes - pdf().length, 'a')]);
+const pdfOfSize = (bytes: number) =>
+  Buffer.concat([pdf(), Buffer.alloc(bytes - pdf().length, 'a')]);
 
 describe('files', () => {
   describe('upload', () => {
@@ -13,9 +22,11 @@ describe('files', () => {
       const owner = newUser();
       const room = await createDataRoom(owner);
 
-      const res = await upload(owner, { dataRoomId: room.id, name: 'Teaser.pdf' }, { content: pdf('teaser') }).expect(
-        201,
-      );
+      const res = await upload(
+        owner,
+        { dataRoomId: room.id, name: 'Teaser.pdf' },
+        { content: pdf('teaser') },
+      ).expect(201);
 
       expect(res.body).toEqual({
         success: true,
@@ -29,7 +40,10 @@ describe('files', () => {
         }),
       });
       const view = await owner.get(`/api/files/${res.body.data.id}/view`).expect(200);
-      expect(storage.objectAt(view.body.data.url)).toEqual({ content: pdf('teaser'), contentType: 'application/pdf' });
+      expect(storage.objectAt(view.body.data.url)).toEqual({
+        content: pdf('teaser'),
+        contentType: 'application/pdf',
+      });
     });
 
     it('stores a PDF in a folder', async () => {
@@ -38,10 +52,16 @@ describe('files', () => {
       const room = await createDataRoom(owner);
       const legal = await createFolder(owner, room.id, 'Legal');
 
-      const file = await uploadFile(owner, { dataRoomId: room.id, folderId: legal.id, name: 'nda.pdf' });
+      const file = await uploadFile(owner, {
+        dataRoomId: room.id,
+        folderId: legal.id,
+        name: 'nda.pdf',
+      });
 
       expect(file.folderId).toBe(legal.id);
-      expect((await contents(owner, room.id, legal.id)).files.map((f) => f.name)).toEqual(['nda.pdf']);
+      expect((await contents(owner, room.id, legal.id)).files.map((f) => f.name)).toEqual([
+        'nda.pdf',
+      ]);
       expect((await contents(owner, room.id)).files).toEqual([]);
     });
 
@@ -50,7 +70,11 @@ describe('files', () => {
       const owner = newUser();
       const room = await createDataRoom(owner);
 
-      const res = await upload(owner, { dataRoomId: room.id }, { filename: 'Board minutes.pdf' }).expect(201);
+      const res = await upload(
+        owner,
+        { dataRoomId: room.id },
+        { filename: 'Board minutes.pdf' },
+      ).expect(201);
 
       expect(res.body.data.name).toBe('Board minutes.pdf');
     });
@@ -60,9 +84,11 @@ describe('files', () => {
       const owner = newUser();
       const room = await createDataRoom(owner);
 
-      const res = await upload(owner, { dataRoomId: room.id, name: 'big.pdf' }, { content: pdfOfSize(4 * MB) }).expect(
-        201,
-      );
+      const res = await upload(
+        owner,
+        { dataRoomId: room.id, name: 'big.pdf' },
+        { content: pdfOfSize(4 * MB) },
+      ).expect(201);
 
       expect(res.body.data.fileSize).toBe(4 * MB);
     });
@@ -72,7 +98,11 @@ describe('files', () => {
       const owner = newUser();
       const room = await createDataRoom(owner);
 
-      const res = await upload(owner, { dataRoomId: room.id }, { content: pdfOfSize(4 * MB + 1) }).expect(413);
+      const res = await upload(
+        owner,
+        { dataRoomId: room.id },
+        { content: pdfOfSize(4 * MB + 1) },
+      ).expect(413);
 
       expect(res.body).toEqual({
         success: false,
@@ -83,9 +113,22 @@ describe('files', () => {
     });
 
     it.each([
-      ['a non-PDF type', { filename: 'notes.txt', contentType: 'text/plain', content: Buffer.from('just text') }],
-      ['PDF bytes declared as another type', { filename: 'doc.png', contentType: 'image/png', content: pdf() }],
-      ['a PDF type without PDF content', { filename: 'fake.pdf', contentType: 'application/pdf', content: Buffer.from('MZ\x90\x00') }],
+      [
+        'a non-PDF type',
+        { filename: 'notes.txt', contentType: 'text/plain', content: Buffer.from('just text') },
+      ],
+      [
+        'PDF bytes declared as another type',
+        { filename: 'doc.png', contentType: 'image/png', content: pdf() },
+      ],
+      [
+        'a PDF type without PDF content',
+        {
+          filename: 'fake.pdf',
+          contentType: 'application/pdf',
+          content: Buffer.from('MZ\x90\x00'),
+        },
+      ],
     ])('rejects %s, storing nothing', async (_case, file) => {
       const { newUser, storage } = createTestApp();
       const owner = newUser();
@@ -109,12 +152,19 @@ describe('files', () => {
       await uploadFile(owner, { dataRoomId: room.id, folderId: legal.id, name: 'nda.pdf' });
 
       const atRoot = await upload(owner, { dataRoomId: room.id, name: 'nda.pdf' }).expect(409);
-      const inFolder = await upload(owner, { dataRoomId: room.id, folderId: legal.id, name: 'nda.pdf' }).expect(409);
+      const inFolder = await upload(owner, {
+        dataRoomId: room.id,
+        folderId: legal.id,
+        name: 'nda.pdf',
+      }).expect(409);
 
       for (const res of [atRoot, inFolder]) {
         expect(res.body).toEqual({
           success: false,
-          error: { code: 'CONFLICT', message: 'A file with this name already exists in this location' },
+          error: {
+            code: 'CONFLICT',
+            message: 'A file with this name already exists in this location',
+          },
         });
       }
       expect(storage.objects.size).toBe(2);
@@ -133,7 +183,11 @@ describe('files', () => {
         return new Promise((resolve) => (releaseFirst = resolve));
       };
 
-      const first = upload(owner, { dataRoomId: room.id, name: 'nda.pdf' }, { content: pdf('first') }).then((r) => r);
+      const first = upload(
+        owner,
+        { dataRoomId: room.id, name: 'nda.pdf' },
+        { content: pdf('first') },
+      ).then((r) => r);
       await reachedStorage;
       await uploadFile(owner, { dataRoomId: room.id, name: 'nda.pdf' }, pdf('second'));
       releaseFirst();
@@ -151,7 +205,9 @@ describe('files', () => {
       const other = await createDataRoom(owner, 'Room two');
       const otherFolder = await createFolder(owner, other.id, 'Legal');
 
-      const res = await upload(owner, { dataRoomId: room.id, folderId: otherFolder.id }).expect(404);
+      const res = await upload(owner, { dataRoomId: room.id, folderId: otherFolder.id }).expect(
+        404,
+      );
 
       expect(res.body.error).toEqual({ code: 'NOT_FOUND', message: 'Folder not found' });
       expect(storage.objects.size).toBe(0);
@@ -167,8 +223,13 @@ describe('files', () => {
       const strangerRoom = await createDataRoom(stranger);
 
       const intoRoom = await upload(stranger, { dataRoomId: room.id }).expect(404);
-      const intoFolder = await upload(stranger, { dataRoomId: room.id, folderId: legal.id }).expect(404);
-      const viaOwnRoom = await upload(stranger, { dataRoomId: strangerRoom.id, folderId: legal.id }).expect(404);
+      const intoFolder = await upload(stranger, { dataRoomId: room.id, folderId: legal.id }).expect(
+        404,
+      );
+      const viaOwnRoom = await upload(stranger, {
+        dataRoomId: strangerRoom.id,
+        folderId: legal.id,
+      }).expect(404);
 
       expect(intoRoom.body.error).toEqual({ code: 'NOT_FOUND', message: 'Data room not found' });
       expect(intoFolder.body.error).toEqual({ code: 'NOT_FOUND', message: 'Data room not found' });
@@ -183,7 +244,11 @@ describe('files', () => {
       const owner = newUser();
       const room = await createDataRoom(owner);
 
-      const res = await owner.post('/api/files/upload').field('dataRoomId', room.id).field('name', 'x.pdf').expect(400);
+      const res = await owner
+        .post('/api/files/upload')
+        .field('dataRoomId', room.id)
+        .field('name', 'x.pdf')
+        .expect(400);
 
       expect(res.body.error).toEqual({
         code: 'VALIDATION_FAILED',
@@ -200,7 +265,9 @@ describe('files', () => {
         .attach('file', pdf(), { filename: 'a.pdf', contentType: 'application/pdf' })
         .expect(400);
 
-      expect(res.body.error.details).toEqual([{ field: 'dataRoomId', message: expect.any(String) }]);
+      expect(res.body.error.details).toEqual([
+        { field: 'dataRoomId', message: expect.any(String) },
+      ]);
     });
 
     it('rejects the file under an unexpected field name', async () => {
@@ -225,17 +292,30 @@ describe('files', () => {
       const room = await createDataRoom(owner);
       const legal = await createFolder(owner, room.id, 'Legal');
       const rootFile = await uploadFile(owner, { dataRoomId: room.id, name: 'draft.pdf' });
-      const nested = await uploadFile(owner, { dataRoomId: room.id, folderId: legal.id, name: 'draft.pdf' });
+      const nested = await uploadFile(owner, {
+        dataRoomId: room.id,
+        folderId: legal.id,
+        name: 'draft.pdf',
+      });
 
-      const res = await owner.patch(`/api/files/${rootFile.id}/rename`).send({ name: ' Final.pdf ' }).expect(200);
+      const res = await owner
+        .patch(`/api/files/${rootFile.id}/rename`)
+        .send({ name: ' Final.pdf ' })
+        .expect(200);
       await owner.patch(`/api/files/${nested.id}/rename`).send({ name: 'Signed.pdf' }).expect(200);
 
       expect(res.body).toEqual({
         success: true,
-        data: expect.objectContaining({ id: rootFile.id, name: 'Final.pdf', fileSize: rootFile.fileSize }),
+        data: expect.objectContaining({
+          id: rootFile.id,
+          name: 'Final.pdf',
+          fileSize: rootFile.fileSize,
+        }),
       });
       expect((await contents(owner, room.id)).files.map((f) => f.name)).toEqual(['Final.pdf']);
-      expect((await contents(owner, room.id, legal.id)).files.map((f) => f.name)).toEqual(['Signed.pdf']);
+      expect((await contents(owner, room.id, legal.id)).files.map((f) => f.name)).toEqual([
+        'Signed.pdf',
+      ]);
     });
 
     it('rejects a name another file in the same place already has', async () => {
@@ -245,11 +325,21 @@ describe('files', () => {
       const legal = await createFolder(owner, room.id, 'Legal');
       const a = await uploadFile(owner, { dataRoomId: room.id, name: 'a.pdf' });
       await uploadFile(owner, { dataRoomId: room.id, name: 'b.pdf' });
-      const nested = await uploadFile(owner, { dataRoomId: room.id, folderId: legal.id, name: 'c.pdf' });
+      const nested = await uploadFile(owner, {
+        dataRoomId: room.id,
+        folderId: legal.id,
+        name: 'c.pdf',
+      });
       await uploadFile(owner, { dataRoomId: room.id, folderId: legal.id, name: 'd.pdf' });
 
-      const atRoot = await owner.patch(`/api/files/${a.id}/rename`).send({ name: 'b.pdf' }).expect(409);
-      const inFolder = await owner.patch(`/api/files/${nested.id}/rename`).send({ name: 'd.pdf' }).expect(409);
+      const atRoot = await owner
+        .patch(`/api/files/${a.id}/rename`)
+        .send({ name: 'b.pdf' })
+        .expect(409);
+      const inFolder = await owner
+        .patch(`/api/files/${nested.id}/rename`)
+        .send({ name: 'd.pdf' })
+        .expect(409);
 
       for (const res of [atRoot, inFolder]) {
         expect(res.body.error).toEqual({
@@ -266,7 +356,11 @@ describe('files', () => {
       const room = await createDataRoom(owner);
       const legal = await createFolder(owner, room.id, 'Legal');
       await uploadFile(owner, { dataRoomId: room.id, name: 'nda.pdf' });
-      const nested = await uploadFile(owner, { dataRoomId: room.id, folderId: legal.id, name: 'draft.pdf' });
+      const nested = await uploadFile(owner, {
+        dataRoomId: room.id,
+        folderId: legal.id,
+        name: 'draft.pdf',
+      });
 
       await owner.patch(`/api/files/${nested.id}/rename`).send({ name: 'nda.pdf' }).expect(200);
     });
@@ -345,7 +439,10 @@ describe('files', () => {
           await stranger.delete(`/api/files/${id}`).expect(404),
         ];
         for (const res of responses) {
-          expect(res.body).toEqual({ success: false, error: { code: 'NOT_FOUND', message: 'File not found' } });
+          expect(res.body).toEqual({
+            success: false,
+            error: { code: 'NOT_FOUND', message: 'File not found' },
+          });
         }
       }
 

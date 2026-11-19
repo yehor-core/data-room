@@ -6,7 +6,13 @@ import { FileStorage, TokenVerifier } from '../ports';
 const BUCKET = 'data-room-files';
 
 /** One service-role client for both storage and token verification. */
-export function createSupabaseAdapters({ url, serviceRoleKey }: { url: string; serviceRoleKey: string }) {
+export function createSupabaseAdapters({
+  url,
+  serviceRoleKey,
+}: {
+  url: string;
+  serviceRoleKey: string;
+}) {
   const supabase = createClient(url, serviceRoleKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   });

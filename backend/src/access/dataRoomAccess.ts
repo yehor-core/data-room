@@ -5,10 +5,14 @@ import { FileStorage } from '../ports';
 import { buildBreadcrumb, subtreeIds } from './folderTree';
 import { checkUpload } from './uploads';
 
-export const VIEW_LINK_TTL_SECONDS = 60;
+const VIEW_LINK_TTL_SECONDS = 60;
 
-const dataRoomCounts = { _count: { select: { folders: true, files: true } } } satisfies Prisma.DataRoomInclude;
-const folderCounts = { _count: { select: { children: true, files: true } } } satisfies Prisma.FolderInclude;
+const dataRoomCounts = {
+  _count: { select: { folders: true, files: true } },
+} satisfies Prisma.DataRoomInclude;
+const folderCounts = {
+  _count: { select: { children: true, files: true } },
+} satisfies Prisma.FolderInclude;
 
 const conflicts = {
   dataRoom: 'A data room with this name already exists',
@@ -47,7 +51,10 @@ export function createDataRoomAccess({ db, storage, logger }: AccessDependencies
   };
 
   async function ownedDataRoom(id: string) {
-    const dataRoom = await db.dataRoom.findFirst({ where: { id, ownerId: userId }, select: { id: true, name: true } });
+    const dataRoom = await db.dataRoom.findFirst({
+      where: { id, ownerId: userId },
+      select: { id: true, name: true },
+    });
     if (!dataRoom) throw notFound('Data room');
     return dataRoom;
   }
@@ -66,7 +73,10 @@ export function createDataRoomAccess({ db, storage, logger }: AccessDependencies
 
   /** Checks that the folder exists in this (already owned) data room. */
   async function assertFolderInDataRoom(dataRoomId: string, folderId: string) {
-    const folder = await db.folder.findFirst({ where: { id: folderId, dataRoomId }, select: { id: true } });
+    const folder = await db.folder.findFirst({
+      where: { id: folderId, dataRoomId },
+      select: { id: true },
+    });
     if (!folder) throw notFound('Folder');
   }
 
@@ -84,7 +94,11 @@ export function createDataRoomAccess({ db, storage, logger }: AccessDependencies
   return {
     dataRooms: {
       list: () =>
-        db.dataRoom.findMany({ where: { ownerId: userId }, include: dataRoomCounts, orderBy: { createdAt: 'desc' } }),
+        db.dataRoom.findMany({
+          where: { ownerId: userId },
+          include: dataRoomCounts,
+          orderBy: { createdAt: 'desc' },
+        }),
 
       create: (name: string) =>
         db.dataRoom
@@ -94,7 +108,10 @@ export function createDataRoomAccess({ db, storage, logger }: AccessDependencies
       async delete(id: string) {
         await ownedDataRoom(id);
         const paths = await db.$transaction(async (tx) => {
-          const files = await tx.file.findMany({ where: { dataRoomId: id }, select: { filePath: true } });
+          const files = await tx.file.findMany({
+            where: { dataRoomId: id },
+            select: { filePath: true },
+          });
           await tx.dataRoom.delete({ where: { id } });
           return files.map((file) => file.filePath);
         });
@@ -103,11 +120,22 @@ export function createDataRoomAccess({ db, storage, logger }: AccessDependencies
     },
 
     folders: {
-      async create({ dataRoomId, parentId, name }: { dataRoomId: string; parentId?: string; name: string }) {
+      async create({
+        dataRoomId,
+        parentId,
+        name,
+      }: {
+        dataRoomId: string;
+        parentId?: string;
+        name: string;
+      }) {
         await ownedDataRoom(dataRoomId);
         if (parentId) await assertFolderInDataRoom(dataRoomId, parentId);
         return db.folder
-          .create({ data: { name, dataRoomId, parentId: parentId ?? null, userId }, include: folderCounts })
+          .create({
+            data: { name, dataRoomId, parentId: parentId ?? null, userId },
+            include: folderCounts,
+          })
           .catch(rethrowDuplicateAs(conflicts.folder));
       },
 
@@ -142,13 +170,23 @@ export function createDataRoomAccess({ db, storage, logger }: AccessDependencies
         if (folderId) await assertFolderInDataRoom(dataRoomId, folderId);
         checkUpload({ mimeType, content });
         // Checked up front so a duplicate isn't uploaded only to be removed again; the index still decides races.
-        const clash = await db.file.findFirst({ where: { dataRoomId, folderId: folderId ?? null, name } });
+        const clash = await db.file.findFirst({
+          where: { dataRoomId, folderId: folderId ?? null, name },
+        });
         if (clash) throw new AppError('CONFLICT', conflicts.file);
 
         const filePath = await storage.put({ name, content, contentType: mimeType });
         try {
           return await db.file.create({
-            data: { name, dataRoomId, folderId: folderId ?? null, userId, fileSize: content.length, mimeType, filePath },
+            data: {
+              name,
+              dataRoomId,
+              folderId: folderId ?? null,
+              userId,
+              fileSize: content.length,
+              mimeType,
+              filePath,
+            },
           });
         } catch (error) {
           await removeStored([filePath]);
@@ -158,7 +196,9 @@ export function createDataRoomAccess({ db, storage, logger }: AccessDependencies
 
       async rename(id: string, name: string) {
         await ownedFile(id);
-        return db.file.update({ where: { id }, data: { name } }).catch(rethrowDuplicateAs(conflicts.file));
+        return db.file
+          .update({ where: { id }, data: { name } })
+          .catch(rethrowDuplicateAs(conflicts.file));
       },
 
       async delete(id: string) {
@@ -192,7 +232,11 @@ export function createDataRoomAccess({ db, storage, logger }: AccessDependencies
 
       const level = folderId ?? null;
       const [folders, files] = await Promise.all([
-        db.folder.findMany({ where: { dataRoomId, parentId: level }, include: folderCounts, orderBy: { name: 'asc' } }),
+        db.folder.findMany({
+          where: { dataRoomId, parentId: level },
+          include: folderCounts,
+          orderBy: { name: 'asc' },
+        }),
         db.file.findMany({ where: { dataRoomId, folderId: level }, orderBy: { name: 'asc' } }),
       ]);
       return { dataRoom, folder, breadcrumb, folders, files };

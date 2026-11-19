@@ -38,7 +38,14 @@ describe('buildBreadcrumb', () => {
 
 describe('subtreeIds', () => {
   it('is the folder and every folder nested under it', () => {
-    const folders = [folder('a', null), folder('b', 'a'), folder('c', 'b'), folder('d', 'a'), folder('x', null), folder('y', 'x')];
+    const folders = [
+      folder('a', null),
+      folder('b', 'a'),
+      folder('c', 'b'),
+      folder('d', 'a'),
+      folder('x', null),
+      folder('y', 'x'),
+    ];
 
     expect(subtreeIds(folders, 'a').sort()).toEqual(['a', 'b', 'c', 'd']);
   });

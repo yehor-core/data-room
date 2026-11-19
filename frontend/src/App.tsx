@@ -6,10 +6,16 @@ import { Layout } from './components/Layout';
 import { PrivateRoute } from './components/PrivateRoute';
 
 // Pages use named exports; React.lazy needs a default export.
-const Login = lazy(() => import('./pages/Login').then(module => ({ default: module.Login })));
-const DataRooms = lazy(() => import('./pages/DataRooms').then(module => ({ default: module.DataRooms })));
-const DataRoomRoot = lazy(() => import('./pages/DataRoomRoot').then(module => ({ default: module.DataRoomRoot })));
-const FolderView = lazy(() => import('./pages/FolderView').then(module => ({ default: module.FolderView })));
+const Login = lazy(() => import('./pages/Login').then((module) => ({ default: module.Login })));
+const DataRooms = lazy(() =>
+  import('./pages/DataRooms').then((module) => ({ default: module.DataRooms })),
+);
+const DataRoomRoot = lazy(() =>
+  import('./pages/DataRoomRoot').then((module) => ({ default: module.DataRoomRoot })),
+);
+const FolderView = lazy(() =>
+  import('./pages/FolderView').then((module) => ({ default: module.FolderView })),
+);
 
 const LoadingFallback = () => (
   <div className="flex items-center justify-center min-h-screen">
@@ -36,7 +42,13 @@ function App() {
           <Suspense fallback={<LoadingFallback />}>
             <Routes>
               <Route path="/login" element={<Login />} />
-              <Route element={<PrivateRoute><Layout /></PrivateRoute>}>
+              <Route
+                element={
+                  <PrivateRoute>
+                    <Layout />
+                  </PrivateRoute>
+                }
+              >
                 <Route path="/" element={<DataRooms />} />
                 <Route path="/data-rooms/:id" element={<DataRoomRoot />} />
                 <Route path="/data-rooms/:id/folders/:folderId" element={<FolderView />} />

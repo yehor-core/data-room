@@ -9,7 +9,10 @@ describe('folders', () => {
       const owner = newUser();
       const room = await createDataRoom(owner);
 
-      const res = await owner.post('/api/folders').send({ name: ' Legal ', dataRoomId: room.id }).expect(201);
+      const res = await owner
+        .post('/api/folders')
+        .send({ name: ' Legal ', dataRoomId: room.id })
+        .expect(201);
 
       expect(res.body).toEqual({
         success: true,
@@ -33,7 +36,9 @@ describe('folders', () => {
       const contracts = await createFolder(owner, room.id, 'Contracts', legal.id);
 
       expect(contracts.parentId).toBe(legal.id);
-      expect((await contents(owner, room.id, legal.id)).folders.map((f) => f.name)).toEqual(['Contracts']);
+      expect((await contents(owner, room.id, legal.id)).folders.map((f) => f.name)).toEqual([
+        'Contracts',
+      ]);
     });
 
     it('rejects a name a sibling folder already has, at the root and inside a folder', async () => {
@@ -43,7 +48,10 @@ describe('folders', () => {
       const legal = await createFolder(owner, room.id, 'Legal');
       await createFolder(owner, room.id, 'Contracts', legal.id);
 
-      const atRoot = await owner.post('/api/folders').send({ name: 'Legal', dataRoomId: room.id }).expect(409);
+      const atRoot = await owner
+        .post('/api/folders')
+        .send({ name: 'Legal', dataRoomId: room.id })
+        .expect(409);
       const nested = await owner
         .post('/api/folders')
         .send({ name: 'Contracts', dataRoomId: room.id, parentId: legal.id })
@@ -52,7 +60,10 @@ describe('folders', () => {
       for (const res of [atRoot, nested]) {
         expect(res.body).toEqual({
           success: false,
-          error: { code: 'CONFLICT', message: 'A folder with this name already exists in this location' },
+          error: {
+            code: 'CONFLICT',
+            message: 'A folder with this name already exists in this location',
+          },
         });
       }
     });
@@ -63,7 +74,10 @@ describe('folders', () => {
       const room = await createDataRoom(owner);
       const legal = await createFolder(owner, room.id, 'Legal');
 
-      await owner.post('/api/folders').send({ name: 'Legal', dataRoomId: room.id, parentId: legal.id }).expect(201);
+      await owner
+        .post('/api/folders')
+        .send({ name: 'Legal', dataRoomId: room.id, parentId: legal.id })
+        .expect(201);
     });
 
     it('rejects a parent folder from another data room', async () => {
@@ -107,11 +121,18 @@ describe('folders', () => {
       const room = await createDataRoom(owner);
       const legal = await createFolder(owner, room.id, 'Legal');
 
-      const res = await owner.patch(`/api/folders/${legal.id}/rename`).send({ name: 'Legal & Tax' }).expect(200);
+      const res = await owner
+        .patch(`/api/folders/${legal.id}/rename`)
+        .send({ name: 'Legal & Tax' })
+        .expect(200);
 
       expect(res.body).toEqual({
         success: true,
-        data: expect.objectContaining({ id: legal.id, name: 'Legal & Tax', _count: { children: 0, files: 0 } }),
+        data: expect.objectContaining({
+          id: legal.id,
+          name: 'Legal & Tax',
+          _count: { children: 0, files: 0 },
+        }),
       });
       expect((await contents(owner, room.id)).folders.map((f) => f.name)).toEqual(['Legal & Tax']);
     });
@@ -134,12 +155,21 @@ describe('folders', () => {
       const inner = await createFolder(owner, room.id, 'A', legal.id);
       await createFolder(owner, room.id, 'B', legal.id);
 
-      const root = await owner.patch(`/api/folders/${legal.id}/rename`).send({ name: 'Finance' }).expect(409);
-      const nested = await owner.patch(`/api/folders/${inner.id}/rename`).send({ name: 'B' }).expect(409);
+      const root = await owner
+        .patch(`/api/folders/${legal.id}/rename`)
+        .send({ name: 'Finance' })
+        .expect(409);
+      const nested = await owner
+        .patch(`/api/folders/${inner.id}/rename`)
+        .send({ name: 'B' })
+        .expect(409);
 
       expect(root.body.error.code).toBe('CONFLICT');
       expect(nested.body.error.code).toBe('CONFLICT');
-      expect((await contents(owner, room.id)).folders.map((f) => f.name)).toEqual(['Finance', 'Legal']);
+      expect((await contents(owner, room.id)).folders.map((f) => f.name)).toEqual([
+        'Finance',
+        'Legal',
+      ]);
     });
 
     it('rejects a blank name', async () => {
@@ -148,7 +178,10 @@ describe('folders', () => {
       const room = await createDataRoom(owner);
       const legal = await createFolder(owner, room.id, 'Legal');
 
-      const res = await owner.patch(`/api/folders/${legal.id}/rename`).send({ name: '  ' }).expect(400);
+      const res = await owner
+        .patch(`/api/folders/${legal.id}/rename`)
+        .send({ name: '  ' })
+        .expect(400);
 
       expect(res.body.error.code).toBe('VALIDATION_FAILED');
     });
@@ -165,7 +198,11 @@ describe('folders', () => {
       await uploadFile(owner, { dataRoomId: room.id, folderId: legal.id, name: 'a.pdf' });
       await uploadFile(owner, { dataRoomId: room.id, folderId: signed.id, name: 'b.pdf' });
       const finance = await createFolder(owner, room.id, 'Finance');
-      await uploadFile(owner, { dataRoomId: room.id, folderId: finance.id, name: 'c.pdf' }, pdf('kept'));
+      await uploadFile(
+        owner,
+        { dataRoomId: room.id, folderId: finance.id, name: 'c.pdf' },
+        pdf('kept'),
+      );
       await uploadFile(owner, { dataRoomId: room.id, name: 'root.pdf' }, pdf('kept'));
 
       const res = await owner.delete(`/api/folders/${legal.id}`).expect(204);
@@ -175,9 +212,15 @@ describe('folders', () => {
       expect(root.folders.map((f) => f.name)).toEqual(['Finance']);
       expect(root.files.map((f) => f.name)).toEqual(['root.pdf']);
       for (const gone of [legal, contracts, signed]) {
-        await owner.get(`/api/data-rooms/${room.id}/contents`).query({ folderId: gone.id }).expect(404);
+        await owner
+          .get(`/api/data-rooms/${room.id}/contents`)
+          .query({ folderId: gone.id })
+          .expect(404);
       }
-      expect([...storage.objects.values()].map((o) => o.content)).toEqual([pdf('kept'), pdf('kept')]);
+      expect([...storage.objects.values()].map((o) => o.content)).toEqual([
+        pdf('kept'),
+        pdf('kept'),
+      ]);
     });
 
     it('still removes the records when storage fails, and logs the failure', async () => {
@@ -206,12 +249,18 @@ describe('folders', () => {
 
       for (const id of [legal.id, missing]) {
         const responses = [
-          await stranger.get(`/api/data-rooms/${strangerRoom.id}/contents`).query({ folderId: id }).expect(404),
+          await stranger
+            .get(`/api/data-rooms/${strangerRoom.id}/contents`)
+            .query({ folderId: id })
+            .expect(404),
           await stranger.patch(`/api/folders/${id}/rename`).send({ name: 'Mine now' }).expect(404),
           await stranger.delete(`/api/folders/${id}`).expect(404),
         ];
         for (const res of responses) {
-          expect(res.body).toEqual({ success: false, error: { code: 'NOT_FOUND', message: 'Folder not found' } });
+          expect(res.body).toEqual({
+            success: false,
+            error: { code: 'NOT_FOUND', message: 'Folder not found' },
+          });
         }
       }
 
@@ -226,7 +275,10 @@ describe('folders', () => {
       const legal = await createFolder(owner, room.id, 'Legal');
       const strangerRoom = await createDataRoom(stranger);
 
-      const intoRoom = await stranger.post('/api/folders').send({ name: 'Planted', dataRoomId: room.id }).expect(404);
+      const intoRoom = await stranger
+        .post('/api/folders')
+        .send({ name: 'Planted', dataRoomId: room.id })
+        .expect(404);
       const underFolder = await stranger
         .post('/api/folders')
         .send({ name: 'Planted', dataRoomId: strangerRoom.id, parentId: legal.id })

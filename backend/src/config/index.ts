@@ -3,7 +3,12 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 // DATABASE_URL is read by Prisma itself, not through this module, but the app can't start without it.
-const required = ['DATABASE_URL', 'SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY', 'ALLOWED_ORIGINS'] as const;
+const required = [
+  'DATABASE_URL',
+  'SUPABASE_URL',
+  'SUPABASE_SERVICE_ROLE_KEY',
+  'ALLOWED_ORIGINS',
+] as const;
 
 /** Validates the environment once and returns it parsed. Every module reads its settings from here. */
 export function loadConfig(env: NodeJS.ProcessEnv) {

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- untyped Item data; T5 replaces it with the typed client data module */
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { DataTable } from '@/components/DataTable';
@@ -32,40 +33,43 @@ export function FolderView() {
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const debouncedSearch = useDebounce(searchQuery, 300);
 
-  const {
-    folderQuery,
-    foldersQuery,
-    filesQuery,
-  } = useDataRoomData({ dataRoomId: id, folderId });
+  const { folderQuery, foldersQuery, filesQuery } = useDataRoomData({ dataRoomId: id, folderId });
 
   const { handleFileView } = useFileViewer();
   const createFolder = useCreateFolder(id, folderId);
   const uploadFile = useFileUpload(id, folderId);
   const renameItem = useItemRename(id, folderId);
-  const { deleteFolderMutation, deleteFileMutation } = useDataRoomMutations({ dataRoomId: id, folderId });
-  
+  const { deleteFolderMutation, deleteFileMutation } = useDataRoomMutations({
+    dataRoomId: id,
+    folderId,
+  });
+
   const [itemToDelete, setItemToDelete] = useState<DataRoomItem | null>(null);
 
   const filteredFolders = useMemo(
     () =>
       folderQuery?.data?.data.children?.filter((folder: any) =>
-        folder.name.toLowerCase().includes(debouncedSearch.toLowerCase())
+        folder.name.toLowerCase().includes(debouncedSearch.toLowerCase()),
       ) || [],
-    [folderQuery?.data, debouncedSearch]
+    [folderQuery?.data, debouncedSearch],
   );
 
   const filteredFiles = useMemo(
     () =>
       folderQuery?.data?.data.files?.filter((file: any) =>
-        file.name.toLowerCase().includes(debouncedSearch.toLowerCase())
+        file.name.toLowerCase().includes(debouncedSearch.toLowerCase()),
       ) || [],
-    [folderQuery?.data, debouncedSearch]
+    [folderQuery?.data, debouncedSearch],
   );
 
   const items = useMemo(() => {
     const combinedItems: DataRoomItem[] = [
       ...filteredFolders.map((folder: any) => ({ ...folder, type: 'folder' as const, size: null })),
-      ...filteredFiles.map((file: any) => ({ ...file, type: 'file' as const, size: Number(file.fileSize) || 0 })),
+      ...filteredFiles.map((file: any) => ({
+        ...file,
+        type: 'file' as const,
+        size: Number(file.fileSize) || 0,
+      })),
     ];
     return combinedItems.sort((a, b) => {
       if (a.type === 'folder' && b.type === 'file') return -1;
@@ -79,7 +83,7 @@ export function FolderView() {
   const { open: openRename } = renameItem;
   const handleRename = useCallback(
     (item: DataRoomItem) => openRename({ id: item.id, name: item.name, type: item.type }),
-    [openRename]
+    [openRename],
   );
 
   useEffect(() => {
@@ -113,7 +117,7 @@ export function FolderView() {
     }
     setItemToDelete(null);
   };
-  
+
   return (
     <>
       <DataRoomLayout
@@ -130,8 +134,8 @@ export function FolderView() {
         onBackClick={handleBackClick}
       >
         {items.length === 0 ? (
-          <EmptyState 
-            isSearching={!!debouncedSearch.trim()} 
+          <EmptyState
+            isSearching={!!debouncedSearch.trim()}
             searchQuery={debouncedSearch}
             isInFolder={true}
             onCreateFolder={createFolder.open}
@@ -141,20 +145,27 @@ export function FolderView() {
         ) : viewMode === 'grid' ? (
           <>
             <FoldersGrid
-              folders={items.filter((item): item is Extract<DataRoomItem, { type: 'folder' }> => item.type === 'folder')}
+              folders={items.filter(
+                (item): item is Extract<DataRoomItem, { type: 'folder' }> => item.type === 'folder',
+              )}
               dataRoomId={id!}
               onRename={handleRename}
               onDelete={setItemToDelete}
             />
             <FilesGrid
-              files={items.filter((item): item is Extract<DataRoomItem, { type: 'file' }> => item.type === 'file')}
+              files={items.filter(
+                (item): item is Extract<DataRoomItem, { type: 'file' }> => item.type === 'file',
+              )}
               onView={handleFileClick}
               onRename={handleRename}
               onDelete={setItemToDelete}
             />
           </>
         ) : (
-          <DataTable columns={getColumns(handleFileClick, handleRename, setItemToDelete)} data={items} />
+          <DataTable
+            columns={getColumns(handleFileClick, handleRename, setItemToDelete)}
+            data={items}
+          />
         )}
       </DataRoomLayout>
 
@@ -188,4 +199,3 @@ export function FolderView() {
     </>
   );
 }
-

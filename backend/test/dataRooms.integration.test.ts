@@ -15,8 +15,16 @@ describe('data rooms', () => {
     expect(res.body).toEqual({
       success: true,
       data: [
-        expect.objectContaining({ id: second.id, name: 'Second deal', _count: { folders: 1, files: 1 } }),
-        expect.objectContaining({ id: first.id, name: 'First deal', _count: { folders: 0, files: 0 } }),
+        expect.objectContaining({
+          id: second.id,
+          name: 'Second deal',
+          _count: { folders: 1, files: 1 },
+        }),
+        expect.objectContaining({
+          id: first.id,
+          name: 'First deal',
+          _count: { folders: 0, files: 0 },
+        }),
       ],
     });
   });
@@ -29,7 +37,11 @@ describe('data rooms', () => {
 
     expect(res.body).toEqual({
       success: true,
-      data: expect.objectContaining({ id: expect.any(String), name: 'Series A', _count: { folders: 0, files: 0 } }),
+      data: expect.objectContaining({
+        id: expect.any(String),
+        name: 'Series A',
+        _count: { folders: 0, files: 0 },
+      }),
     });
   });
 
@@ -102,7 +114,10 @@ describe('data rooms', () => {
 
       expect(res.text).toBe('');
       await owner.get(`/api/data-rooms/${room.id}/contents`).expect(404);
-      await owner.get(`/api/data-rooms/${room.id}/contents`).query({ folderId: contracts.id }).expect(404);
+      await owner
+        .get(`/api/data-rooms/${room.id}/contents`)
+        .query({ folderId: contracts.id })
+        .expect(404);
       const list = await owner.get('/api/data-rooms').expect(200);
       expect(list.body.data.map((r: { id: string }) => r.id)).toEqual([keep.id]);
       expect([...storage.objects.values()].map((o) => o.content)).toEqual([pdf('kept')]);
