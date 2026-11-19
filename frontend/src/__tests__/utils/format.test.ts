@@ -19,14 +19,7 @@ describe('Format Utilities', () => {
       expect(result).toContain('TB');
     });
 
-    it('handles string inputs (BigInt serialization)', () => {
-      expect(formatBytes('1024')).toBe('1 KB');
-      expect(formatBytes('1048576')).toBe('1 MB');
-      expect(formatBytes('0')).toBe('0 Bytes');
-    });
-
     it('handles invalid inputs', () => {
-      expect(formatBytes('invalid')).toBe('0 Bytes');
       expect(formatBytes(NaN)).toBe('0 Bytes');
     });
   });

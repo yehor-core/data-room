@@ -44,7 +44,7 @@ export interface File {
   id: string;
   name: string;
   mimeType?: string;
-  fileSize?: number | string | null; // BigInt column, serialized as string
+  fileSize?: number | null;
   folderId: string;
   filePath?: string;
   createdAt: string;
