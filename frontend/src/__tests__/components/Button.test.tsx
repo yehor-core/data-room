@@ -19,7 +19,11 @@ describe('Button Component', () => {
 
   it('can be disabled', () => {
     const handleClick = jest.fn();
-    render(<Button disabled onClick={handleClick}>Click me</Button>);
+    render(
+      <Button disabled onClick={handleClick}>
+        Click me
+      </Button>,
+    );
     const button = screen.getByText('Click me');
     fireEvent.click(button);
     expect(handleClick).not.toHaveBeenCalled();

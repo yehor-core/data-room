@@ -4,7 +4,13 @@ import { Link } from 'react-router-dom';
 import { Plus, FolderOpen, Trash2 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/Card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../components/ui/Dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '../components/ui/Dialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -86,7 +92,7 @@ export const DataRooms: React.FC = () => {
       await queryClient.cancelQueries({ queryKey: ['dataRooms'] });
       const previousDataRooms = queryClient.getQueryData<DataRoom[]>(['dataRooms']);
       queryClient.setQueryData<DataRoom[]>(['dataRooms'], (old = []) =>
-        old.filter(dataRoom => dataRoom.id !== id)
+        old.filter((dataRoom) => dataRoom.id !== id),
       );
       return { previousDataRooms };
     },
@@ -131,9 +137,7 @@ export const DataRooms: React.FC = () => {
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold">Data Rooms</h1>
-          <p className="text-muted-foreground mt-1">
-            Manage your secure document repositories
-          </p>
+          <p className="text-muted-foreground mt-1">Manage your secure document repositories</p>
         </div>
         <Button onClick={() => setIsCreateDialogOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />
@@ -181,14 +185,13 @@ export const DataRooms: React.FC = () => {
                   <FolderOpen className="h-5 w-5 text-primary" />
                   {dataRoom.name}
                 </CardTitle>
-                <CardDescription>
-                  Created {formatDate(dataRoom.createdAt)}
-                </CardDescription>
+                <CardDescription>Created {formatDate(dataRoom.createdAt)}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">
-                    {dataRoom._count?.folders ?? 0} {dataRoom._count?.folders === 1 ? 'folder' : 'folders'}
+                    {dataRoom._count?.folders ?? 0}{' '}
+                    {dataRoom._count?.folders === 1 ? 'folder' : 'folders'}
                   </span>
                   <div className="flex gap-2">
                     {dataRoom.id.startsWith('temp-') ? (
@@ -197,9 +200,7 @@ export const DataRooms: React.FC = () => {
                       </Button>
                     ) : (
                       <Button variant="outline" size="sm" asChild>
-                        <Link to={`/data-rooms/${dataRoom.id}`}>
-                          Open
-                        </Link>
+                        <Link to={`/data-rooms/${dataRoom.id}`}>Open</Link>
                       </Button>
                     )}
                     <AlertDialog>
@@ -216,7 +217,8 @@ export const DataRooms: React.FC = () => {
                         <AlertDialogHeader>
                           <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                           <AlertDialogDescription>
-                            This action cannot be undone. This will permanently delete this data room and all of its contents.
+                            This action cannot be undone. This will permanently delete this data
+                            room and all of its contents.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
@@ -251,9 +253,7 @@ export const DataRooms: React.FC = () => {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Create New Data Room</DialogTitle>
-            <DialogDescription>
-              Enter a name for your new data room
-            </DialogDescription>
+            <DialogDescription>Enter a name for your new data room</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleCreate} className="space-y-4">
             <div className="space-y-2">

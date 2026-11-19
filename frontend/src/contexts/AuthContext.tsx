@@ -59,14 +59,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       setAuthToken(session?.access_token ?? null);
       setSession(session);
-      
+
       if (session) {
         await fetchUser();
       } else {
         setUser(null);
       }
       setLoading(false);
-      
+
       if (session?.user) {
         const loginToastShown = sessionStorage.getItem('login_toast_shown');
         if (event === 'SIGNED_IN' && !loginToastShown) {
@@ -74,7 +74,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           sessionStorage.setItem('login_toast_shown', 'true');
         }
       }
-      
+
       if (event === 'SIGNED_OUT') {
         sessionStorage.removeItem('login_toast_shown');
       }
@@ -111,4 +111,3 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     </AuthContext.Provider>
   );
 };
-

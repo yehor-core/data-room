@@ -27,9 +27,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
           <>
             <Search className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
             <h3 className="text-xl font-semibold mb-2">No results found</h3>
-            <p className="text-muted-foreground mb-6">
-              No files or folders match "{searchQuery}"
-            </p>
+            <p className="text-muted-foreground mb-6">No files or folders match "{searchQuery}"</p>
             <Button variant="outline" onClick={onClearSearch}>
               Clear Search
             </Button>
@@ -39,7 +37,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
             <Folder className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
             <h3 className="text-xl font-semibold mb-2">No files or folders yet</h3>
             <p className="text-muted-foreground mb-6">
-              {isInFolder 
+              {isInFolder
                 ? 'Upload files or create folders to get started'
                 : 'Create folders to organize your documents'}
             </p>
@@ -61,4 +59,3 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
     </Card>
   );
 };
-

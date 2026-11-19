@@ -6,7 +6,7 @@
     "backend": {},
     "frontend": {
       // knip has no Create React App / craco plugin, so the app, its config and the Jest files CRA runs are listed here.
-      "entry": ["src/index.tsx", "craco.config.js", "src/setupTests.ts", "src/**/*.test.{ts,tsx}"]
-    }
-  }
+      "entry": ["src/index.tsx", "craco.config.js", "src/setupTests.ts", "src/**/*.test.{ts,tsx}"],
+    },
+  },
 }

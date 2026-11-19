@@ -12,7 +12,7 @@ const unusedVarsOptions = {
   caughtErrors: 'all',
   ignoreRestSiblings: true,
 };
-const testFiles =['**/__tests__/**/*.{ts,tsx}', '**/*.test.{ts,tsx}'];
+const testFiles = ['**/__tests__/**/*.{ts,tsx}', '**/*.test.{ts,tsx}'];
 
 export default defineConfig([
   globalIgnores(['**/node_modules/', '**/build/', '**/dist/', '**/coverage/']),

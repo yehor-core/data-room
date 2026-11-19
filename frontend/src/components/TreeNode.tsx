@@ -31,7 +31,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({ item, level }) => {
     if (!contents?.data) return [];
     const folders = contents.data.children || [];
     const files = contents.data.files || [];
-    
+
     const combined: DataRoomItem[] = [
       ...folders.map((f: any) => ({ ...f, type: 'folder' as const, size: null })),
       ...files.map((f: any) => ({ ...f, type: 'file' as const, size: Number(f.fileSize) || 0 })),
@@ -62,11 +62,14 @@ const TreeNode: React.FC<TreeNodeProps> = ({ item, level }) => {
         onContextMenu={handleContextMenu}
       >
         <div onClick={() => setIsOpen(!isOpen)} className="flex-shrink-0">
-          {isFolder && (
-            isOpen ? <ChevronDown className="h-4 w-4 mr-1" /> : <ChevronRight className="h-4 w-4 mr-1" />
-          )}
+          {isFolder &&
+            (isOpen ? (
+              <ChevronDown className="h-4 w-4 mr-1" />
+            ) : (
+              <ChevronRight className="h-4 w-4 mr-1" />
+            ))}
         </div>
-        <div 
+        <div
           onClick={isFolder ? handleFolderNavigation : () => handleFileView(item.id)}
           className="flex items-center flex-grow"
         >
@@ -134,18 +137,17 @@ const TreeNode: React.FC<TreeNodeProps> = ({ item, level }) => {
         </div>
       )}
 
-      {isFolder && isOpen && (
-        isLoading ? <div style={{ paddingLeft: `${(level + 1) * 20}px` }}>Loading...</div> :
-        <div>
-          {children.map((child) => (
-            <TreeNode
-              key={child.id}
-              item={child}
-              level={level + 1}
-            />
-          ))}
-        </div>
-      )}
+      {isFolder &&
+        isOpen &&
+        (isLoading ? (
+          <div style={{ paddingLeft: `${(level + 1) * 20}px` }}>Loading...</div>
+        ) : (
+          <div>
+            {children.map((child) => (
+              <TreeNode key={child.id} item={child} level={level + 1} />
+            ))}
+          </div>
+        ))}
     </div>
   );
 };

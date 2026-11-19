@@ -169,4 +169,3 @@ style.textContent = `
 document.head.appendChild(style);
 
 export const toast = new ToastManager();
-

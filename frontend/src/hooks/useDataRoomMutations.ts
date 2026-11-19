@@ -39,42 +39,50 @@ export const useDataRoomMutations = ({ dataRoomId, folderId }: UseDataRoomMutati
       const queryKey = folderId ? ['folder', folderId] : ['dataRoom', dataRoomId];
       await queryClient.cancelQueries({ queryKey });
 
-      const previousData = queryClient.getQueryData<ApiResponse<DataRoom | { folder: Folder, children: Folder[] }>>(queryKey);
+      const previousData =
+        queryClient.getQueryData<ApiResponse<DataRoom | { folder: Folder; children: Folder[] }>>(
+          queryKey,
+        );
 
       if (previousData) {
-        queryClient.setQueryData<ApiResponse<DataRoom | { folder: Folder, children: Folder[] }>>(queryKey, oldData => {
-          if (!oldData || !oldData.data || !dataRoomId) return oldData;
-          
-          const newFolder: Folder = {
-            id: 'temp-id',
-            name,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            dataRoomId: dataRoomId,
-            parentId: folderId || null,
-          };
+        queryClient.setQueryData<ApiResponse<DataRoom | { folder: Folder; children: Folder[] }>>(
+          queryKey,
+          (oldData) => {
+            if (!oldData || !oldData.data || !dataRoomId) return oldData;
 
-          let updatedData;
+            const newFolder: Folder = {
+              id: 'temp-id',
+              name,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+              dataRoomId: dataRoomId,
+              parentId: folderId || null,
+            };
 
-          if ('folder' in oldData.data) { // Folder view
-            updatedData = {
-              ...oldData,
-              data: {
-                ...oldData.data,
-                children: [...oldData.data.children, newFolder]
-              }
-            };
-          } else { // DataRoom view
-            updatedData = {
-              ...oldData,
-              data: {
-                ...oldData.data,
-                folders: [...(oldData.data as DataRoom).folders || [], newFolder]
-              }
-            };
-          }
-          return updatedData;
-        });
+            let updatedData;
+
+            if ('folder' in oldData.data) {
+              // Folder view
+              updatedData = {
+                ...oldData,
+                data: {
+                  ...oldData.data,
+                  children: [...oldData.data.children, newFolder],
+                },
+              };
+            } else {
+              // DataRoom view
+              updatedData = {
+                ...oldData,
+                data: {
+                  ...oldData.data,
+                  folders: [...((oldData.data as DataRoom).folders || []), newFolder],
+                },
+              };
+            }
+            return updatedData;
+          },
+        );
       }
       return { previousData };
     },
@@ -129,34 +137,44 @@ export const useDataRoomMutations = ({ dataRoomId, folderId }: UseDataRoomMutati
     onMutate: async ({ id, name }) => {
       const queryKey = folderId ? ['folder', folderId] : ['dataRoom', dataRoomId];
       await queryClient.cancelQueries({ queryKey });
-      
-      const previousData = queryClient.getQueryData<ApiResponse<DataRoom | { folder: Folder, children: Folder[] }>>(queryKey);
-      
+
+      const previousData =
+        queryClient.getQueryData<ApiResponse<DataRoom | { folder: Folder; children: Folder[] }>>(
+          queryKey,
+        );
+
       if (previousData) {
-        queryClient.setQueryData<ApiResponse<DataRoom | { folder: Folder, children: Folder[] }>>(queryKey, oldData => {
-          if (!oldData || !oldData.data) return oldData;
+        queryClient.setQueryData<ApiResponse<DataRoom | { folder: Folder; children: Folder[] }>>(
+          queryKey,
+          (oldData) => {
+            if (!oldData || !oldData.data) return oldData;
 
-          let updatedData;
+            let updatedData;
 
-          if ('folder' in oldData.data) { // Folder view
-            updatedData = {
-              ...oldData,
-              data: {
-                ...oldData.data,
-                children: oldData.data.children.map(f => f.id === id ? { ...f, name } : f)
-              }
-            };
-          } else { // DataRoom view
-            updatedData = {
-              ...oldData,
-              data: {
-                ...oldData.data,
-                folders: (oldData.data as DataRoom).folders?.map(f => f.id === id ? { ...f, name } : f)
-              }
-            };
-          }
-          return updatedData;
-        });
+            if ('folder' in oldData.data) {
+              // Folder view
+              updatedData = {
+                ...oldData,
+                data: {
+                  ...oldData.data,
+                  children: oldData.data.children.map((f) => (f.id === id ? { ...f, name } : f)),
+                },
+              };
+            } else {
+              // DataRoom view
+              updatedData = {
+                ...oldData,
+                data: {
+                  ...oldData.data,
+                  folders: (oldData.data as DataRoom).folders?.map((f) =>
+                    f.id === id ? { ...f, name } : f,
+                  ),
+                },
+              };
+            }
+            return updatedData;
+          },
+        );
       }
       return { previousData };
     },
@@ -184,19 +202,25 @@ export const useDataRoomMutations = ({ dataRoomId, folderId }: UseDataRoomMutati
       const previousData = queryClient.getQueryData<ApiResponse<any>>(queryKey);
 
       if (previousData) {
-        queryClient.setQueryData<ApiResponse<any>>(queryKey, oldData => {
+        queryClient.setQueryData<ApiResponse<any>>(queryKey, (oldData) => {
           if (!oldData || !oldData.data) return oldData;
 
           const files = 'files' in oldData.data ? oldData.data.files : oldData.data.dataRoom?.files;
-          const updatedFiles = files.map((f: any) => f.id === id ? { ...f, name } : f);
+          const updatedFiles = files.map((f: any) => (f.id === id ? { ...f, name } : f));
 
           let updatedData;
           if ('files' in oldData.data) {
             updatedData = { ...oldData, data: { ...oldData.data, files: updatedFiles } };
           } else {
-            updatedData = { ...oldData, data: { ...oldData.data, dataRoom: { ...oldData.data.dataRoom, files: updatedFiles } } };
+            updatedData = {
+              ...oldData,
+              data: {
+                ...oldData.data,
+                dataRoom: { ...oldData.data.dataRoom, files: updatedFiles },
+              },
+            };
           }
-          
+
           return updatedData;
         });
       }
@@ -215,7 +239,15 @@ export const useDataRoomMutations = ({ dataRoomId, folderId }: UseDataRoomMutati
   });
 
   const uploadFileMutation = useMutation({
-    mutationFn: async ({ file, name, folderId }: { file: File; name: string; folderId: string | null }) => {
+    mutationFn: async ({
+      file,
+      name,
+      folderId,
+    }: {
+      file: File;
+      name: string;
+      folderId: string | null;
+    }) => {
       const toastId = toast.loading('Uploading file...');
 
       try {
@@ -226,13 +258,13 @@ export const useDataRoomMutations = ({ dataRoomId, folderId }: UseDataRoomMutati
           formData.append('folderId', folderId);
         }
         formData.append('dataRoomId', dataRoomId as string);
-        
+
         const response = await api.post('/files/upload', formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
           },
         });
-        
+
         toast.dismiss(toastId);
         return response.data.data;
       } catch (error) {
@@ -244,40 +276,48 @@ export const useDataRoomMutations = ({ dataRoomId, folderId }: UseDataRoomMutati
       const queryKey = folderId ? ['folder', folderId] : ['dataRoom', dataRoomId];
       await queryClient.cancelQueries({ queryKey });
 
-      const previousData = queryClient.getQueryData<ApiResponse<DataRoom | { folder: Folder, files: FileType[] }>>(queryKey);
-      
+      const previousData =
+        queryClient.getQueryData<ApiResponse<DataRoom | { folder: Folder; files: FileType[] }>>(
+          queryKey,
+        );
+
       if (previousData) {
-        queryClient.setQueryData<ApiResponse<DataRoom | { folder: Folder, files: FileType[] }>>(queryKey, oldData => {
-          if (!oldData || !oldData.data || !dataRoomId) return oldData;
-          
-          const newFile: FileType = {
-            id: 'temp-id',
-            name,
-            fileSize: file.size,
-            mimeType: file.type,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            folderId: folderId!,
-          };
+        queryClient.setQueryData<ApiResponse<DataRoom | { folder: Folder; files: FileType[] }>>(
+          queryKey,
+          (oldData) => {
+            if (!oldData || !oldData.data || !dataRoomId) return oldData;
 
-          let updatedData;
-
-          if ('folder' in oldData.data) { // Folder view
-            updatedData = {
-              ...oldData,
-              data: {
-                ...oldData.data,
-                files: [...(oldData.data.files || []), newFile]
-              }
+            const newFile: FileType = {
+              id: 'temp-id',
+              name,
+              fileSize: file.size,
+              mimeType: file.type,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+              folderId: folderId!,
             };
-          } else { // DataRoom view
-            // The optimistic update for the data room view is complex and the current
-            // implementation is incorrect as DataRoom does not have a `files` property.
-            // We will rely on query invalidation to update the view.
-            updatedData = oldData;
-          }
-          return updatedData;
-        });
+
+            let updatedData;
+
+            if ('folder' in oldData.data) {
+              // Folder view
+              updatedData = {
+                ...oldData,
+                data: {
+                  ...oldData.data,
+                  files: [...(oldData.data.files || []), newFile],
+                },
+              };
+            } else {
+              // DataRoom view
+              // The optimistic update for the data room view is complex and the current
+              // implementation is incorrect as DataRoom does not have a `files` property.
+              // We will rely on query invalidation to update the view.
+              updatedData = oldData;
+            }
+            return updatedData;
+          },
+        );
       }
       return { previousData };
     },
@@ -305,4 +345,3 @@ export const useDataRoomMutations = ({ dataRoomId, folderId }: UseDataRoomMutati
     uploadFileMutation,
   };
 };
-

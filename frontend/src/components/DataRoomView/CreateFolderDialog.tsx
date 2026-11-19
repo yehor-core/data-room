@@ -52,4 +52,3 @@ export const CreateFolderDialog: React.FC<CreateFolderDialogProps> = ({
     </Dialog>
   );
 };
-

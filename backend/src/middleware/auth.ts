@@ -10,7 +10,7 @@ const supabase = createClient(config.supabaseUrl, config.supabaseServiceKey);
 export const authenticateToken = async (
   req: AuthenticatedRequest,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   try {
     const authHeader = req.headers.authorization;
@@ -20,7 +20,10 @@ export const authenticateToken = async (
       throw createError('Access token required', 401);
     }
 
-    const { data: { user: supabaseUser }, error } = await supabase.auth.getUser(token);
+    const {
+      data: { user: supabaseUser },
+      error,
+    } = await supabase.auth.getUser(token);
 
     if (error || !supabaseUser) {
       throw createError('Invalid or expired token', 401);
@@ -56,7 +59,8 @@ export const authenticateToken = async (
     req.user = user;
     next();
   } catch (error) {
-    const message = error instanceof Error && error.message ? error.message : 'Authentication failed';
+    const message =
+      error instanceof Error && error.message ? error.message : 'Authentication failed';
     next(createError(message, 401));
   }
 };

@@ -12,7 +12,7 @@ export const useCreateFolder = (dataRoomId?: string, folderId?: string) => {
   const { createFolderMutation } = useDataRoomMutations({ dataRoomId, folderId });
 
   const open = () => setIsOpen(true);
-  
+
   const close = () => {
     setIsOpen(false);
     setFolderName('');
@@ -24,11 +24,11 @@ export const useCreateFolder = (dataRoomId?: string, folderId?: string) => {
       toast.error('Please enter a folder name');
       return;
     }
-    
+
     createFolderMutation.mutate(folderName, {
       onSuccess: () => {
         close();
-      }
+      },
     });
   };
 
@@ -42,4 +42,3 @@ export const useCreateFolder = (dataRoomId?: string, folderId?: string) => {
     isPending: createFolderMutation.isPending,
   };
 };
-

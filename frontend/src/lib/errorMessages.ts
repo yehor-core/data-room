@@ -6,7 +6,7 @@ export const FILE_TOO_LARGE_MESSAGE = 'File is too large. Maximum size is 4.5MB.
 const ERROR_MESSAGES = {
   NETWORK: 'Unable to connect. Please check your internet connection and try again.',
   UNAUTHORIZED: 'Your session has expired. Please log in again.',
-  FORBIDDEN: 'You don\'t have permission to perform this action.',
+  FORBIDDEN: "You don't have permission to perform this action.",
   NOT_FOUND: 'The requested item could not be found. It may have been deleted.',
   DUPLICATE: 'An item with this name already exists. Please choose a different name.',
   INVALID_INPUT: 'Invalid input. Please check your data and try again.',

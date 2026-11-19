@@ -5,12 +5,7 @@ export interface AppError extends Error {
   statusCode?: number;
 }
 
-export const errorHandler = (
-  error: AppError,
-  req: Request,
-  res: Response,
-  _next: NextFunction
-) => {
+export const errorHandler = (error: AppError, req: Request, res: Response, _next: NextFunction) => {
   const { statusCode = 500 } = error;
   let { message } = error;
 
@@ -40,9 +35,7 @@ export const createError = (message: string, statusCode: number = 500): AppError
   return error;
 };
 
-export const asyncHandler = (
-  fn: (req: Request, res: Response, next: NextFunction) => unknown,
-) => {
+export const asyncHandler = (fn: (req: Request, res: Response, next: NextFunction) => unknown) => {
   return (req: Request, res: Response, next: NextFunction) => {
     Promise.resolve(fn(req, res, next)).catch(next);
   };

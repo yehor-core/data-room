@@ -27,10 +27,9 @@ describe('Input Component', () => {
     const { rerender } = render(<Input type="email" placeholder="Email" />);
     let input = screen.getByPlaceholderText('Email');
     expect(input).toHaveAttribute('type', 'email');
-    
+
     rerender(<Input type="password" placeholder="Password" />);
     input = screen.getByPlaceholderText('Password');
     expect(input).toHaveAttribute('type', 'password');
   });
 });
-

@@ -30,7 +30,7 @@ export const Login: React.FC = () => {
       } else if (typeof err === 'string') {
         message = err;
       }
-      
+
       setError('Failed to sign in with Google: ' + message);
       setLoading(false);
     }
@@ -54,7 +54,7 @@ export const Login: React.FC = () => {
               </p>
             )}
 
-            <Button 
+            <Button
               type="button"
               variant="outline"
               className="w-full"

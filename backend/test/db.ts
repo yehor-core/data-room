@@ -25,10 +25,15 @@ export async function migrateDeployUpTo(databaseUrl: string, lastMigration: stri
   try {
     const migrations = path.join(path.dirname(schemaPath), 'migrations');
     await cp(schemaPath, path.join(dir, 'schema.prisma'));
-    await cp(path.join(migrations, 'migration_lock.toml'), path.join(dir, 'migrations', 'migration_lock.toml'));
+    await cp(
+      path.join(migrations, 'migration_lock.toml'),
+      path.join(dir, 'migrations', 'migration_lock.toml'),
+    );
     for (const name of (await readdir(migrations)).sort()) {
       if (name === 'migration_lock.toml' || name > lastMigration) continue;
-      await cp(path.join(migrations, name), path.join(dir, 'migrations', name), { recursive: true });
+      await cp(path.join(migrations, name), path.join(dir, 'migrations', name), {
+        recursive: true,
+      });
     }
     await migrateDeploy(databaseUrl, path.join(dir, 'schema.prisma'));
   } finally {

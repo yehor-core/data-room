@@ -19,113 +19,130 @@ const validateDataRoom = [
     .withMessage('Name must be between 3 and 100 characters.'),
 ];
 
-router.get('/', asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-  const dataRooms = await prisma.dataRoom.findMany({
-    where: { ownerId: req.user!.id },
-    orderBy: { createdAt: 'desc' },
-    include: {
-      _count: {
-        select: { folders: true, files: true },
+router.get(
+  '/',
+  asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    const dataRooms = await prisma.dataRoom.findMany({
+      where: { ownerId: req.user!.id },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        _count: {
+          select: { folders: true, files: true },
+        },
       },
-    },
-  });
-  res.status(200).json({
-    success: true,
-    data: dataRooms,
-  });
-}));
+    });
+    res.status(200).json({
+      success: true,
+      data: dataRooms,
+    });
+  }),
+);
 
-router.post('/', validateDataRoom, asyncHandler(async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
-  }
+router.post(
+  '/',
+  validateDataRoom,
+  asyncHandler(async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
 
-  const { name } = req.body;
-  const userId = req.user!.id;
+    const { name } = req.body;
+    const userId = req.user!.id;
 
-  const existingDataRoom = await prisma.dataRoom.findFirst({
-    where: { name, ownerId: userId },
-  });
+    const existingDataRoom = await prisma.dataRoom.findFirst({
+      where: { name, ownerId: userId },
+    });
 
-  if (existingDataRoom) {
-    return next(createError('A data room with this name already exists.', 409));
-  }
+    if (existingDataRoom) {
+      return next(createError('A data room with this name already exists.', 409));
+    }
 
-  const newDataRoom = await prisma.dataRoom.create({
-    data: { name, ownerId: userId },
-  });
-  res.status(201).json({
-    success: true,
-    data: newDataRoom,
-  });
-}));
+    const newDataRoom = await prisma.dataRoom.create({
+      data: { name, ownerId: userId },
+    });
+    res.status(201).json({
+      success: true,
+      data: newDataRoom,
+    });
+  }),
+);
 
-router.get('/:id', asyncHandler(async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-  const { id } = req.params;
-  const dataRoom = await prisma.dataRoom.findFirst({
-    where: { id, ownerId: req.user!.id },
-    include: {
-      folders: {
-        where: { parentId: null }, // Only root folders
+router.get(
+  '/:id',
+  asyncHandler(async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    const { id } = req.params;
+    const dataRoom = await prisma.dataRoom.findFirst({
+      where: { id, ownerId: req.user!.id },
+      include: {
+        folders: {
+          where: { parentId: null }, // Only root folders
+        },
+        files: {
+          where: { folderId: null }, // Only root files
+        },
       },
-      files: {
-        where: { folderId: null }, // Only root files
-      },
-    },
-  });
+    });
 
-  if (!dataRoom) {
-    return next(createError('Data room not found', 404));
-  }
-  res.status(200).json({
-    success: true,
-    data: dataRoom,
-  });
-}));
+    if (!dataRoom) {
+      return next(createError('Data room not found', 404));
+    }
+    res.status(200).json({
+      success: true,
+      data: dataRoom,
+    });
+  }),
+);
 
-router.put('/:id', validateDataRoom, asyncHandler(async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
-  }
+router.put(
+  '/:id',
+  validateDataRoom,
+  asyncHandler(async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
 
-  const { id } = req.params;
-  const { name } = req.body;
-  const userId = req.user!.id;
+    const { id } = req.params;
+    const { name } = req.body;
+    const userId = req.user!.id;
 
-  const dataRoom = await prisma.dataRoom.findFirst({
-    where: { id, ownerId: userId },
-  });
+    const dataRoom = await prisma.dataRoom.findFirst({
+      where: { id, ownerId: userId },
+    });
 
-  if (!dataRoom) {
-    return next(createError('Data room not found', 404));
-  }
+    if (!dataRoom) {
+      return next(createError('Data room not found', 404));
+    }
 
-  const updatedDataRoom = await prisma.dataRoom.update({
-    where: { id },
-    data: { name },
-  });
-  res.status(200).json({
-    success: true,
-    data: updatedDataRoom,
-  });
-}));
+    const updatedDataRoom = await prisma.dataRoom.update({
+      where: { id },
+      data: { name },
+    });
+    res.status(200).json({
+      success: true,
+      data: updatedDataRoom,
+    });
+  }),
+);
 
-router.delete('/:id', asyncHandler(async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-  const { id } = req.params;
-  const userId = req.user!.id;
+router.delete(
+  '/:id',
+  asyncHandler(async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    const { id } = req.params;
+    const userId = req.user!.id;
 
-  const dataRoom = await prisma.dataRoom.findFirst({
-    where: { id, ownerId: userId },
-  });
+    const dataRoom = await prisma.dataRoom.findFirst({
+      where: { id, ownerId: userId },
+    });
 
-  if (!dataRoom) {
-    return next(createError('Data room not found', 404));
-  }
+    if (!dataRoom) {
+      return next(createError('Data room not found', 404));
+    }
 
-  await prisma.dataRoom.delete({ where: { id } });
-  res.status(200).json({ success: true });
-}));
+    await prisma.dataRoom.delete({ where: { id } });
+    res.status(200).json({ success: true });
+  }),
+);
 
 export { router as dataRoomRoutes };

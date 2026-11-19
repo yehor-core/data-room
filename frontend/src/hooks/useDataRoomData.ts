@@ -22,15 +22,13 @@ export const useDataRoomData = ({ dataRoomId, folderId }: UseDataRoomDataProps) 
   const dataQuery = useQuery<ApiResponse<DataRoomContents | any>>({
     queryKey: folderId ? ['folder', folderId] : ['dataRoom', dataRoomId],
     queryFn: async () => {
-      const url = folderId 
-        ? `/folders/${folderId}/contents` 
-        : `/data-rooms/${dataRoomId}`;
+      const url = folderId ? `/folders/${folderId}/contents` : `/data-rooms/${dataRoomId}`;
       const response = await api.get(url);
       return response.data;
     },
     enabled: !!isValidId,
     staleTime: 2 * 60 * 1000, // 2 minutes
-    gcTime: 5 * 60 * 1000,   // 5 minutes cache
+    gcTime: 5 * 60 * 1000, // 5 minutes cache
   });
 
   // Fetch ALL files from entire data room (for search and file tree)
@@ -43,7 +41,7 @@ export const useDataRoomData = ({ dataRoomId, folderId }: UseDataRoomDataProps) 
     },
     enabled: !!isValidId,
     staleTime: 5 * 60 * 1000, // 5 minutes - this data is less likely to change frequently
-    gcTime: 10 * 60 * 1000,  // 10 minutes cache
+    gcTime: 10 * 60 * 1000, // 10 minutes cache
   });
 
   const foldersQuery = useQuery({
@@ -54,7 +52,7 @@ export const useDataRoomData = ({ dataRoomId, folderId }: UseDataRoomDataProps) 
     },
     enabled: !!isValidId,
     staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000,  // 10 minutes cache
+    gcTime: 10 * 60 * 1000, // 10 minutes cache
   });
 
   return {
@@ -68,4 +66,3 @@ export const useDataRoomData = ({ dataRoomId, folderId }: UseDataRoomDataProps) 
     dataRoomQuery: !folderId ? dataQuery : undefined,
   };
 };
-
