@@ -28,9 +28,13 @@ export const nameRule = (min: number, max: number) =>
     .isLength({ min, max })
     .withMessage(`Name must be between ${min} and ${max} characters`);
 
-/** An id field; absent, null and empty all mean "none". */
+/** An id field; absent, null and empty all mean "none" and leave the field undefined for the route. */
 export const optionalId = (field: string, location = body) =>
-  location(field).optional({ values: 'falsy' }).isString().withMessage(`${field} must be a string`);
+  location(field)
+    .customSanitizer((value) => value || undefined)
+    .optional()
+    .isString()
+    .withMessage(`${field} must be a string`);
 
 export const requiredId = (field: string) =>
   body(field)

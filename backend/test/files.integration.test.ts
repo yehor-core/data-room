@@ -65,6 +65,23 @@ describe('files', () => {
       expect((await contents(owner, room.id)).files).toEqual([]);
     });
 
+    it('stores a PDF at the root when the folder id is empty', async () => {
+      const { newUser } = createTestApp();
+      const owner = newUser();
+      const room = await createDataRoom(owner);
+
+      const res = await owner
+        .post('/api/files/upload')
+        .field('dataRoomId', room.id)
+        .field('folderId', '')
+        .field('name', 'nda.pdf')
+        .attach('file', pdf(), { filename: 'nda.pdf', contentType: 'application/pdf' })
+        .expect(201);
+
+      expect(res.body.data.folderId).toBeNull();
+      expect((await contents(owner, room.id)).files.map((f) => f.name)).toEqual(['nda.pdf']);
+    });
+
     it('names the file after the uploaded file when no name is given', async () => {
       const { newUser } = createTestApp();
       const owner = newUser();

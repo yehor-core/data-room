@@ -11,7 +11,7 @@ export function folderRoutes(accessFor: AccessFor) {
     validate(nameRule(1, 100), requiredId('dataRoomId'), optionalId('parentId')),
     route((req) => {
       const { name, dataRoomId, parentId } = req.body;
-      return accessFor(req).folders.create({ name, dataRoomId, parentId: parentId || undefined });
+      return accessFor(req).folders.create({ name, dataRoomId, parentId });
     }, 201),
   );
 

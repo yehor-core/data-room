@@ -37,7 +37,7 @@ export function fileRoutes(accessFor: AccessFor) {
       const { dataRoomId, folderId, name } = req.body;
       return accessFor(req).files.upload({
         dataRoomId,
-        folderId: folderId || undefined,
+        folderId,
         name,
         mimeType: file.mimetype,
         content: file.buffer,

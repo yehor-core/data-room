@@ -22,7 +22,7 @@ export function dataRoomRoutes(accessFor: AccessFor) {
     '/:id/contents',
     validate(optionalId('folderId', query)),
     route((req) =>
-      accessFor(req).contents(req.params.id, (req.query.folderId as string) || undefined),
+      accessFor(req).contents(req.params.id, req.query.folderId as string | undefined),
     ),
   );
 
