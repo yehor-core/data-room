@@ -117,8 +117,10 @@ src/
 - `session.ts`: hands the session's access token to the API client, loads the profile, and clears every cached
   response when the session ends.
 - `optimistic.ts`: the shared optimistic-update pattern. It patches the cached queries the change affects (for a
-  data room, every cached level), marks new Items as pending, rolls back and shows exactly one toast on failure, and
-  refetches afterwards.
+  data room, every cached level), marks new Items as pending, and rolls back and shows exactly one toast on failure.
+  When the change settles it refetches only what shows it: the level it happened in, the level whose Folder card
+  counts it changed, every level whose breadcrumb shows a renamed Folder, and the data rooms list when a Folder was
+  created or deleted (the list shows Folder counts).
 - `items.ts`: turns Folders and Files into `Item`s (Folders first, then by name) and filters them for search.
 - `uploads.ts`: the client copy of the upload rules (4 MB, PDF), checked before any request is sent.
 - `queryKeys.ts`: the cache keys, used only inside `data/`. `queryClient.ts`: query defaults (retry only network,

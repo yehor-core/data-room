@@ -49,14 +49,20 @@ export function useDataRoomContents(dataRoomId: string, folderId: string | null)
 
 const levelOf = (contents: CachedContents) => contents.folder?.id ?? null;
 
+/** The level `folderId` (null for the root), and the level whose card for that Folder shows its counts. */
+const showsContentsOf = (folderId: string | null) => (contents: CachedContents) =>
+  levelOf(contents) === folderId || contents.folders.some((folder) => folder.id === folderId);
+
+/** Every level that shows the Folder's name: where its card is, its own and those below it (their breadcrumbs). */
+const showsFolder = (folderId: string) => (contents: CachedContents) =>
+  contents.folders.some((folder) => folder.id === folderId) ||
+  contents.breadcrumb.some((crumb) => crumb.id === folderId);
+
 let pendingIds = 0;
 
 export function useDataRoomMutations(dataRoomId: string) {
   const queryClient = useQueryClient();
-  const room = {
-    scope: queryKeys.dataRoom(dataRoomId),
-    alsoInvalidate: queryKeys.dataRoomList,
-  };
+  const room = { scope: queryKeys.dataRoom(dataRoomId) };
 
   const createFolder = useOptimisticMutation<
     CachedContents,
@@ -83,6 +89,9 @@ export function useDataRoomMutations(dataRoomId: string) {
         };
         return { ...contents, folders: [...contents.folders, folder] };
       },
+    affects: ({ parentId }) => showsContentsOf(parentId),
+    // The data rooms list shows how many Folders each data room has.
+    alsoInvalidate: () => queryKeys.dataRoomList,
     successMessage: () => SUCCESS_MESSAGES.FOLDER_CREATED,
   });
 
@@ -109,6 +118,7 @@ export function useDataRoomMutations(dataRoomId: string) {
       levelOf(contents) === uploaded.folderId
         ? { ...contents, files: [...contents.files, uploaded] }
         : contents,
+    affects: ({ folderId }) => showsContentsOf(folderId),
     successMessage: () => SUCCESS_MESSAGES.FILE_UPLOADED,
   });
 
@@ -130,6 +140,10 @@ export function useDataRoomMutations(dataRoomId: string) {
             }
           : { ...contents, files: contents.files.map(rename) };
       },
+    affects: ({ item }) =>
+      item.type === 'folder'
+        ? showsFolder(item.id)
+        : (contents) => levelOf(contents) === item.parentId,
     successMessage: ({ item }) =>
       item.type === 'folder' ? SUCCESS_MESSAGES.FOLDER_RENAMED : SUCCESS_MESSAGES.FILE_RENAMED,
   });
@@ -143,9 +157,19 @@ export function useDataRoomMutations(dataRoomId: string) {
         : { ...contents, files: contents.files.filter((file) => file.id !== item.id) },
     onConfirmed: (item) => {
       if (item.type === 'folder') {
+        // The Folder's own level and every level below it are gone.
         queryClient.removeQueries({ queryKey: queryKeys.contents(dataRoomId, item.id) });
+        queryClient.removeQueries({
+          queryKey: room.scope,
+          predicate: ({ state }) =>
+            (state.data as CachedContents | undefined)?.breadcrumb.some(
+              (crumb) => crumb.id === item.id,
+            ) ?? false,
+        });
       }
     },
+    affects: (item) => showsContentsOf(item.parentId),
+    alsoInvalidate: (item) => (item.type === 'folder' ? queryKeys.dataRoomList : null),
     successMessage: (item) =>
       item.type === 'folder' ? SUCCESS_MESSAGES.FOLDER_DELETED : SUCCESS_MESSAGES.FILE_DELETED,
   });
