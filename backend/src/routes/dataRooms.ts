@@ -14,7 +14,7 @@ export function dataRoomRoutes(accessFor: AccessFor) {
 
   router.post(
     '/',
-    validate(nameRule(3, 100)),
+    validate(nameRule('dataRoom')),
     route((req) => accessFor(req).dataRooms.create(req.body.name), 201),
   );
 

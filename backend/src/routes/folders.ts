@@ -8,7 +8,7 @@ export function folderRoutes(accessFor: AccessFor) {
 
   router.post(
     '/',
-    validate(nameRule(1, 100), requiredId('dataRoomId'), optionalId('parentId')),
+    validate(nameRule('folder'), requiredId('dataRoomId'), optionalId('parentId')),
     route((req) => {
       const { name, dataRoomId, parentId } = req.body;
       return accessFor(req).folders.create({ name, dataRoomId, parentId });
@@ -17,7 +17,7 @@ export function folderRoutes(accessFor: AccessFor) {
 
   router.patch(
     '/:id/rename',
-    validate(nameRule(1, 100)),
+    validate(nameRule('folder')),
     route((req) => accessFor(req).folders.rename(req.params.id, req.body.name)),
   );
 
