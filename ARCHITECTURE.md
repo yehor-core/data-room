@@ -54,11 +54,13 @@ Other backend modules:
 - `lib/prisma.ts`: the production Prisma client.
 - `errors.ts`: `AppError`, a typed error with a code.
 - `middleware/`: `auth.ts`, `validate.ts` (express-validator rules) and `errorHandler.ts`. The error handler turns
-  `AppError`, malformed JSON and multer errors into the error envelope. Anything else becomes a 500 with a generic
-  message.
+  `AppError`, body parser errors and multer errors into the error envelope: malformed JSON becomes 400
+  `VALIDATION_FAILED` and an oversized JSON body 413 `PAYLOAD_TOO_LARGE`, not a 500. Anything else becomes a 500 with
+  a generic message.
 
 The app also applies `helmet`, CORS limited to `ALLOWED_ORIGINS`, `morgan` request logs through the logger, and a
-rate limit of 100 requests per 15 minutes per IP.
+rate limit of 100 requests per 15 minutes per IP. The rate limiter answers 429 in plain text, without the envelope;
+the frontend maps it to its own `RATE_LIMITED` code (it is not one of the backend's error codes).
 
 ### Access module
 
@@ -109,8 +111,8 @@ src/
 `frontend/src/data/` is the only code that knows about HTTP or the query cache.
 
 - `api.ts`: the axios client. It attaches the access token and unwraps the envelope. It turns every failure into an
-  `ApiError` with a code, including Vercel's own 413 without an envelope, the plain-text 429, network errors and
-  timeouts. It never notifies the user.
+  `ApiError` with a code, including Vercel's own 413 without an envelope, the plain-text 429 (as `RATE_LIMITED`),
+  network errors and timeouts. It never notifies the user.
 - `dataRoom.ts`: `useDataRoomContents(dataRoomId, folderId)` reads one level. `useDataRoomMutations(dataRoomId)`
   creates, renames, deletes and uploads. `openFile(fileId)` opens a File through a short-lived signed URL.
 - `dataRooms.ts`: the list of data rooms, with create and delete.
