@@ -23,7 +23,7 @@ test('deleting a folder removes everything nested in it', async ({ page, api }) 
   await expect(ui.item('keep-me.pdf')).toBeVisible();
 
   await page.goto(`/data-rooms/${room.id}/folders/${nested.id}`);
-  await expect(ui.errorMessage).toBeVisible();
+  await expect(ui.loadError).toBeVisible();
   await expect(ui.item('closing.pdf')).toBeHidden();
 
   for (const file of files) {

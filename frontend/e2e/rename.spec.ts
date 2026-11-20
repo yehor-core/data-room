@@ -13,13 +13,13 @@ test('the owner renames a file and a folder', async ({ page, api }) => {
   await expect(ui.item('Final')).toBeVisible();
   await expect(ui.item('Drafts')).toBeHidden();
 
-  await ui.openFolder('Final');
+  await ui.open('Final');
   await ui.rename('scan-001.pdf', 'Signed NDA.pdf');
   await expect(ui.item('Signed NDA.pdf')).toBeVisible();
   await expect(ui.item('scan-001.pdf')).toBeHidden();
 
   // The server kept both names.
   await page.reload();
-  await expect(page.getByRole('heading', { name: 'Final' })).toBeVisible();
+  await expect(ui.title('Final')).toBeVisible();
   await expect(ui.item('Signed NDA.pdf')).toBeVisible();
 });

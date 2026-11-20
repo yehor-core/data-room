@@ -11,9 +11,9 @@ test('the owner creates a data room and opens it', async ({ page }) => {
   await expect(list.room(name)).toBeVisible();
 
   await page.reload();
-  await list.room(name).click();
-  await expect(page.getByRole('heading', { name })).toBeVisible();
-  await expect(dataRoomUi(page).content.getByText(/no files or folders yet/i)).toBeVisible();
+  await list.open(name);
+  await expect(dataRoomUi(page).title(name)).toBeVisible();
+  await expect(page.getByRole('region', { name: 'No files or folders yet' })).toBeVisible();
 });
 
 test('deleting a data room removes it with everything in it', async ({ page, api }) => {

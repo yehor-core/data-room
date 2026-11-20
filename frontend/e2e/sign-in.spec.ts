@@ -1,4 +1,5 @@
 import { expect, test } from './support/fixtures';
+import { dataRoomsListUi } from './support/ui';
 import { createUser, freshUser, saveStorageState } from './support/users';
 
 test('a user signing in for the first time lands on an empty data rooms list', async ({
@@ -11,8 +12,8 @@ test('a user signing in for the first time lands on an empty data rooms list', a
   const page = await openAs(user);
   await page.goto('/');
 
-  await expect(page.getByRole('heading', { name: 'Data Rooms' })).toBeVisible();
-  await expect(page.getByText('No Data Rooms Yet')).toBeVisible();
+  await expect(dataRoomsListUi(page).heading).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'No Data Rooms Yet' })).toBeVisible();
 });
 
 test.describe('signed out', () => {

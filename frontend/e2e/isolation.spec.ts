@@ -23,12 +23,12 @@ test('another user can neither see nor open the owner’s data room, folders or 
   await expect(page.getByText(room.name)).toBeHidden();
 
   await page.goto(`/data-rooms/${room.id}`);
-  await expect(ui.errorMessage).toBeVisible();
+  await expect(ui.loadError).toBeVisible();
   await expect(page.getByText(room.name)).toBeHidden();
   await expect(ui.item('Board minutes')).toBeHidden();
 
   await page.goto(`/data-rooms/${room.id}/folders/${folder.id}`);
-  await expect(ui.errorMessage).toBeVisible();
+  await expect(ui.loadError).toBeVisible();
   await expect(ui.item('minutes.pdf')).toBeHidden();
 
   const outsiderApi = await apiAs(outsider);
