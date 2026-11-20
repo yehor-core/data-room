@@ -1,8 +1,11 @@
-interface FolderNode {
+export interface FolderNode {
   id: string;
   name: string;
   parentId: string | null;
 }
+
+/** One step of a breadcrumb: a folder on the path from the top level down. */
+export type Crumb = Pick<FolderNode, 'id' | 'name'>;
 
 /**
  * The path from the top-level folder down to `folderId`, built from all folders of one data room.
@@ -10,7 +13,7 @@ interface FolderNode {
  */
 export function buildBreadcrumb(folders: FolderNode[], folderId: string) {
   const byId = new Map(folders.map((folder) => [folder.id, folder]));
-  const chain: { id: string; name: string }[] = [];
+  const chain: Crumb[] = [];
   const seen = new Set<string>();
   for (
     let folder = byId.get(folderId);

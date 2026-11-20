@@ -18,19 +18,32 @@ export const validate = (...chains: ValidationChain[]): RequestHandler[] => [
   },
 ];
 
-/** A required name, trimmed, between `min` and `max` characters. */
-export const nameRule = (min: number, max: number) =>
-  body('name')
+/** How long a name may be, in characters after trimming. */
+const NAME_LENGTH = {
+  dataRoom: { min: 3, max: 100 },
+  folder: { min: 1, max: 100 },
+  file: { min: 1, max: 255 },
+};
+
+/** A required name, trimmed, as long as names of this kind may be. */
+export const nameRule = (kind: keyof typeof NAME_LENGTH) => {
+  const { min, max } = NAME_LENGTH[kind];
+  return body('name')
     .isString()
     .withMessage('Name is required')
     .bail()
     .trim()
     .isLength({ min, max })
     .withMessage(`Name must be between ${min} and ${max} characters`);
+};
 
-/** An id field; absent, null and empty all mean "none". */
+/** An id field; absent, null and empty all mean "none" and leave the field undefined for the route. */
 export const optionalId = (field: string, location = body) =>
-  location(field).optional({ values: 'falsy' }).isString().withMessage(`${field} must be a string`);
+  location(field)
+    .customSanitizer((value) => value || undefined)
+    .optional()
+    .isString()
+    .withMessage(`${field} must be a string`);
 
 export const requiredId = (field: string) =>
   body(field)

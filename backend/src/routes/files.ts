@@ -30,14 +30,14 @@ export function fileRoutes(accessFor: AccessFor) {
         .withMessage('A file is required'),
       requiredId('dataRoomId'),
       optionalId('folderId'),
-      nameRule(1, 255),
+      nameRule('file'),
     ),
     route((req) => {
       const file = req.file!;
       const { dataRoomId, folderId, name } = req.body;
       return accessFor(req).files.upload({
         dataRoomId,
-        folderId: folderId || undefined,
+        folderId,
         name,
         mimeType: file.mimetype,
         content: file.buffer,
@@ -47,7 +47,7 @@ export function fileRoutes(accessFor: AccessFor) {
 
   router.patch(
     '/:id/rename',
-    validate(nameRule(1, 255)),
+    validate(nameRule('file')),
     route((req) => accessFor(req).files.rename(req.params.id, req.body.name)),
   );
 

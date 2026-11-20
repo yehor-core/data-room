@@ -35,7 +35,7 @@ services. Running the tests does not need a Supabase project.
    [Existing databases](#existing-databases) first.
 
    ```bash
-   npm run db:migrate --prefix backend
+   npm run db:migrate
    ```
 
 4. Start the backend (port 3001) and the frontend (port 3000).
@@ -63,11 +63,11 @@ Run these from the repository root.
 | `npm run test:e2e`         | Playwright against the full local stack. See [End-to-end tests](#end-to-end-tests).                                                                     |
 | `npm run db:test`          | Starts a local Postgres for the backend integration tests. See [Test database](#test-database).                                                         |
 | `npm run db:generate`      | Regenerates the Prisma client after a change to `backend/prisma/schema.prisma`.                                                                         |
-| `npm run db:migrate`       | Creates a new migration from schema changes and applies it (`prisma migrate dev`) to the database in `backend/.env`.                                    |
+| `npm run db:migrate`       | Applies the existing migrations only (`prisma migrate deploy`, as CI does) to the database in `backend/.env`.                                           |
+| `npm run db:migrate:dev`   | Creates a new migration from schema changes and applies it (`prisma migrate dev`) to the database in `backend/.env`. For development only.              |
 | `npm run db:studio`        | Opens Prisma Studio.                                                                                                                                    |
 
-In `backend/`, `npm run db:migrate` applies the existing migrations only (`prisma migrate deploy`). That is what
-deployments and CI run.
+The same two scripts exist in `backend/` with the same meaning.
 
 ## Tests
 
@@ -116,7 +116,7 @@ Vercel deploys two projects from this repository:
   Environment: the variables from `backend/env.example`, with `ALLOWED_ORIGINS` set to the deployed frontend's
   origin.
 
-Deployments do not run migrations. Apply them with `npm run db:migrate --prefix backend` and `backend/.env` pointed at
+Deployments do not run migrations. Apply them with `npm run db:migrate` and `backend/.env` pointed at
 the production database.
 
 ### Existing databases

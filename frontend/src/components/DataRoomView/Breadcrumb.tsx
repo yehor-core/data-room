@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronRight } from 'lucide-react';
 import type { BreadcrumbItem } from '@/types';
+import { levelPath } from '@/lib/paths';
 
 interface BreadcrumbProps {
   dataRoomId: string;
@@ -28,10 +29,7 @@ export const Breadcrumb: React.FC<BreadcrumbProps> = ({ dataRoomId, dataRoomName
                   {crumb.name}
                 </span>
               ) : (
-                <Link
-                  to={`/data-rooms/${dataRoomId}${crumb.id ? `/folders/${crumb.id}` : ''}`}
-                  className="hover:underline"
-                >
+                <Link to={levelPath(dataRoomId, crumb.id)} className="hover:underline">
                   {crumb.name}
                 </Link>
               )}

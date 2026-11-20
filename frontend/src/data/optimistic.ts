@@ -5,8 +5,22 @@ import { getErrorMessage } from '@/lib/errorMessages';
 
 type Patch<TData> = (data: TData) => TData;
 
+let pendingIds = 0;
+
+/** What every optimistically created record has: a temporary id, its trimmed name, timestamps and the pending flag. */
+export function pendingRecord(kind: string, name: string) {
+  const timestamp = new Date().toISOString();
+  return {
+    id: `pending-${kind}-${++pendingIds}`,
+    name: name.trim(),
+    createdAt: timestamp,
+    updatedAt: timestamp,
+    pending: true,
+  };
+}
+
 interface OptimisticMutation<TData, TVars, TResult> {
-  /** Every cached query under this key holds TData; all of them are patched, restored and invalidated. */
+  /** Every cached query under this key holds TData; all of them are patched and restored. */
   scope: QueryKey;
   mutationFn: (vars: TVars) => Promise<TResult>;
   /** Applied before the request; undone if it fails. */
@@ -16,8 +30,13 @@ interface OptimisticMutation<TData, TVars, TResult> {
   successMessage: (vars: TVars) => string;
   /** Called when the server confirms, e.g. to drop caches of something deleted. */
   onConfirmed?: (vars: TVars) => void;
-  /** Another cache that shows derived data (e.g. counts) and is refetched when the change settles. */
-  alsoInvalidate?: QueryKey;
+  /**
+   * Which of the scope's cached queries show something the change affects: only those are refetched when it
+   * settles. Without it, all of them are.
+   */
+  affects?: (vars: TVars) => (data: TData) => boolean;
+  /** Another cache that shows derived data (e.g. counts) of this change, refetched when it settles. */
+  alsoInvalidate?: (vars: TVars) => QueryKey | null;
 }
 
 /**
@@ -31,6 +50,7 @@ export function useOptimisticMutation<TData, TVars, TResult>({
   confirmed,
   successMessage,
   onConfirmed,
+  affects,
   alsoInvalidate,
 }: OptimisticMutation<TData, TVars, TResult>) {
   const queryClient = useQueryClient();
@@ -54,12 +74,17 @@ export function useOptimisticMutation<TData, TVars, TResult>({
       context?.snapshot.forEach(([queryKey, data]) => queryClient.setQueryData(queryKey, data));
       toast.error(getErrorMessage(error));
     },
-    onSettled: () =>
-      Promise.all(
-        [scope, alsoInvalidate].map(
-          (queryKey) => queryKey && queryClient.invalidateQueries({ queryKey }),
-        ),
-      ),
+    onSettled: (_result, _error, vars) => {
+      const affected = affects?.(vars);
+      const other = alsoInvalidate?.(vars);
+      return Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: scope,
+          predicate: affected && (({ state }) => !!state.data && affected(state.data as TData)),
+        }),
+        other && queryClient.invalidateQueries({ queryKey: other }),
+      ]);
+    },
   });
 
   return useCallback(

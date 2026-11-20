@@ -54,11 +54,13 @@ Other backend modules:
 - `lib/prisma.ts`: the production Prisma client.
 - `errors.ts`: `AppError`, a typed error with a code.
 - `middleware/`: `auth.ts`, `validate.ts` (express-validator rules) and `errorHandler.ts`. The error handler turns
-  `AppError`, malformed JSON and multer errors into the error envelope. Anything else becomes a 500 with a generic
-  message.
+  `AppError`, body parser errors and multer errors into the error envelope: malformed JSON becomes 400
+  `VALIDATION_FAILED` and an oversized JSON body 413 `PAYLOAD_TOO_LARGE`, not a 500. Anything else becomes a 500 with
+  a generic message.
 
 The app also applies `helmet`, CORS limited to `ALLOWED_ORIGINS`, `morgan` request logs through the logger, and a
-rate limit of 100 requests per 15 minutes per IP.
+rate limit of 100 requests per 15 minutes per IP. The rate limiter answers 429 in plain text, without the envelope;
+the frontend maps it to its own `RATE_LIMITED` code (it is not one of the backend's error codes).
 
 ### Access module
 
@@ -99,7 +101,7 @@ src/
   pages/       Login, DataRooms (the list), DataRoomPage (one screen for the root and every Folder)
   components/  Layout (sidebar FileTree + actions provider), DataRoomActions, DataRoomView/*, dialogs, ui/*
   contexts/    AuthContext (Supabase session + profile)
-  lib/         supabase client, error messages, toast, formatting
+  lib/         supabase client, error messages, toast, formatting, screen paths
   hooks/       useDebounce (search input)
   types/       API data shapes
 ```
@@ -109,14 +111,18 @@ src/
 `frontend/src/data/` is the only code that knows about HTTP or the query cache.
 
 - `api.ts`: the axios client. It attaches the access token and unwraps the envelope. It turns every failure into an
-  `ApiError` with a code, including Vercel's own 413 without an envelope, the plain-text 429, network errors and
-  timeouts. It never notifies the user.
+  `ApiError` with a code, including Vercel's own 413 without an envelope, the plain-text 429 (as `RATE_LIMITED`),
+  network errors and timeouts. It never notifies the user.
 - `dataRoom.ts`: `useDataRoomContents(dataRoomId, folderId)` reads one level. `useDataRoomMutations(dataRoomId)`
   creates, renames, deletes and uploads. `openFile(fileId)` opens a File through a short-lived signed URL.
 - `dataRooms.ts`: the list of data rooms, with create and delete.
+- `session.ts`: hands the session's access token to the API client, loads the profile, and clears every cached
+  response when the session ends.
 - `optimistic.ts`: the shared optimistic-update pattern. It patches the cached queries the change affects (for a
-  data room, every cached level), marks new Items as pending, rolls back and shows exactly one toast on failure, and
-  refetches afterwards.
+  data room, every cached level), marks new Items as pending, and rolls back and shows exactly one toast on failure.
+  When the change settles it refetches only what shows it: the level it happened in, the level whose Folder card
+  counts it changed, every level whose breadcrumb shows a renamed Folder, and the data rooms list when a Folder was
+  created or deleted (the list shows Folder counts).
 - `items.ts`: turns Folders and Files into `Item`s (Folders first, then by name) and filters them for search.
 - `uploads.ts`: the client copy of the upload rules (4 MB, PDF), checked before any request is sent.
 - `queryKeys.ts`: the cache keys, used only inside `data/`. `queryClient.ts`: query defaults (retry only network,
@@ -135,8 +141,8 @@ list, search, breadcrumb and empty states are shared by every level.
 `openItem`, `startCreateFolder`, `startUpload`, `renameItem` and `deleteItem`. The single `ItemMenu` calls these
 actions wherever an Item appears: grid, list and tree, from its button or by right-click.
 
-`AuthContext` takes the session from Supabase's auth events and loads the profile (`GET /api/auth/me`) once per app
-start. `PrivateRoute` sends signed-out visitors to `/login`.
+`AuthContext` takes the session from Supabase's auth events, passes it to `data/session.ts` and loads the profile
+(`GET /api/auth/me`) through it once per app start. `PrivateRoute` sends signed-out visitors to `/login`.
 
 ## Tests
 

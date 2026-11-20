@@ -27,6 +27,20 @@ describe('folders', () => {
       expect((await contents(owner, room.id)).folders.map((f) => f.name)).toEqual(['Legal']);
     });
 
+    it.each([null, ''])('adds a folder at the root when parentId is %p', async (parentId) => {
+      const { newUser } = createTestApp();
+      const owner = newUser();
+      const room = await createDataRoom(owner);
+
+      const res = await owner
+        .post('/api/folders')
+        .send({ name: 'Legal', dataRoomId: room.id, parentId })
+        .expect(201);
+
+      expect(res.body.data.parentId).toBeNull();
+      expect((await contents(owner, room.id)).folders.map((f) => f.name)).toEqual(['Legal']);
+    });
+
     it('adds a folder inside another folder', async () => {
       const { newUser } = createTestApp();
       const owner = newUser();

@@ -19,6 +19,7 @@ import { Header } from '../components/Header';
 import { LoadError } from '../components/LoadError';
 import { TextPromptDialog } from '../components/TextPromptDialog';
 import { formatDate } from '../lib/utils';
+import { levelPath } from '../lib/paths';
 import { useDataRoomListMutations, useDataRooms, usePrefetchDataRoom } from '../data/dataRooms';
 
 export const DataRooms: React.FC = () => {
@@ -93,7 +94,7 @@ export const DataRooms: React.FC = () => {
                     </Button>
                   ) : (
                     <Button variant="outline" size="sm" asChild>
-                      <Link to={`/data-rooms/${dataRoom.id}`}>Open</Link>
+                      <Link to={levelPath(dataRoom.id)}>Open</Link>
                     </Button>
                   )}
                   <AlertDialog>

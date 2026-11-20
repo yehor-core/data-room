@@ -2,7 +2,7 @@ import { Prisma, PrismaClient } from '@prisma/client';
 import { AppError } from '../errors';
 import { Logger } from '../lib/logger';
 import { FileStorage } from '../ports';
-import { buildBreadcrumb, subtreeIds } from './folderTree';
+import { buildBreadcrumb, subtreeIds, type Crumb, type FolderNode } from './folderTree';
 import { checkUpload } from './uploads';
 
 const VIEW_LINK_TTL_SECONDS = 60;
@@ -218,8 +218,8 @@ export function createDataRoomAccess({ db, storage, logger }: AccessDependencies
     /** One level of a data room: its root when `folderId` is absent, otherwise that folder. */
     async contents(dataRoomId: string, folderId?: string) {
       const dataRoom = await ownedDataRoom(dataRoomId);
-      let folder: { id: string; name: string; parentId: string | null } | null = null;
-      let breadcrumb: { id: string; name: string }[] = [];
+      let folder: FolderNode | null = null;
+      let breadcrumb: Crumb[] = [];
       if (folderId) {
         const roomFolders = await db.folder.findMany({
           where: { dataRoomId },

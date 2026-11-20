@@ -91,6 +91,18 @@ describe('contents of a data room level', () => {
     expect(res.body.error).toEqual({ code: 'NOT_FOUND', message: 'Folder not found' });
   });
 
+  it('treats an empty folder id as the root', async () => {
+    const { newUser } = createTestApp();
+    const owner = newUser();
+    const room = await createDataRoom(owner);
+    await createFolder(owner, room.id, 'Legal');
+
+    const res = await owner.get(`/api/data-rooms/${room.id}/contents?folderId=`).expect(200);
+
+    expect(res.body.data.folder).toBeNull();
+    expect(res.body.data.folders.map((f: { name: string }) => f.name)).toEqual(['Legal']);
+  });
+
   it('rejects more than one folder id', async () => {
     const { newUser } = createTestApp();
     const owner = newUser();
