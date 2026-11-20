@@ -5,6 +5,20 @@ import { getErrorMessage } from '@/lib/errorMessages';
 
 type Patch<TData> = (data: TData) => TData;
 
+let pendingIds = 0;
+
+/** What every optimistically created record has: a temporary id, its trimmed name, timestamps and the pending flag. */
+export function pendingRecord(kind: string, name: string) {
+  const timestamp = new Date().toISOString();
+  return {
+    id: `pending-${kind}-${++pendingIds}`,
+    name: name.trim(),
+    createdAt: timestamp,
+    updatedAt: timestamp,
+    pending: true,
+  };
+}
+
 interface OptimisticMutation<TData, TVars, TResult> {
   /** Every cached query under this key holds TData; all of them are patched and restored. */
   scope: QueryKey;

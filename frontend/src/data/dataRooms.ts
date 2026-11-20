@@ -5,25 +5,19 @@ import type { DataRoom } from '@/types';
 import { SUCCESS_MESSAGES } from '@/lib/errorMessages';
 import { api } from './api';
 import { queryKeys } from './queryKeys';
-import { useOptimisticMutation } from './optimistic';
+import { pendingRecord, useOptimisticMutation } from './optimistic';
+import { readStatus } from './readStatus';
 import { contentsQuery } from './dataRoom';
 
 type CachedDataRoom = DataRoom & { pending?: boolean };
 
 export function useDataRooms() {
-  const { data, isPending, error, refetch } = useQuery({
+  const { data, ...query } = useQuery({
     queryKey: queryKeys.dataRoomList,
     queryFn: () => api.get<CachedDataRoom[]>('/data-rooms'),
   });
-  return {
-    dataRooms: data ?? [],
-    isLoading: isPending && !error,
-    error,
-    retry: () => void refetch(),
-  };
+  return { dataRooms: data ?? [], ...readStatus(query) };
 }
-
-let pendingIds = 0;
 
 export function useDataRoomListMutations() {
   const queryClient = useQueryClient();
@@ -32,19 +26,10 @@ export function useDataRoomListMutations() {
   const createDataRoom = useOptimisticMutation<CachedDataRoom[], string, DataRoom>({
     ...list,
     mutationFn: (name) => api.post<DataRoom>('/data-rooms', { name }),
-    optimistic: (name) => (dataRooms) => {
-      const timestamp = new Date().toISOString();
-      const dataRoom = {
-        id: `pending-data-room-${++pendingIds}`,
-        name: name.trim(),
-        ownerId: '',
-        createdAt: timestamp,
-        updatedAt: timestamp,
-        _count: { folders: 0, files: 0 },
-        pending: true,
-      };
-      return [dataRoom, ...dataRooms];
-    },
+    optimistic: (name) => (dataRooms) => [
+      { ...pendingRecord('data-room', name), ownerId: '', _count: { folders: 0, files: 0 } },
+      ...dataRooms,
+    ],
     successMessage: () => SUCCESS_MESSAGES.DATA_ROOM_CREATED,
   });
 
