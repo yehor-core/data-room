@@ -1,3 +1,5 @@
+// Response shapes of the backend API. Dates are ISO strings, sizes are bytes.
+
 export interface User {
   id: string;
   email: string;
@@ -12,73 +14,40 @@ export interface DataRoom {
   ownerId: string;
   createdAt: string;
   updatedAt: string;
-  _count?: {
-    folders: number;
-  };
-  folders?: Folder[];
+  _count: { folders: number; files: number };
 }
 
 export interface Folder {
   id: string;
   name: string;
-  parentId: string | null;
   dataRoomId: string;
+  parentId: string | null;
   createdAt: string;
   updatedAt: string;
-  _count?: {
-    children: number;
-    files: number;
-  };
-  children?: Folder[];
-  files?: File[];
-}
-
-export interface FolderWithChildren extends Folder {
-  children: Folder[];
-  files: File[];
+  _count: { children: number; files: number };
 }
 
 export interface File {
   id: string;
   name: string;
-  fileType?: string; // Frontend field
-  mimeType?: string; // Database field
-  size?: number | null; // Frontend field
-  fileSize?: number | string | null; // Database field (BigInt serialized as string)
-  folderId: string;
-  blobUrl?: string; // Frontend field
-  filePath?: string; // Database field
+  dataRoomId: string;
+  folderId: string | null;
+  fileSize: number | null;
+  mimeType: string | null;
   createdAt: string;
   updatedAt: string;
-  folder?: {
-    id: string;
-    name: string;
-    dataRoomId: string;
-  };
 }
 
-export interface ApiResponse<T = any> {
-  success: boolean;
-  data?: T;
-  error?: string;
-  message?: string;
+export interface BreadcrumbItem {
+  id: string;
+  name: string;
 }
 
-export interface PaginatedResponse<T> extends ApiResponse<T[]> {
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
+/** One level of a data room: its root (`folder` is null) or one Folder. */
+export interface Contents {
+  dataRoom: { id: string; name: string };
+  folder: { id: string; name: string; parentId: string | null } | null;
+  breadcrumb: BreadcrumbItem[];
+  folders: Folder[];
+  files: File[];
 }
-
-export interface AuthResponse {
-  success: boolean;
-  data: {
-    user: User;
-    token: string;
-  };
-  message: string;
-}
-

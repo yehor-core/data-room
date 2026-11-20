@@ -2,22 +2,20 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/Card';
-import { Alert, AlertDescription } from '../components/ui/Alert';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 export const Login: React.FC = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signInWithGoogle, user, session } = useAuth();
+  const { signInWithGoogle, user } = useAuth();
   const navigate = useNavigate();
 
-  // Redirect to home if user is already logged in
   useEffect(() => {
-    if (user && session) {
+    if (user) {
       navigate('/', { replace: true });
     }
-  }, [user, session, navigate]);
+  }, [user, navigate]);
 
   const handleGoogleLogin = async () => {
     try {
@@ -25,15 +23,13 @@ export const Login: React.FC = () => {
       setLoading(true);
       await signInWithGoogle();
     } catch (err: unknown) {
-      console.error('❌ Google login error:', err);
-      
       let message = 'Unknown error';
       if (err instanceof Error) {
         message = err.message;
       } else if (typeof err === 'string') {
         message = err;
       }
-      
+
       setError('Failed to sign in with Google: ' + message);
       setLoading(false);
     }
@@ -49,12 +45,15 @@ export const Login: React.FC = () => {
         <CardContent>
           <div className="space-y-4">
             {error && (
-              <Alert variant="destructive">
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
+              <p
+                role="alert"
+                className="rounded-lg border border-destructive/50 p-4 text-sm text-destructive dark:border-destructive"
+              >
+                {error}
+              </p>
             )}
 
-            <Button 
+            <Button
               type="button"
               variant="outline"
               className="w-full"
@@ -100,5 +99,3 @@ export const Login: React.FC = () => {
     </div>
   );
 };
-
-export default Login;

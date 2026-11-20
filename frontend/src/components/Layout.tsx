@@ -1,54 +1,47 @@
 import React, { useState } from 'react';
-import { Link, Outlet, useNavigate, useParams } from 'react-router-dom';
+import { Link, Outlet, useParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from './ui/Button';
 import { FolderOpen, LogOut, User, ChevronRight, X } from 'lucide-react';
-import FileTree from './FileTree';
+import { FileTree } from './FileTree';
+import { DataRoomActionsProvider } from './DataRoomActions';
 
 export const Layout: React.FC = () => {
   const { user, signOut } = useAuth();
-  const navigate = useNavigate();
-  const params = useParams();
-  const showFileTree = params.id;
+  const { id: dataRoomId, folderId } = useParams<{ id?: string; folderId?: string }>();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
-  const handleLogout = async () => {
-    await signOut();
-    navigate('/login');
-  };
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
       <header className="bg-card border-b border-border">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
-            <Link to="/" className="flex items-center gap-2 font-bold text-lg sm:text-xl text-primary">
+            <Link
+              to="/"
+              className="flex items-center gap-2 font-bold text-lg sm:text-xl text-primary"
+            >
               <FolderOpen className="h-5 w-5 sm:h-6 sm:w-6" />
               <span className="hidden sm:inline">Data Room</span>
               <span className="sm:hidden">DR</span>
             </Link>
 
             <div className="flex items-center gap-2 sm:gap-4">
-              {user && (
-                <>
-                  <div className="hidden md:flex items-center gap-2 text-sm">
-                    <User className="h-4 w-4" />
-                    <span className="max-w-[150px] truncate">{user.name || user.email}</span>
-                  </div>
-                  <Button variant="outline" size="sm" onClick={handleLogout}>
-                    <LogOut className="h-4 w-4 sm:mr-2" />
-                    <span className="hidden sm:inline">Logout</span>
-                  </Button>
-                </>
-              )}
+              <div className="hidden md:flex items-center gap-2 text-sm">
+                <User className="h-4 w-4" />
+                <span className="max-w-[150px] truncate">{user?.name || user?.email}</span>
+              </div>
+              <Button variant="outline" size="sm" onClick={signOut}>
+                <LogOut className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Logout</span>
+              </Button>
             </div>
           </div>
         </div>
       </header>
 
       <div className="flex-1 flex overflow-hidden relative">
-        {showFileTree && (
-          <>
+        {dataRoomId ? (
+          <DataRoomActionsProvider dataRoomId={dataRoomId} folderId={folderId ?? null}>
             {/* Mobile Toggle Button - Full height on left edge */}
             <button
               onClick={() => setIsSidebarOpen(true)}
@@ -87,14 +80,18 @@ export const Layout: React.FC = () => {
                 </button>
               </div>
               <div className="overflow-y-auto flex-1">
-                <FileTree />
+                <FileTree dataRoomId={dataRoomId} />
               </div>
             </aside>
-          </>
+            <main className="flex-1 overflow-y-auto md:ml-0 ml-8">
+              <Outlet />
+            </main>
+          </DataRoomActionsProvider>
+        ) : (
+          <main className="flex-1 overflow-y-auto">
+            <Outlet />
+          </main>
         )}
-        <main className={`flex-1 overflow-y-auto ${showFileTree ? 'md:ml-0 ml-8' : ''}`}>
-          <Outlet />
-        </main>
       </div>
 
       <footer className="bg-card border-t border-border">
@@ -107,4 +104,3 @@ export const Layout: React.FC = () => {
     </div>
   );
 };
-

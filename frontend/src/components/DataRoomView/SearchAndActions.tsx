@@ -8,8 +8,7 @@ interface SearchAndActionsProps {
   searchValue: string;
   onSearchChange: (value: string) => void;
   onCreateFolder: () => void;
-  onUploadFile?: () => void;
-  showUploadButton: boolean;
+  onUploadFile: () => void;
   viewMode: 'grid' | 'list';
   onViewModeChange: (mode: 'grid' | 'list') => void;
 }
@@ -19,7 +18,6 @@ export const SearchAndActions: React.FC<SearchAndActionsProps> = ({
   onSearchChange,
   onCreateFolder,
   onUploadFile,
-  showUploadButton,
   viewMode,
   onViewModeChange,
 }) => {
@@ -35,9 +33,9 @@ export const SearchAndActions: React.FC<SearchAndActionsProps> = ({
         />
       </div>
       <div className="flex items-center gap-2">
-        <ToggleGroup 
-          type="single" 
-          value={viewMode} 
+        <ToggleGroup
+          type="single"
+          value={viewMode}
           onValueChange={(value: 'grid' | 'list') => {
             if (value) onViewModeChange(value);
           }}
@@ -55,14 +53,11 @@ export const SearchAndActions: React.FC<SearchAndActionsProps> = ({
           <Plus className="mr-2 h-4 w-4" />
           New Folder
         </Button>
-        {showUploadButton && onUploadFile && (
-          <Button onClick={onUploadFile}>
-            <Upload className="mr-2 h-4 w-4" />
-            Upload File
-          </Button>
-        )}
+        <Button onClick={onUploadFile}>
+          <Upload className="mr-2 h-4 w-4" />
+          Upload File
+        </Button>
       </div>
     </div>
   );
 };
-

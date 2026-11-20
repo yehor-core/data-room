@@ -1,133 +1,142 @@
-## Tech Stack
+# Data Room
 
--   **Frontend:** React, TypeScript, React Router, Tailwind CSS (based on UI components)
--   **Backend:** Node.js, Express.js (likely), TypeScript
--   **Database:** Supabase (PostgreSQL)
--   **ORM:** Prisma
--   **Authentication:** Supabase Auth (Google OAuth)
--   **Deployment:** Vercel
+Store PDF files in data rooms with nested Folders. Sign-in is through Google (Supabase Auth).
 
-## Design Decisions
+For the stack, the module structure, the test strategy and CI, see [ARCHITECTURE.md](ARCHITECTURE.md).
 
-The application is a monorepo with a React frontend and a Node.js (Express) backend.
-The frontend uses TanStack Query for state management and Tailwind CSS for styling.
-The backend connects to a Supabase (PostgreSQL) database via the Prisma ORM.
-Authentication is handled by Supabase Auth, and the entire application is deployed on Vercel.
+## Getting started
 
-For more detailed information see [ARCHITECTURE.md](ARCHITECTURE.md).
+Prerequisites: Node.js 24 (see `.nvmrc`) with npm, and a Supabase project for local development against real
+services. Running the tests does not need a Supabase project.
 
-## Getting Started
+1. Install the dependencies of the root, `backend/` and `frontend/`. Each has its own lockfile.
 
-### Prerequisites
+   ```bash
+   npm run install:all
+   ```
 
--   Node.js (v18 or later)
--   npm
--   A Supabase account and a new project created.
+   Installing the root also installs the git hooks. The pre-commit hook needs
+   [gitleaks](https://github.com/gitleaks/gitleaks#installing) on your `PATH`.
 
-### Local Development
+2. Create the environment files from the examples, then fill them in from your Supabase project's settings.
 
-1.  **Clone the repository:**
-    ```bash
-    git clone <repository-url>
-    cd data-room
-    ```
+   ```bash
+   cp backend/env.example backend/.env
+   cp frontend/env.example frontend/.env.local
+   ```
 
-2.  **Install dependencies:**
-    This command installs dependencies for the root, frontend, and backend.
-    ```bash
-    npm run install:all
-    ```
+   - `backend/.env`: `DATABASE_URL` is the pooled (pgbouncer, port 6543) connection string the app uses.
+     `DIRECT_URL` is the direct (port 5432) one that migrations use. Also set `SUPABASE_URL`,
+     `SUPABASE_SERVICE_ROLE_KEY` and `ALLOWED_ORIGINS` (the frontend's origin).
+   - `frontend/.env.local`: `REACT_APP_API_URL` (the backend URL ending in `/api`), `REACT_APP_SUPABASE_URL` and
+     `REACT_APP_SUPABASE_ANON_KEY`.
 
-3.  **Set up environment variables:**
-    You'll need to create `.env` files for both the frontend and backend. Copy the contents from the `.env.example` files in each directory.
+3. Apply the migrations to your database. If the database was created before migrations were tracked, see
+   [Existing databases](#existing-databases) first.
 
-    -   **Backend:** Create a `.env` file in the `backend` directory by copying `backend/.env.example`.
-        ```bash
-        cp backend/.env.example backend/.env
-        ```
-        You'll need to get your project's `DATABASE_URL` from your Supabase project settings (under Database -> Connection string) and add it to `backend/.env`.
+   ```bash
+   npm run db:migrate
+   ```
 
-    -   **Frontend:** Create a `.env` file in the `frontend` directory by copying `frontend/.env.example`.
-        ```bash
-        cp frontend/.env.example frontend/.env
-        ```
-        You will also need to set up environment variables for the frontend for Supabase authentication. Add your Supabase URL and Anon Key from your Supabase project's API settings to `frontend/.env`.
+4. Start the backend (port 3001) and the frontend (port 3000).
 
+   ```bash
+   npm run dev
+   ```
 
-4.  **Apply database schema:**
-    This command will push the schema defined in `backend/prisma/schema.prisma` to your Supabase database.
-    ```bash
-    npm run db:push
-    ```
+## Scripts
 
-5.  **Start the development servers:**
-    This will start both the frontend and backend servers concurrently.
-    ```bash
-    npm run dev
-    ```
-    -   Frontend will be running on `http://localhost:3000`
-    -   Backend will be running on a different port (e.g., `http://localhost:3001`)
+Run these from the repository root.
+
+| Script                     | What it does                                                                                                                                            |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm run dev`              | Starts the backend and the frontend dev servers (`dev:backend`, `dev:frontend` start one each).                                                         |
+| `npm run build`            | Builds both packages.                                                                                                                                   |
+| `npm run install:all`      | Installs the dependencies of all three install roots.                                                                                                   |
+| `npm run lint`             | ESLint over the whole repository, no warnings allowed.                                                                                                  |
+| `npm run format`           | Formats everything with Prettier. `format:check` only checks.                                                                                           |
+| `npm run typecheck`        | TypeScript checks of both packages.                                                                                                                     |
+| `npm run deadcode`         | knip: unused files, exports and dependencies in all three install roots.                                                                                |
+| `npm run test:unit`        | Unit tests of both packages.                                                                                                                            |
+| `npm run test:integration` | Integration tests of both packages: backend over HTTP against real Postgres, frontend screens over MSW.                                                 |
+| `npm run test:coverage`    | Unit and integration tests of both packages in one coverage run per package. Fails below the thresholds in [ARCHITECTURE.md](ARCHITECTURE.md#coverage). |
+| `npm run test:e2e`         | Playwright against the full local stack. See [End-to-end tests](#end-to-end-tests).                                                                     |
+| `npm run db:test`          | Starts a local Postgres for the backend integration tests. See [Test database](#test-database).                                                         |
+| `npm run db:generate`      | Regenerates the Prisma client after a change to `backend/prisma/schema.prisma`.                                                                         |
+| `npm run db:migrate`       | Applies the existing migrations only (`prisma migrate deploy`, as CI does) to the database in `backend/.env`.                                           |
+| `npm run db:migrate:dev`   | Creates a new migration from schema changes and applies it (`prisma migrate dev`) to the database in `backend/.env`. For development only.              |
+| `npm run db:studio`        | Opens Prisma Studio.                                                                                                                                    |
+
+The same two scripts exist in `backend/` with the same meaning.
+
+## Tests
+
+### Test database
+
+The backend integration tests need Postgres. You do not need to install or start anything: when `TEST_DATABASE_URL`
+is not set, the tests start a throwaway embedded Postgres and apply all migrations to it.
+
+To keep one database running between test runs, start it in another terminal and export the URL it prints:
+
+```bash
+npm run db:test   # Postgres on port 54329 (TEST_DB_PORT changes it), all migrations applied
+export TEST_DATABASE_URL=postgresql://...   # the URL printed by db:test
+npm run test:integration
+```
+
+### End-to-end tests
+
+The e2e tests run in Chromium against a full local stack. The local Supabase stack (Postgres, Auth, Storage, from
+`supabase/config.toml`) runs on ports 54321–54322. The backend runs with its production adapters on port 3101, and
+the frontend production build is served on port 3100. No cloud credentials are needed.
+
+Prerequisites: the [Supabase CLI](https://supabase.com/docs/guides/local-development/cli/getting-started) on your
+`PATH` (it starts the stack in Docker), and Chromium for Playwright:
+
+```bash
+cd frontend && npx playwright install chromium
+```
+
+Then:
+
+```bash
+npm run test:e2e
+```
+
+This starts local Supabase, builds and starts the backend and the frontend, and runs the specs in `frontend/e2e/`.
+Stop the stack with `supabase stop`. The HTML report is written to `frontend/playwright-report/`.
 
 ## Deployment
 
-### Vercel
+Vercel deploys two projects from this repository:
 
-This project is configured for easy deployment to Vercel.
+- **Frontend**: root directory `frontend`, build command `npm run build`, output directory `build`. Environment:
+  the variables from `frontend/env.example`, with `REACT_APP_API_URL` pointing at the deployed backend's `/api`.
+- **Backend**: root directory `backend`. `backend/vercel.json` deploys the whole API as one serverless function.
+  Environment: the variables from `backend/env.example`, with `ALLOWED_ORIGINS` set to the deployed frontend's
+  origin.
 
-1.  **Connect your repository to Vercel.**
-2.  Vercel should automatically detect that it is a monorepo. You will need to configure two projects, one for the frontend and one for the backend.
-3.  **Frontend Configuration:**
-    -   **Root Directory:** `frontend`
-    -   **Build Command:** `npm run build`
-    -   **Output Directory:** `build`
-    -   **Environment Variables:** Add the following environment variables in the Vercel project settings. You can use your `frontend/.env` file as a reference. For more details, see `frontend/env.example`.
-        ```env
-        REACT_APP_API_URL="<your_deployed_backend_url>/api"
-        REACT_APP_SUPABASE_URL="https://[YOUR_SUPABASE_REF].supabase.co"
-        REACT_APP_SUPABASE_ANON_KEY="[YOUR_SUPABASE_ANON_KEY]"
-        ```
+Deployments do not run migrations. Apply them with `npm run db:migrate` and `backend/.env` pointed at
+the production database.
 
-4.  **Backend Configuration:**
-    -   **Root Directory:** `backend`
-    -   Vercel will detect the `vercel.json` and configure it as a serverless function.
-    -   **Environment Variables:** Add the following environment variables in the Vercel project settings. For more details, see `backend/env.example`.
-        ```env
-        DATABASE_URL="<your_supabase_connection_string>"
-        DIRECT_URL="<your_supabase_direct_connection_string>"
-        SUPABASE_URL="https://[YOUR_SUPABASE_REF].supabase.co"
-        SUPABASE_SERVICE_ROLE_KEY="[YOUR_SUPABASE_SERVICE_ROLE_KEY]"
-        SUPABASE_ANON_KEY="[SUPABASE_ANON_KEY]"
-        ALLOWED_ORIGINS="<your_deployed_frontend_url>"
-        ```
+### Existing databases
 
-## Database Management
+- **Database created with `prisma db push`** (before migrations were tracked): mark the baseline as applied once,
+  then deploy the remaining migrations.
 
-Prisma is used for database management.
+  ```bash
+  cd backend
+  npx prisma migrate resolve --applied 0_init
+  npm run db:migrate
+  ```
 
--   **Generate Prisma Client:** After any changes to the `schema.prisma` file, you need to regenerate the Prisma Client.
-    ```bash
-    npm run db:generate
-    ```
--   **Push schema changes:** To apply schema changes to the database without creating a migration.
-    ```bash
-    npm run db:push
-    ```
--   **Create migrations:** To create a new migration file for schema changes.
-    ```bash
-    npm run db:migrate
-    ```
--   **Prisma Studio:** To open a GUI for your database.
-    ```bash
-    npm run db:studio
-    ```
+- **Duplicate names**: migration `20261119120000_unique_names` adds unique name indexes. First it checks for data
+  rooms, Folders and Files that share a name with a sibling. If there are any, it stops, applies nothing and lists
+  them in the error detail. Rename or delete the duplicates, then mark the failed migration as rolled back and deploy
+  again:
 
-## Available Scripts
-
--   `npm run dev`: Starts both frontend and backend development servers.
--   `npm run build`: Builds both frontend and backend for production.
--   `npm run test`: Runs tests for both frontend and backend.
--   `npm run install:all`: Installs all dependencies.
--   `npm run db:generate`: Generates Prisma Client.
--   `npm run db:push`: Pushes schema to the database.
--   `npm run db:migrate`: Creates a new database migration.
--   `npm run db:studio`: Opens Prisma Studio.
+  ```bash
+  cd backend
+  npx prisma migrate resolve --rolled-back 20261119120000_unique_names
+  npm run db:migrate
+  ```

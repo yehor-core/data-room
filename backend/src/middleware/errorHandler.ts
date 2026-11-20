@@ -1,63 +1,57 @@
-import { Request, Response, NextFunction } from 'express';
+import { ErrorRequestHandler, RequestHandler } from 'express';
+import multer from 'multer';
+import { AppError, ErrorCode, ErrorDetail } from '../errors';
+import { Logger } from '../lib/logger';
+import { FILE_TOO_LARGE_MESSAGE } from '../access/uploads';
 
-export interface AppError extends Error {
-  statusCode?: number;
-  isOperational?: boolean;
+const statusByCode: Record<ErrorCode, number> = {
+  UNAUTHENTICATED: 401,
+  NOT_FOUND: 404,
+  CONFLICT: 409,
+  VALIDATION_FAILED: 400,
+  PAYLOAD_TOO_LARGE: 413,
+  UNSUPPORTED_MEDIA_TYPE: 415,
+  INTERNAL: 500,
+};
+
+interface ErrorResponse {
+  status: number;
+  body: { success: false; error: { code: ErrorCode; message: string; details?: ErrorDetail[] } };
 }
 
-export const errorHandler = (
-  error: AppError,
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  let { statusCode = 500, message } = error;
+const respond = (code: ErrorCode, message: string, details?: ErrorDetail[]): ErrorResponse => ({
+  status: statusByCode[code],
+  body: { success: false, error: { code, message, ...(details && { details }) } },
+});
 
-  // Log error for debugging
-  console.error('Error:', {
-    message: error.message,
-    stack: error.stack,
-    url: req.url,
-    method: req.method,
-    timestamp: new Date().toISOString(),
-  });
+/** Body parser errors carry the HTTP status they stand for and a `type` such as 'entity.parse.failed'. */
+const isBodyParserError = (error: unknown): error is { status: number; type: string } =>
+  typeof error === 'object' && error !== null && 'type' in error && 'status' in error;
 
-  // Handle specific error types
-  if (error.name === 'ValidationError') {
-    statusCode = 400;
-    message = 'Validation Error';
-  } else if (error.name === 'CastError') {
-    statusCode = 400;
-    message = 'Invalid ID format';
-  } else if (error.name === 'JsonWebTokenError') {
-    statusCode = 401;
-    message = 'Invalid token';
-  } else if (error.name === 'TokenExpiredError') {
-    statusCode = 401;
-    message = 'Token expired';
+export function toErrorResponse(error: unknown): ErrorResponse {
+  if (error instanceof AppError) return respond(error.code, error.message, error.details);
+  if (error instanceof multer.MulterError) {
+    return error.code === 'LIMIT_FILE_SIZE'
+      ? respond('PAYLOAD_TOO_LARGE', FILE_TOO_LARGE_MESSAGE)
+      : respond('VALIDATION_FAILED', error.message, [
+          { field: error.field ?? 'file', message: error.message },
+        ]);
   }
-
-  // Don't leak error details in production
-  if (process.env.NODE_ENV === 'production' && statusCode === 500) {
-    message = 'Internal Server Error';
+  if (isBodyParserError(error)) {
+    return error.status === 413
+      ? respond('PAYLOAD_TOO_LARGE', 'Request body is too large')
+      : respond('VALIDATION_FAILED', 'Request body is not valid JSON');
   }
+  return respond('INTERNAL', 'Internal server error');
+}
 
-  res.status(statusCode).json({
-    success: false,
-    error: message,
-    ...(process.env.NODE_ENV === 'development' && { stack: error.stack }),
-  });
-};
-
-export const createError = (message: string, statusCode: number = 500): AppError => {
-  const error: AppError = new Error(message);
-  error.statusCode = statusCode;
-  error.isOperational = true;
-  return error;
-};
-
-export const asyncHandler = (fn: Function) => {
-  return (req: Request, res: Response, next: NextFunction) => {
-    Promise.resolve(fn(req, res, next)).catch(next);
+export const errorHandler =
+  (logger: Logger): ErrorRequestHandler =>
+  (error, req, res, _next) => {
+    const { status, body } = toErrorResponse(error);
+    if (status === 500) logger.error(`Unhandled error on ${req.method} ${req.path}`, error);
+    res.status(status).json(body);
   };
-};
+
+export const notFound: RequestHandler = (_req, _res, next) =>
+  next(new AppError('NOT_FOUND', 'Route not found'));

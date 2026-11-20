@@ -9,12 +9,11 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
+  id        String     @id @default(uuid())
+  email     String     @unique
   name      String?
-  password  String?
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
   dataRooms DataRoom[]
   folders   Folder[]
   files     File[]
@@ -23,17 +22,16 @@ model User {
 }
 
 model DataRoom {
-  id          String   @id @default(uuid())
-  name        String
-  description String?
-  ownerId     String   @map("user_id")
-  owner       User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-  files       File[]
-  folders     Folder[]
+  id        String   @id @default(uuid())
+  name      String
+  ownerId   String   @map("user_id")
+  owner     User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  files     File[]
+  folders   Folder[]
 
-  @@index([ownerId])
+  @@unique([ownerId, name])
   @@index([createdAt])
   @@map("data_rooms")
 }
@@ -52,11 +50,9 @@ model Folder {
   children   Folder[] @relation("FolderHierarchy")
   files      File[]
 
-  @@index([dataRoomId])
+  @@unique([dataRoomId, parentId, name])
   @@index([parentId])
   @@index([userId])
-  @@index([dataRoomId, parentId])
-  @@index([createdAt])
   @@map("folders")
 }
 
@@ -66,7 +62,7 @@ model File {
   dataRoomId String   @map("data_room_id")
   folderId   String?  @map("folder_id")
   userId     String   @map("user_id")
-  fileSize   BigInt?  @map("file_size")
+  fileSize   Int?     @map("file_size")
   mimeType   String?  @map("mime_type")
   filePath   String?  @map("file_path")
   createdAt  DateTime @default(now()) @map("created_at")
@@ -75,10 +71,8 @@ model File {
   folder     Folder?  @relation(fields: [folderId], references: [id], onDelete: Cascade)
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@unique([dataRoomId, folderId, name])
   @@index([folderId])
-  @@index([dataRoomId])
   @@index([userId])
-  @@index([dataRoomId, folderId])
-  @@index([createdAt])
   @@map("files")
 }
