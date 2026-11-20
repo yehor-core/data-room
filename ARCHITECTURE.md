@@ -1,245 +1,189 @@
-# System Architecture Document
+# Architecture
 
-This document provides a detailed overview of the technical architecture of the Data Room application.
+Data Room lets a signed-in user keep PDF files in data rooms with nested Folders. The repository has two deployable
+packages and a root that only holds shared tooling:
 
-## 1. High-Level Architecture
+- `backend/`: an Express API over Postgres (Prisma) and Supabase Storage.
+- `frontend/`: a React single-page app (Create React App with craco, React Router 7, TanStack Query, Tailwind CSS,
+  Radix UI primitives).
+- root: ESLint, Prettier, knip, husky and the commands that run each package's scripts.
 
-The application follows a **client-server model** with a modern web stack. It is structured as a **monorepo** containing two main projects:
+Each of the three has its own `package-lock.json` (no npm workspaces), because Vercel deploys `backend/` and
+`frontend/` as two projects with separate root directories.
 
-- `frontend`: A Single Page Application (SPA) built with React.
-- `backend`: A RESTful API built with Node.js and Express.
+The database schema is [`backend/prisma/schema.prisma`](backend/prisma/schema.prisma). The HTTP API (envelopes, error
+codes, endpoints) is pinned by the backend integration tests in `backend/test/`.
 
-This structure simplifies development, dependency management, and deployment.
+## Authentication
 
-### Core Technologies
+The frontend signs in with Google through Supabase Auth (`frontend/src/lib/supabase.ts`) and sends the Supabase access
+token as `Authorization: Bearer <token>` on every API request. The backend does not check the JWT itself: the
+production token verifier asks Supabase Auth for the token's user (`supabase.auth.getUser(token)`) and gets back an
+email and a name, or a refusal.
 
-- **Frontend**: React, TypeScript, React Router, TanStack Query, Tailwind CSS
-- **Backend**: Node.js, Express, TypeScript, Prisma
-- **Database**: Supabase (PostgreSQL)
-- **Deployment**: Vercel
+`backend/src/middleware/auth.ts` is mounted once, in front of every `/api` route except `GET /api/health`. It verifies
+the token once per request and finds or creates the user by email, so the first request creates the account.
 
----
+## Backend
 
-## 2. Frontend Architecture
+### App factory, ports and adapters
 
-The frontend is a modern, performant, and maintainable React application.
+`createApp` in `backend/src/app.ts` builds the Express app from its dependencies and does nothing else: no
+environment reads and no `listen`.
 
-### 2.1. Core Framework & Language
-
-- **React**: The UI is built using React for its component-based architecture and declarative nature.
-- **TypeScript**: We use TypeScript for static typing, which improves code quality, developer experience, and reduces runtime errors.
-- **Create React App (CRA) with Craco**: The project is bootstrapped with CRA and customized using `Craco` to allow for configuration overrides (like Tailwind CSS) without ejecting.
-
-### 2.2. Routing
-
-- **React Router DOM (`v6`)**: Handles all client-side routing. The application uses a centralized routing setup in `App.tsx` which includes:
-  - Public and private routes.
-  - Lazy loading of pages/components using `React.lazy` and `Suspense` for better initial load performance.
-  - A `PrivateRoute` component to protect routes that require authentication.
-
-### 2.3. State Management & Data Fetching
-
-- **TanStack Query (React Query)**: Used as the primary tool for server state management. It handles data fetching, caching, synchronization, and updates with excellent developer experience.
-  - **Caching Strategy**: A default caching strategy is configured in `App.tsx` with a `staleTime` of 1 minute and a `gcTime` (garbage collection) of 5 minutes.
-- **React Context API**: Used for global UI state, specifically for authentication (`AuthContext`). It provides user and session information to all components in the application.
-- **Axios**: The HTTP client used to make requests to the backend API.
-
-### 2.4. UI & Styling
-
-- **Tailwind CSS**: A utility-first CSS framework for rapid UI development.
-- **Radix UI**: Provides unstyled, accessible UI primitives which are used as a base for custom components. This is indicative of a `shadcn/ui`-like setup.
-- **Component Library**: The UI is built with a custom component library located in `src/components/ui`, ensuring a consistent look and feel across the application.
-- **lucide-react**: Used for icons.
-
-### 2.5. Folder Structure
-
-The `frontend/src` directory is organized as follows:
-
-```
-/src
-├── /components       # Reusable UI components
-│   ├── /ui           # Base UI components (Button, Card, etc.)
-│   └── Layout.tsx
-│   └── PrivateRoute.tsx
-├── /contexts         # React Context providers (e.g., AuthContext)
-├── /hooks            # Custom React hooks
-├── /pages            # Top-level page components (lazily loaded)
-├── /services         # API service layer (Axios configurations)
-├── /utils            # Utility functions
-├── App.tsx           # Root component with routing setup
-└── index.tsx         # Application entry point
+```ts
+createApp({ db, storage, tokenVerifier, logger, config });
 ```
 
----
+The two external systems are ports, each an interface in `backend/src/ports.ts`:
 
-## 3. Backend Architecture
+- `FileStorage`: `put`, `signedUrl`, `remove`. The storage path format belongs to the adapter.
+- `TokenVerifier`: `verify(token)` returns an identity or null.
 
-The backend is a robust and scalable Node.js application built with Express.
+Each port has a production adapter in `backend/src/adapters/supabase.ts`, which uses one service-role Supabase client
+for both ports. Its test adapters (in-memory storage and a fake verifier that issues tokens) are in
+`backend/test/adapters.ts`.
 
-### 3.1. Core Framework & Language
+`backend/src/index.ts` is the only place that wires production dependencies: Prisma, the Supabase adapters, the logger
+and `config`. Outside production it also starts a server.
 
-- **Node.js**: The runtime environment.
-- **Express.js**: A minimal and flexible web application framework for Node.js. It's used to define the REST API routes and middleware.
-- **TypeScript**: Ensures type safety and better code organization.
+Other backend modules:
 
-### 3.2. API Design
+- `config/`: reads and validates the environment once. No other module reads `process.env`.
+- `lib/logger.ts`: the only way backend code writes logs. Emails, tokens and session contents are never logged.
+- `lib/prisma.ts`: the production Prisma client.
+- `errors.ts`: `AppError`, a typed error with a code.
+- `middleware/`: `auth.ts`, `validate.ts` (express-validator rules) and `errorHandler.ts`. The error handler turns
+  `AppError`, malformed JSON and multer errors into the error envelope. Anything else becomes a 500 with a generic
+  message.
 
-- **RESTful API**: The backend exposes a RESTful API for the frontend to consume.
-- **Routing**: Routes are modularized and located in the `src/routes` directory (e.g., `authRoutes`, `dataRoomRoutes`).
-- **Middleware**: The application makes extensive use of Express middleware for:
-  - **Security**: `helmet` for setting various HTTP headers, `cors` for Cross-Origin Resource Sharing, `express-rate-limit` to prevent brute-force attacks.
-  - **Authentication**: A custom `authenticateToken` middleware to protect routes.
-  - **Logging**: `morgan` for HTTP request logging.
-  - **Error Handling**: A centralized `errorHandler` middleware.
-  - **File Uploads**: `multer` is used for handling multipart/form-data, primarily for file uploads.
+The app also applies `helmet`, CORS limited to `ALLOWED_ORIGINS`, `morgan` request logs through the logger, and a
+rate limit of 100 requests per 15 minutes per IP.
 
-### 3.3. Database & ORM
+### Access module
 
-- **Supabase (PostgreSQL)**: The primary database. Supabase provides a managed PostgreSQL instance with additional features like authentication and storage.
-- **Prisma**: A next-generation ORM for Node.js and TypeScript.
-  - **Schema Definition**: The database schema is defined in `prisma/schema.prisma`.
-  - **Type Safety**: Prisma Client is auto-generated from the schema, providing fully type-safe database queries.
-  - **Migrations**: Prisma Migrate is used for declarative database schema migrations.
+`backend/src/access/` owns the rules for what a user may do with data rooms, Folders and Files.
+`createDataRoomAccess(deps, userId)` returns the operations available to that user:
 
-### 3.4. Folder Structure
+- **Ownership.** A Folder or File belongs to the user who owns its data room. A resource owned by someone else gets
+  the same 404 as one that does not exist.
+- **Names.** Names are trimmed. They must be unique among siblings, checked on create and on rename. Unique indexes
+  in the database enforce this, so two concurrent requests cannot both succeed. A violation becomes 409 `CONFLICT`.
+- **Contents.** One `contents` operation serves the data room root and every Folder: the level's Folders and Files
+  plus a breadcrumb (`folderTree.ts`).
+- **Uploads.** Files are PDF only, checked by both the declared type and the `%PDF-` signature, up to 4 MB
+  (`uploads.ts`). If the database rejects the record after the content was stored, the stored object is removed.
+- **Deletes.** Deleting a data room or Folder cascades in the database and removes the stored content of every File
+  under it.
 
-The `backend/src` directory is organized as follows:
+Routes (`backend/src/routes/`) only validate input and call the access module through `accessFor(req)`. `route()`
+sends the result in the `{ success: true, data }` envelope; `undefined` becomes 204.
+
+### Deployment
+
+`backend/vercel.json` builds `src/index.ts` with `@vercel/node` and rewrites every `/api/*` path to it, so the whole
+API is **one** serverless function. Vercel caps a request body at 4.5 MB, which is why the file limit is 4 MB.
+
+### Migrations
+
+The schema changes only through Prisma migrations in `backend/prisma/migrations/`, starting from the `0_init`
+baseline. `DATABASE_URL` is the pooled (pgbouncer) URL the app uses. `DIRECT_URL` is the direct connection that
+migrations use. CI applies every migration to a fresh Postgres before the backend tests run. The README covers the
+one-time steps for databases created before migrations were tracked.
+
+## Frontend
 
 ```
-/src
-├── /config           # Environment configuration
-├── /controllers      # Route handlers (business logic)
-├── /middleware       # Express middleware (auth, errorHandler)
-├── /routes           # API route definitions
-├── /services         # Services for interacting with external APIs or complex logic
-├── /utils            # Utility functions
-├── index.ts          # Application entry point, server and middleware setup
+src/
+  data/        client data module: API client, read hooks, mutations, Items, upload rules
+  pages/       Login, DataRooms (the list), DataRoomPage (one screen for the root and every Folder)
+  components/  Layout (sidebar FileTree + actions provider), DataRoomActions, DataRoomView/*, dialogs, ui/*
+  contexts/    AuthContext (Supabase session + profile)
+  lib/         supabase client, error messages, toast, formatting
+  hooks/       useDebounce (search input)
+  types/       API data shapes
 ```
 
----
+### Client data module
 
-## 4. Authentication
+`frontend/src/data/` is the only code that knows about HTTP or the query cache.
 
-- **Supabase Auth**: Authentication is handled by Supabase. The frontend interacts directly with Supabase for user sign-up, sign-in (Google OAuth), and session management.
-- **JWT (JSON Web Tokens)**: Supabase issues JWTs to authenticated users. The frontend stores this token and sends it in the `Authorization` header of every request to the backend.
-- **Backend Token Validation**: The `authenticateToken` middleware on the backend verifies the JWT signature with Supabase's public key to authorize requests.
+- `api.ts`: the axios client. It attaches the access token and unwraps the envelope. It turns every failure into an
+  `ApiError` with a code, including Vercel's own 413 without an envelope, the plain-text 429, network errors and
+  timeouts. It never notifies the user.
+- `dataRoom.ts`: `useDataRoomContents(dataRoomId, folderId)` reads one level. `useDataRoomMutations(dataRoomId)`
+  creates, renames, deletes and uploads. `openFile(fileId)` opens a File through a short-lived signed URL.
+- `dataRooms.ts`: the list of data rooms, with create and delete.
+- `optimistic.ts`: the shared optimistic-update pattern. It patches the cached queries the change affects (for a
+  data room, every cached level), marks new Items as pending, rolls back and shows exactly one toast on failure, and
+  refetches afterwards.
+- `items.ts`: turns Folders and Files into `Item`s (Folders first, then by name) and filters them for search.
+- `uploads.ts`: the client copy of the upload rules (4 MB, PDF), checked before any request is sent.
+- `queryKeys.ts`: the cache keys, used only inside `data/`. `queryClient.ts`: query defaults (retry only network,
+  timeout and server errors, once).
 
----
+A failed read becomes an error state with a retry button on the screen. A failed mutation becomes one toast built
+from its error code (`lib/errorMessages.ts`).
 
-## 5. Deployment & DevOps
+### Screen and actions provider
 
-- **Vercel**: The entire application (both frontend and backend) is deployed on Vercel.
-- **Frontend Deployment**: Deployed as a static site using `@vercel/static-build`. The `frontend/vercel.json` file configures rewrites to ensure client-side routing works correctly.
-- **Backend Deployment**: Deployed as **Vercel Serverless Functions** using `@vercel/node`. Each API route becomes a serverless function.
-- **CI/CD**: Vercel provides automated builds and deployments triggered by `git push` to the main branch.
-- **Environment Variables**: Vercel's dashboard is used to manage environment variables for both frontend (`REACT_APP_*`) and backend (`DATABASE_URL`).
+`DataRoomPage` is one screen for the data room root and every Folder; the Folder id in the URL is optional. Grid,
+list, search, breadcrumb and empty states are shared by every level.
 
----
+`DataRoomActionsProvider` (`components/DataRoomActions.tsx`) is mounted by `Layout` around both the sidebar
+`FileTree` and the screen. It holds the dialogs (create Folder, rename, upload, confirm delete) and exposes
+`openItem`, `startCreateFolder`, `startUpload`, `renameItem` and `deleteItem`. The single `ItemMenu` calls these
+actions wherever an Item appears: grid, list and tree, from its button or by right-click.
 
-## 6. Security
+`AuthContext` takes the session from Supabase's auth events and loads the profile (`GET /api/auth/me`) once per app
+start. `PrivateRoute` sends signed-out visitors to `/login`.
 
-Security is a critical aspect of the application. The following measures are in place:
+## Tests
 
-- **HTTPS**: Enforced by Vercel deployment.
-- **CORS (Cross-Origin Resource Sharing)**: The backend uses the `cors` middleware to restrict requests to a specific list of allowed origins (`ALLOWED_ORIGINS` env var).
-- **HTTP Security Headers**: The `helmet` middleware is used to set various security-related HTTP headers to protect against common attacks like XSS and clickjacking.
-- **Rate Limiting**: `express-rate-limit` is implemented to prevent brute-force attacks on API endpoints.
-- **Input Validation**: The `express-validator` library is used on the backend to validate and sanitize incoming request data, preventing injection attacks.
-- **Authentication**: Secure JWT-based authentication is handled by Supabase Auth. Tokens have a limited lifetime and are verified on the backend for protected routes.
-- **Secret Management**: All sensitive keys and credentials are stored as environment variables and are not hardcoded in the source code.
+Tests check observable behaviour through a module's public interface. Mocks are only used at the external seams:
+file storage, token verification, and the network on the frontend. Prisma and Postgres are never mocked.
 
----
+| Seam                 | What runs                                                                                                                                              | Where                                                                          |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ |
+| Backend integration  | The app from `createApp` with real Postgres, in-memory storage and the fake token verifier, driven over HTTP with supertest. Covers every access rule. | `backend/test/*.integration.test.ts`                                           |
+| Frontend integration | Whole screens with the real providers, memory router and data module. MSW intercepts HTTP.                                                             | `frontend/src/__tests__/integration/*.integration.test.tsx`                    |
+| E2E                  | Playwright in Chromium against the full local stack: Supabase CLI (Postgres, Auth, Storage), the backend with its production adapters, the built app.  | `frontend/e2e/`                                                                |
+| Unit                 | Pure modules: Item sorting and search, breadcrumb, upload rules, error mapping, config, formatting; UI primitives only where they add behaviour.       | `backend/src/**/__tests__/`, `frontend/src/__tests__/{data,utils,components}/` |
 
-## 7. Testing Strategy
+Backend integration tests use `TEST_DATABASE_URL` when it is set (the CI service container, or `npm run db:test`).
+Otherwise jest's global setup starts a throwaway embedded Postgres. Either way all migrations are applied first.
 
-The project includes a testing strategy for both frontend and backend to ensure reliability.
+E2E signs in without any test-only code path. The test user is created through the local Supabase admin API, its
+session is saved as Playwright storage state, and Google OAuth is only checked up to the redirect.
 
-### 7.1. Frontend Testing
+### Coverage
 
-- **Framework**: [Jest](https://jestjs.io/) is used as the test runner.
-- **Utilities**: [React Testing Library](https://testing-library.com/docs/react-testing-library/intro/) is used for testing React components. It encourages writing tests that resemble how users interact with the application.
-- **Types of Tests**: The focus is on unit and integration tests for components and custom hooks.
+Each package measures coverage in one jest run that executes both its unit and integration tests, so code exercised
+by either suite counts. `npm run test:coverage` (root or package) runs it and fails when coverage drops below these
+thresholds:
 
-### 7.2. Backend Testing
+| Scope                                                   | Lines | Branches |
+| ------------------------------------------------------- | ----- | -------- |
+| `backend/src/access/` (access module)                   | 90%   | 90%      |
+| `frontend/src/data/` (client data module)               | 90%   | 90%      |
+| the rest of `backend/src/`, the rest of `frontend/src/` | 80%   | —        |
 
-- **Framework**: [Jest](https://jestjs.io/) is used as the test runner, with `ts-jest` for TypeScript support.
-- **Utilities**: [Supertest](https://github.com/visionmedia/supertest) is used for testing API endpoints. It allows for making HTTP requests to the Express application without needing a running server.
-- **Types of Tests**: The strategy includes integration tests for API routes (controllers) and unit tests for individual service functions.
+The thresholds live in `backend/jest.coverage.config.js` and in the `jest` block of `frontend/package.json`. Test
+helpers are not counted. E2E does not contribute to coverage.
 
----
+## CI
 
-## 8. Scalability & Performance
+`.github/workflows/ci.yml` runs on every pull request and every push to `main`. A new push cancels the outdated run
+for the same ref, and the token is read-only.
 
-- **Frontend Performance**:
-  - **Code Splitting**: Page components are lazy-loaded using `React.lazy` and `Suspense`, which reduces the initial bundle size and improves load times.
-  - **Caching**: TanStack Query provides a sophisticated caching layer that minimizes unnecessary network requests.
-- **Backend Scalability**:
-  - **Serverless Architecture**: The backend is deployed as Vercel Serverless Functions. This architecture scales automatically with demand, as Vercel provisions resources for each incoming request.
-  - **Database Pooling**: The use of a `DIRECT_URL` with `pgbouncer=true` in the Prisma configuration indicates that a connection pooler is used, which is essential for managing database connections efficiently in a serverless environment.
+1. **Lint, format, typecheck, dead code**: `npm run lint`, `format:check`, `typecheck`, `deadcode` (knip).
+2. **Backend unit + integration**: a Postgres service container, `prisma migrate deploy`, then the coverage run.
+3. **Frontend unit + integration**: the coverage run.
+4. **E2E**: runs after the first three jobs pass. Starts local Supabase and runs `npm run test:e2e`. If it fails, it
+   uploads the Playwright report, traces and screenshots.
+5. **Build**: both packages.
 
----
+Jobs 2 and 3 upload their coverage reports (`lcov` and a summary) as artifacts, whether they pass or fail.
 
-## 9. Code Quality
-
-- **TypeScript**: Used across the entire stack (frontend and backend) to enforce type safety and reduce runtime errors.
-- **ESLint**: An ESLint configuration is in place to enforce a consistent code style and identify potential issues early.
-- **Monorepo**: The monorepo structure, while a high-level architectural choice, also contributes to code quality by making it easier to share types and configurations between the frontend and backend.
-
----
-
-## 10. Database Schema (ERD)
-
-The following diagram illustrates the relationships between the main entities in the database.
-
-```mermaid
-erDiagram
-    User {
-        String id PK
-        String email UK
-        String name
-        DateTime createdAt
-        DateTime updatedAt
-    }
-
-    DataRoom {
-        String id PK
-        String name
-        String description
-        String ownerId FK
-        DateTime createdAt
-        DateTime updatedAt
-    }
-
-    Folder {
-        String id PK
-        String name
-        String dataRoomId FK
-        String parentId FK
-        String userId FK
-        DateTime createdAt
-        DateTime updatedAt
-    }
-
-    File {
-        String id PK
-        String name
-        String dataRoomId FK
-        String folderId FK
-        String userId FK
-        BigInt fileSize
-        String mimeType
-        String filePath
-        DateTime createdAt
-        DateTime updatedAt
-    }
-
-    User ||--o{ DataRoom : "owns"
-    User ||--o{ Folder : "owns"
-    User ||--o{ File : "owns"
-
-    DataRoom ||--o{ Folder : "contains"
-    DataRoom ||--o{ File : "contains"
-
-    Folder ||--o{ File : "contains"
-    Folder }o--o{ Folder : "is child of"
-```
+Locally, a husky pre-commit hook runs gitleaks on the staged changes, then ESLint and Prettier through lint-staged.
+The pre-push hook runs `typecheck` and `test:unit`.

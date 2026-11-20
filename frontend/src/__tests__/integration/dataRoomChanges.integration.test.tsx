@@ -79,7 +79,7 @@ describe('Changing a data room', () => {
       }
     });
 
-    it('removes a deleted Item at once, only after confirmation', async () => {
+    it('removes a deleted Folder and File at once, only after confirmation', async () => {
       const { room, contracts } = seedDeals();
       const [folderName, fileName] = inFolder ? ['NDAs', 'msa'] : ['Contracts', 'Budget'];
       const { user } = renderApp(
@@ -105,6 +105,16 @@ describe('Changing a data room', () => {
       release();
       await expectSingleToast('Folder deleted successfully!');
       expect(main().getByText(fileName)).toBeInTheDocument();
+
+      const releaseFile = holdRequests('delete', `${API_URL}/files/:id`);
+      await user.click(menuButton(main, fileName));
+      await user.click(await screen.findByRole('menuitem', { name: 'Delete' }));
+      await user.click(screen.getByRole('button', { name: 'Delete' }));
+
+      expect(main().queryByText(fileName)).not.toBeInTheDocument();
+      releaseFile();
+      await expectSingleToast('File deleted successfully!');
+      expect(main().queryByText(fileName)).not.toBeInTheDocument();
     });
   });
 

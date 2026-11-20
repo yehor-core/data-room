@@ -13,7 +13,7 @@
     "typecheck": "tsc -p test/tsconfig.json",
     "test:unit": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage",
+    "test:coverage": "jest -c jest.coverage.config.js --coverage --runInBand",
     "test:integration": "jest -c jest.integration.config.js --runInBand",
     "db:test": "ts-node -P test/tsconfig.json test/db-server.ts",
     "db:generate": "prisma generate",

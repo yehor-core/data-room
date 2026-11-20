@@ -17,6 +17,7 @@
     "deadcode": "knip",
     "test:unit": "npm run test:unit --prefix backend && npm run test:unit --prefix frontend",
     "test:integration": "npm run test:integration --prefix backend --if-present && npm run test:integration --prefix frontend --if-present",
+    "test:coverage": "npm run test:coverage --prefix backend && npm run test:coverage --prefix frontend",
     "test:e2e": "npm run test:e2e --prefix frontend --if-present",
     "build": "npm run build --prefix backend && npm run build --prefix frontend",
     "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install",
