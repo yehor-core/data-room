@@ -99,7 +99,7 @@ src/
   pages/       Login, DataRooms (the list), DataRoomPage (one screen for the root and every Folder)
   components/  Layout (sidebar FileTree + actions provider), DataRoomActions, DataRoomView/*, dialogs, ui/*
   contexts/    AuthContext (Supabase session + profile)
-  lib/         supabase client, error messages, toast, formatting
+  lib/         supabase client, error messages, toast, formatting, screen paths
   hooks/       useDebounce (search input)
   types/       API data shapes
 ```

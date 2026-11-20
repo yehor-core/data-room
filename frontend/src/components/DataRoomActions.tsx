@@ -14,6 +14,7 @@ import { TextPromptDialog } from './TextPromptDialog';
 import { UploadFileDialog } from './DataRoomView/UploadFileDialog';
 import { openFile, useDataRoomContents, useDataRoomMutations } from '@/data/dataRoom';
 import type { Item } from '@/data/items';
+import { levelPath } from '@/lib/paths';
 
 interface DataRoomActions {
   /** Opens a Folder on the data room screen, or a File in a new tab. */
@@ -56,24 +57,22 @@ export const DataRoomActionsProvider: React.FC<DataRoomActionsProviderProps> = (
 }) => {
   const [dialog, setDialog] = useState<OpenDialog>(null);
   const navigate = useNavigate();
-  const { createFolder, uploadFile, renameItem, deleteItem } = useDataRoomMutations(dataRoomId);
+  const mutations = useDataRoomMutations(dataRoomId);
   const { breadcrumb } = useDataRoomContents(dataRoomId, folderId);
   const close = () => setDialog(null);
 
   const confirmDelete = (item: Item) => {
     // Deleting the Folder on screen (or one above it) leaves nothing to show: go to where the Folder was.
     if (item.type === 'folder' && breadcrumb.some((crumb) => crumb.id === item.id)) {
-      navigate(`/data-rooms/${dataRoomId}${item.parentId ? `/folders/${item.parentId}` : ''}`);
+      navigate(levelPath(dataRoomId, item.parentId));
     }
-    void deleteItem(item);
+    void mutations.deleteItem(item);
   };
 
   const actions = useMemo<DataRoomActions>(
     () => ({
       openItem: (item) =>
-        item.type === 'folder'
-          ? navigate(`/data-rooms/${dataRoomId}/folders/${item.id}`)
-          : void openFile(item.id),
+        item.type === 'folder' ? navigate(levelPath(dataRoomId, item.id)) : void openFile(item.id),
       startCreateFolder: () => setDialog({ kind: 'createFolder' }),
       startUpload: () => setDialog({ kind: 'upload' }),
       renameItem: (item) => setDialog({ kind: 'rename', item }),
@@ -96,7 +95,7 @@ export const DataRoomActionsProvider: React.FC<DataRoomActionsProviderProps> = (
         description="Enter a name for the new folder"
         label="Folder Name"
         submitLabel="Create"
-        onSubmit={(name) => void createFolder({ name, parentId: folderId })}
+        onSubmit={(name) => void mutations.createFolder({ name, parentId: folderId })}
       />
       <TextPromptDialog
         open={!!renaming}
@@ -106,12 +105,12 @@ export const DataRoomActionsProvider: React.FC<DataRoomActionsProviderProps> = (
         label="New Name"
         submitLabel="Rename"
         initialValue={renaming?.name}
-        onSubmit={(name) => renaming && void renameItem({ item: renaming, name })}
+        onSubmit={(name) => renaming && void mutations.renameItem({ item: renaming, name })}
       />
       <UploadFileDialog
         open={dialog?.kind === 'upload'}
         onOpenChange={close}
-        onUpload={({ file, name }) => uploadFile({ file, name, folderId })}
+        onUpload={({ file, name }) => mutations.uploadFile({ file, name, folderId })}
       />
       <AlertDialog open={!!deleting} onOpenChange={close}>
         <AlertDialogContent>

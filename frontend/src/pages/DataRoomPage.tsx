@@ -11,6 +11,7 @@ import { SearchAndActions } from '@/components/DataRoomView/SearchAndActions';
 import { useDataRoomContents } from '@/data/dataRoom';
 import { filterItems } from '@/data/items';
 import { useDebounce } from '@/hooks/useDebounce';
+import { levelPath } from '@/lib/paths';
 
 type ViewMode = 'grid' | 'list';
 
@@ -37,8 +38,7 @@ const DataRoomScreen: React.FC<{ dataRoomId: string; folderId: string | null }> 
 
   const visibleItems = filterItems(items, debouncedSearch);
 
-  const goBack = () =>
-    navigate(`/data-rooms/${dataRoomId}${folder?.parentId ? `/folders/${folder.parentId}` : ''}`);
+  const goBack = () => navigate(levelPath(dataRoomId, folder?.parentId ?? null));
 
   let content: React.ReactNode;
   if (isLoading) {
