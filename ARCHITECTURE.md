@@ -114,6 +114,8 @@ src/
 - `dataRoom.ts`: `useDataRoomContents(dataRoomId, folderId)` reads one level. `useDataRoomMutations(dataRoomId)`
   creates, renames, deletes and uploads. `openFile(fileId)` opens a File through a short-lived signed URL.
 - `dataRooms.ts`: the list of data rooms, with create and delete.
+- `session.ts`: hands the session's access token to the API client, loads the profile, and clears every cached
+  response when the session ends.
 - `optimistic.ts`: the shared optimistic-update pattern. It patches the cached queries the change affects (for a
   data room, every cached level), marks new Items as pending, rolls back and shows exactly one toast on failure, and
   refetches afterwards.
@@ -135,8 +137,8 @@ list, search, breadcrumb and empty states are shared by every level.
 `openItem`, `startCreateFolder`, `startUpload`, `renameItem` and `deleteItem`. The single `ItemMenu` calls these
 actions wherever an Item appears: grid, list and tree, from its button or by right-click.
 
-`AuthContext` takes the session from Supabase's auth events and loads the profile (`GET /api/auth/me`) once per app
-start. `PrivateRoute` sends signed-out visitors to `/login`.
+`AuthContext` takes the session from Supabase's auth events, passes it to `data/session.ts` and loads the profile
+(`GET /api/auth/me`) through it once per app start. `PrivateRoute` sends signed-out visitors to `/login`.
 
 ## Tests
 

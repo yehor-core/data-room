@@ -1,10 +1,9 @@
 import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { toast } from '../lib/toast';
 import { SUCCESS_MESSAGES } from '../lib/errorMessages';
 import { User } from '../types';
-import { api, setAuthToken } from '../data/api';
+import { useSessionData } from '../data/session';
 
 interface AuthContextType {
   user: User | null;
@@ -26,7 +25,7 @@ export const useAuth = () => {
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const queryClient = useQueryClient();
+  const { sessionChanged, loadProfile: fetchProfile } = useSessionData();
   // The Supabase identity whose profile is loaded (or loading), so token refreshes don't reload it.
   const profileOf = useRef<string | null>(null);
 
@@ -35,7 +34,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       profileOf.current = identity;
       setLoading(true);
       try {
-        const profile = await api.get<User>('/auth/me');
+        const profile = await fetchProfile();
         if (profileOf.current === identity) setUser(profile);
       } catch {
         if (profileOf.current === identity) setUser(null);
@@ -47,13 +46,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
-      setAuthToken(session?.access_token ?? null);
+      sessionChanged(session?.access_token ?? null);
 
       if (!session) {
         profileOf.current = null;
         setUser(null);
         setLoading(false);
-        queryClient.clear();
         sessionStorage.removeItem('login_toast_shown');
         return;
       }
@@ -70,7 +68,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     });
 
     return () => subscription.unsubscribe();
-  }, [queryClient]);
+  }, [sessionChanged, fetchProfile]);
 
   const signInWithGoogle = async () => {
     setLoading(true);
