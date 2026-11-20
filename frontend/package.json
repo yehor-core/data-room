@@ -29,6 +29,7 @@
     "start": "craco start",
     "build": "craco build",
     "test": "craco test",
+    "test:coverage": "craco test --watchAll=false --coverage",
     "typecheck": "tsc",
     "test:unit": "craco test --watchAll=false --testPathIgnorePatterns \"\\\\.integration\\\\.test\\\\.tsx?$\"",
     "test:integration": "craco test --watchAll=false --testPathPattern \"\\\\.integration\\\\.test\\\\.tsx?$\""
@@ -53,7 +54,29 @@
     },
     "transformIgnorePatterns": [
       "node_modules/(?!(axios|react-router|react-router-dom|until-async)/).+\\.(js|jsx|cjs|ts|tsx)$"
-    ]
+    ],
+    "collectCoverageFrom": [
+      "src/**/*.{ts,tsx}",
+      "!src/**/*.d.ts",
+      "!src/setupTests.ts",
+      "!src/test/**",
+      "!src/**/__tests__/**"
+    ],
+    "coverageReporters": [
+      "text",
+      "text-summary",
+      "lcov",
+      "json-summary"
+    ],
+    "coverageThreshold": {
+      "./src/data/": {
+        "lines": 90,
+        "branches": 90
+      },
+      "global": {
+        "lines": 80
+      }
+    }
   },
   "devDependencies": {
     "@craco/craco": "^7.1.0",
