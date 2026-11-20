@@ -1,0 +1,8 @@
+.link.json
+..link.json.*.tmp
+.supabase.lock.*.tmp
+.supabase.lock.lease
+.temp/
+.branches/
+# Written by the experimental stack (SUPABASE_EXPERIMENTAL_STACK=1), which only local runs use.
+supabase.lock

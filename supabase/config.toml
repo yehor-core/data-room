@@ -1,0 +1,62 @@
+#:schema https://supabase.com/schemas/config/v1.json
+# Local Supabase stack for the e2e tests (`npm run test:e2e`): Postgres, Auth and Storage only.
+# Settings not listed here keep the Supabase CLI defaults. Nothing in this file is a real credential.
+project_id = "data-room"
+
+[api]
+port = 54321
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 17
+
+[storage]
+file_size_limit = "50MiB"
+
+# The bucket the backend's Supabase storage adapter writes to (backend/src/adapters/supabase.ts).
+[storage.buckets.data-room-files]
+public = false
+
+[storage.s3_protocol]
+enabled = false
+
+[storage.vector]
+enabled = false
+
+[auth]
+# The frontend under test (frontend/e2e/support/stack.ts).
+site_url = "http://localhost:3100"
+additional_redirect_urls = ["http://localhost:3100"]
+enable_signup = true
+
+[auth.rate_limit]
+# Every test signs a user in with a password; the default (30 per 5 minutes per IP) is too low for a suite.
+sign_in_sign_ups = 1000
+token_refresh = 1000
+
+[auth.email]
+enable_confirmations = false
+
+# Google is enabled with placeholder credentials so the sign-in button's redirect to Google can be checked.
+# The e2e tests stop at that redirect and never talk to Google.
+[auth.external.google]
+enabled = true
+client_id = "e2e-placeholder-client-id"
+secret = "e2e-placeholder"
+skip_nonce_check = true
+
+[realtime]
+enabled = false
+
+[studio]
+enabled = false
+
+[local_smtp]
+enabled = false
+
+[edge_runtime]
+enabled = false
+
+[analytics]
+enabled = false
