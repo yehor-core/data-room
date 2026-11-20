@@ -143,6 +143,18 @@ describe('Opening a File', () => {
     open.mockRestore();
   });
 
+  it('opens the signed link itself when the browser blocks the blank tab', async () => {
+    const open = jest.spyOn(window, 'open').mockReturnValue(null);
+    const { user, file } = await setUp();
+
+    await user.click(main().getByRole('button', { name: /^Budget/ }));
+
+    await waitFor(() =>
+      expect(open).toHaveBeenLastCalledWith(signedUrl(file.id), '_blank', 'noopener,noreferrer'),
+    );
+    open.mockRestore();
+  });
+
   it('closes the new tab and says why when the link cannot be had', async () => {
     const { tab, open } = fakeTab();
     server.use(
