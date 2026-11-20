@@ -25,7 +25,7 @@ export const useAuth = () => {
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const { sessionChanged, loadProfile: fetchProfile } = useSessionData();
+  const { sessionChanged, fetchProfile } = useSessionData();
   // The Supabase identity whose profile is loaded (or loading), so token refreshes don't reload it.
   const profileOf = useRef<string | null>(null);
 

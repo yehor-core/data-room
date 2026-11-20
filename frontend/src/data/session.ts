@@ -15,7 +15,7 @@ export function useSessionData() {
         if (!accessToken) queryClient.clear();
       },
       /** The signed-in user's profile (`GET /api/auth/me`). The first request also creates the account. */
-      loadProfile: () => api.get<User>('/auth/me'),
+      fetchProfile: () => api.get<User>('/auth/me'),
     }),
     [queryClient],
   );
